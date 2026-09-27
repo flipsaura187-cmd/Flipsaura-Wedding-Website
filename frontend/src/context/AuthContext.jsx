@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
+import api from "@/api/axios";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -18,18 +19,9 @@ export function AuthProvider({ children }) {
 
   const refresh = useCallback(async () => {
     try {
-      const headers = {};
-      if (typeof window !== "undefined") {
-        const token = localStorage.getItem("fa_token");
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const r = await fetch("/api/auth/me", {
-        cache: "no-store",
-        credentials: "include",
-        headers,
+      const { data: j } = await api.get("/api/auth/me", {
+        headers: { "Cache-Control": "no-cache" },
       });
-      const j = await r.json();
       setUser(j.ok && j.data?.user ? j.data.user : null);
     } catch {
       setUser(null);
@@ -43,13 +35,7 @@ export function AuthProvider({ children }) {
   }, [refresh]);
 
   const login = async (email, password) => {
-    const r = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, password }),
-    });
-    const j = await r.json();
+    const { data: j } = await api.post("/api/auth/login", { email, password });
     if (!j.ok) throw new Error(j.error || "Login failed");
 
     if (j.data?.token && typeof window !== "undefined") {
@@ -61,13 +47,7 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (payload) => {
-    const r = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-    const j = await r.json();
+    const { data: j } = await api.post("/api/auth/register", payload);
     if (!j.ok) throw new Error(j.error || "Register failed");
 
     if (j.data?.token && typeof window !== "undefined") {
@@ -80,7 +60,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      await api.post("/api/auth/logout");
     } catch (e) {
       console.warn("Logout error:", e);
     }

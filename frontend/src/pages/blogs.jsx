@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "@/compat/Link";
 
+import api from "@/api/axios";
 const CATEGORIES = [
   "All",
   "Wedding Planning",
@@ -33,9 +34,8 @@ export default function BlogsPage() {
     }
 
     setLoading(true);
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
+    api.get(url)
+      .then(({ data }) => {
         const list = Array.isArray(data) ? data : data?.blogs || data?.data || [];
         setBlogs(list);
         setTotalPages(data?.totalPages || 1);

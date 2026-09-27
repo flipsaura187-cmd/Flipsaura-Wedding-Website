@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 
+import api from "@/api/axios";
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
-  useEffect(() => { fetch("/api/admin/stats").then(r => r.json()).then(j => j.ok && setStats(j.data.stats)); }, []);
+  useEffect(() => { api.get("/api/admin/stats").then(r => r.data).then(j => j.ok && setStats(j.data.stats)); }, []);
   if (!stats) return <div className="loading">Loading…</div>;
   return (
     <>

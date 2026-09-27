@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "@/compat/navigation";
 import Image from "@/compat/Image";
 
+import api from "@/api/axios";
+import axios from "axios";
 export default function ItemForm({ onSaved, initialData = null, categories }) {
     const router = useRouter();
     const isEdit = !!initialData?._id;
@@ -63,12 +65,9 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
         setUploading(true);
         try {
             // 1. Get signature from your API
-            const sigRes = await fetch("/api/upload", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ folder: "flipsaura/items" }),
+            const { data: sigData } = await api.post("/api/upload", {
+                folder: "flipsaura/items",
             });
-            const sigData = await sigRes.json();
             if (!sigData.ok) throw new Error(sigData.error || "Failed to get upload signature");
 
             const { signature, timestamp, apiKey, cloudName } = sigData.data;
@@ -82,11 +81,10 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
             cloudForm.append("folder", "flipsaura/items");
 
             // 3. Upload to Cloudinary
-            const uploadRes = await fetch(
+            const { data: uploadData } = await axios.post(
                 `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-                { method: "POST", body: cloudForm }
+                cloudForm
             );
-            const uploadData = await uploadRes.json();
             if (!uploadData.secure_url) throw new Error("Upload failed");
 
             // 4. Add the new URL to images array
@@ -136,12 +134,9 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
         try {
             const url = isEdit ? `/api/items/${initialData._id}` : "/api/items";
             const method = isEdit ? "PUT" : "POST";
-            const res = await fetch(url, {
-                method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            const data = await res.json();
+            const { data } = method === "PUT"
+                ? await api.put(url, payload)
+                : await api.post(url, payload);
             if (!data.ok) throw new Error(data.error || "Something went wrong");
             if (onSaved) onSaved(data.data.item);
             router.refresh();

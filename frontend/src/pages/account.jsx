@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
+import api from "@/api/axios";
 export default function AccountPage() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
@@ -9,8 +10,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     (async () => {
-      const r = await fetch("/api/bookings");
-      const j = await r.json();
+      const { data: j } = await api.get("/api/bookings");
       if (j.ok) setBookings(j.data.bookings);
       setLoading(false);
     })();

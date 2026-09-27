@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "@/compat/Link";
 import BlogForm from "@/components/admin/BlogForm";
 
+import api from "@/api/axios";
 export default function AdminBlogs() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,8 +14,7 @@ export default function AdminBlogs() {
   const fetchBlogs = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/blogs");
-      const data = await res.json();
+      const { data } = await api.get("/api/admin/blogs");
       const list = Array.isArray(data) ? data : data.blogs || data.data || [];
       setBlogs(list);
     } catch (err) {
@@ -36,9 +36,8 @@ export default function AdminBlogs() {
       : `/api/blogs/${blog._id || blog.slug}/publish`;
 
     try {
-      const res = await fetch(endpoint, { method: "PATCH" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Action failed");
+      const { data } = await api.patch(endpoint);
+      if (!data.ok) throw new Error(data.error || "Action failed");
 
       setFeedback({
         type: "success",
@@ -56,9 +55,8 @@ export default function AdminBlogs() {
     }
 
     try {
-      const res = await fetch(`/api/blogs/${blog._id || blog.slug}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to delete blog");
+      const { data } = await api.delete(`/api/blogs/${blog._id || blog.slug}`);
+      if (!data.ok) throw new Error(data.error || "Failed to delete blog");
 
       setFeedback({ type: "success", message: "Article deleted successfully." });
       fetchBlogs();

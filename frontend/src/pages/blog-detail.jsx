@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "@/compat/navigation";
 import Link from "@/compat/Link";
 
+import api from "@/api/axios";
 export default function BlogDetail() {
   const { slug } = useParams();
   const [blog, setBlog] = useState(null);
@@ -14,10 +15,9 @@ export default function BlogDetail() {
     setLoading(true);
     setError("");
 
-    fetch(`/api/blogs/${slug}`)
-      .then(async (r) => {
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error || "Article not found");
+    api.get(`/api/blogs/${slug}`)
+      .then(({ data: j }) => {
+        if (!j.ok) throw new Error(j.error || "Article not found");
         setBlog(j.blog || j.data || j);
       })
       .catch((err) => {

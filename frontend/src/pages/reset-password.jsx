@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, useParams } from "@/compat/navigation";
 import Link from "@/compat/Link";
 
+import api from "@/api/axios";
 export default function ResetPasswordPage() {
   const searchParamsResult = useSearchParams();
   const searchParams = Array.isArray(searchParamsResult) ? searchParamsResult[0] : searchParamsResult;
@@ -67,14 +68,8 @@ export default function ResetPasswordPage() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
+      const { data } = await api.post("/api/auth/reset-password", { token, newPassword });
+      if (!data.ok) {
         throw new Error(data.error || "Password reset failed. The link may have expired.");
       }
 

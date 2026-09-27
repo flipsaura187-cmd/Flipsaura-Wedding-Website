@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
+import api from "@/api/axios";
+import axios from "axios";
 export default function AdminCategories() {
   const [list, setList] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -17,9 +19,8 @@ export default function AdminCategories() {
   const [error, setError] = useState("");
 
   const load = () =>
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then((j) => j.ok && setList(j.data.categories));
+    api.get("/api/categories")
+      .then(({ data: j }) => j.ok && setList(j.data.categories));
 
   useEffect(() => {
     load();
@@ -53,12 +54,9 @@ export default function AdminCategories() {
     const url = editingId ? `/api/categories/${formData.slug}` : "/api/categories";
     const method = editingId ? "PUT" : "POST";
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-    const data = await res.json();
+    const { data } = method === "PUT"
+      ? await api.put(url, formData)
+      : await api.post(url, formData);
     if (!data.ok) {
       setError(data.error || "Something went wrong");
       return;
@@ -70,7 +68,7 @@ export default function AdminCategories() {
   // Delete category
   const remove = async (slug) => {
     if (!confirm("Delete this category?")) return;
-    await fetch(`/api/categories/${slug}`, { method: "DELETE" });
+    await api.delete(`/api/categories/${slug}`);
     load();
   };
 
@@ -79,12 +77,9 @@ export default function AdminCategories() {
     setUploading(true);
     setError("");
     try {
-      const sigRes = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder: "flipsaura/categories" }),
+      const { data: sigData } = await api.post("/api/upload", {
+        folder: "flipsaura/categories",
       });
-      const sigData = await sigRes.json();
       if (!sigData.ok) throw new Error(sigData.error || "Failed to get signature");
 
       const { signature, timestamp, apiKey, cloudName } = sigData.data;
@@ -95,11 +90,10 @@ export default function AdminCategories() {
       cloudForm.append("signature", signature);
       cloudForm.append("folder", "flipsaura/categories");
 
-      const uploadRes = await fetch(
+      const { data: uploadData } = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: "POST", body: cloudForm }
+        cloudForm
       );
-      const uploadData = await uploadRes.json();
       if (!uploadData.secure_url) throw new Error("Upload failed");
       return uploadData.secure_url;
     } catch (err) {

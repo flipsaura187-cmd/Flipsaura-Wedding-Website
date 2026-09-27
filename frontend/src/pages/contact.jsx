@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 
+import api from "@/api/axios";
 export default function ContactPage() {
     const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
     const [status, setStatus] = useState({ type: "", message: "" });
@@ -13,13 +14,8 @@ export default function ContactPage() {
         setLoading(true);
         setStatus({ type: "", message: "" });
         try {
-            const res = await fetch("/api/contact", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed to send");
+            const { data } = await api.post("/api/contact", form);
+            if (!data.ok) throw new Error(data.error || "Failed to send");
             setStatus({ type: "success", message: "Message sent! We'll get back to you soon." });
             setForm({ name: "", email: "", phone: "", message: "" });
         } catch (err) {

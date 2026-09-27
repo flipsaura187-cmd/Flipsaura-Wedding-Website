@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "@/compat/Link";
 
+import api from "@/api/axios";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -29,21 +30,17 @@ export default function ForgotPasswordPage() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: toSend }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 429 && data.retryAfter) {
+      try {
+        const { data } = await api.post("/api/auth/forgot-password", { email: toSend });
+        if (!data.ok) throw new Error(data.error || "Failed to send reset link. Please try again.");
+        setMessage(data.message || "A password reset link has been sent to your email.");
+      } catch (err) {
+        const data = err.response?.data;
+        if (err.response?.status === 429 && data?.retryAfter) {
           setCooldown(data.retryAfter);
         }
-        throw new Error(data.error || "Failed to send reset link. Please try again.");
+        throw new Error(data?.error || err.message || "Failed to send reset link. Please try again.");
       }
-
-      setMessage(data.message || "A password reset link has been sent to your email.");
       setCooldown(60); // 60 seconds cooldown for resending
     } catch (err) {
       setError(err.message);

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
+import api from "@/api/axios";
+import axios from "axios";
 export default function ItemForm({ onSaved, initial }) {
   const [cats, setCats] = useState([]);
   const [form, setForm] = useState(initial || {
@@ -12,18 +14,16 @@ export default function ItemForm({ onSaved, initial }) {
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    fetch("/api/categories").then(r => r.json()).then(j => j.ok && setCats(j.data.categories));
+    api.get("/api/categories").then(r => r.data).then(j => j.ok && setCats(j.data.categories));
   }, []);
 
   const upload = async (file) => {
     setUploading(true); setErr("");
     try {
       // 1) get a short-lived signature from our server
-      const r = await fetch("/api/upload", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder: "flipsaura/items" }),
+      const { data: j } = await api.post("/api/upload", {
+        folder: "flipsaura/items",
       });
-      const j = await r.json();
       if (!j.ok) throw new Error(j.error);
       const { cloudName, apiKey, timestamp, folder, signature, uploadUrl } = j.data;
 
@@ -35,9 +35,8 @@ export default function ItemForm({ onSaved, initial }) {
       fd.append("folder", folder);
       fd.append("signature", signature);
 
-      const up = await fetch(uploadUrl, { method: "POST", body: fd });
-      const upJson = await up.json();
-      if (!up.ok) throw new Error(upJson.error?.message || "Cloudinary upload failed");
+      const { data: upJson } = await axios.post(uploadUrl, fd);
+      if (!upJson.secure_url) throw new Error(upJson.error?.message || "Cloudinary upload failed");
 
       // store the optimized delivery URL (auto format + quality)
       const optimized = upJson.secure_url.replace("/upload/", "/upload/f_auto,q_auto/");
@@ -50,8 +49,7 @@ export default function ItemForm({ onSaved, initial }) {
     e.preventDefault();
     setErr("");
     const payload = { ...form, price: Number(form.price), specifications: form.specifications.filter(s => s.key) };
-    const r = await fetch("/api/items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    const j = await r.json();
+    const { data: j } = await api.post("/api/items", payload);
     if (j.ok) onSaved?.(j.data.item);
     else setErr(j.error);
   };

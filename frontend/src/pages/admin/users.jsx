@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 
+import api from "@/api/axios";
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
-  const load = () => fetch("/api/admin/users").then(r => r.json()).then(j => j.ok && setUsers(j.data.users));
+  const load = () => api.get("/api/admin/users").then(r => r.data).then(j => j.ok && setUsers(j.data.users));
   useEffect(() => { load(); }, []);
 
   const update = async (id, body) => {
-    await fetch("/api/admin/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...body }) });
+    await api.put("/api/admin/users", { id, ...body });
     load();
   };
 

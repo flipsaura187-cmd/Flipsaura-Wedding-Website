@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
+import api from "@/api/axios";
+import axios from "axios";
 const CATEGORIES = [
   "Wedding Planning",
   "Wedding Decoration",
@@ -144,12 +146,9 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
 
     try {
       // 1. Fetch signed parameters from our server
-      const sigRes = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder: "flipsaura/blogs" }),
+      const { data: sigData } = await api.post("/api/upload", {
+        folder: "flipsaura/blogs",
       });
-      const sigData = await sigRes.json();
       if (!sigData.ok) {
         throw new Error(sigData.error || "Failed to obtain upload authorization");
       }
@@ -164,11 +163,10 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
       formData.append("signature", signature);
       formData.append("folder", "flipsaura/blogs");
 
-      const uploadRes = await fetch(
+      const { data: uploadData } = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: "POST", body: formData }
+        formData
       );
-      const uploadData = await uploadRes.json();
 
       if (!uploadData.secure_url) {
         throw new Error(uploadData.error?.message || "Cloudinary upload failed");
@@ -213,14 +211,11 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
     const method = isEdit ? "PUT" : "POST";
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      const { data } = method === "PUT"
+        ? await api.put(url, payload)
+        : await api.post(url, payload);
 
-      if (!res.ok) {
+      if (!data.ok) {
         throw new Error(data.error || "Failed to save blog post");
       }
 

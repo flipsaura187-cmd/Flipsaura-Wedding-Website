@@ -4,6 +4,7 @@ import { useParams, useRouter, useSearchParams } from "@/compat/navigation";
 import ItemCard from "@/components/ItemCard";
 import Pagination from "@/components/Pagination";
 
+import api from "@/api/axios";
 export default function CategoryPage() {
   const { slug } = useParams();
   const router = useRouter();
@@ -25,8 +26,7 @@ export default function CategoryPage() {
     setLoading(true);
     const params = new URLSearchParams({ category: slug, page: String(page), limit: "12" });
     Object.entries(filters).forEach(([k, v]) => v && params.set(k, v));
-    const r = await fetch(`/api/items?${params}`);
-    const j = await r.json();
+    const { data: j } = await api.get(`/api/items?${params}`);
     if (j.ok) {
       setItems(j.data.items);
       setTotalPages(j.data.totalPages || 1);

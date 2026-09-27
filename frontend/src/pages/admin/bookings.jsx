@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 
+import api from "@/api/axios";
 export default function AdminBookings() {
   const [list, setList] = useState([]);
-  const load = () => fetch("/api/bookings").then(r => r.json()).then(j => j.ok && setList(j.data.bookings));
+  const load = () => api.get("/api/bookings").then(r => r.data).then(j => j.ok && setList(j.data.bookings));
   useEffect(() => { load(); }, []);
 
   const setStatus = async (id, status) => {
-    await fetch(`/api/bookings/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    await api.put(`/api/bookings/${id}`, { status });
     load();
   };
 

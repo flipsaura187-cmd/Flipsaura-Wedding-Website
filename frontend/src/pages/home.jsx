@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Link from '@/compat/Link';
 import ItemCard from '@/components/ItemCard';
 import HeroSlideshow from '@/components/Hero';
+import api from "@/api/axios";
 const indianWeddingImages=[
 {url:'https://images.unsplash.com/photo-1611106211090-8f3c79eb8552?q=80&w=687&auto=format&fit=crop',alt:'Indian bride in red lehenga'},
 {url:'https://images.unsplash.com/photo-1597157639073-69284dc0fdaf?q=80&w=1174&auto=format&fit=crop',alt:'Indian groom and baraat'},
@@ -12,7 +13,7 @@ const indianWeddingImages=[
 const reviews=[['Aisha & Rahul','FlipsAura made venue booking a breeze. Stunning decor, smooth process.'],['Priya & Karan','The planners we booked were absolute magic. Worth every rupee.'],['Neha & Aman','From mandap to lighting — everything was just perfect.']];
 export default function HomePage(){
  const [data,setData]=useState({categories:[],featured:[]});
- useEffect(()=>{Promise.all([fetch('/api/categories').then(r=>r.json()),fetch('/api/items?limit=8&sort=newest').then(r=>r.json())]).then(([c,i])=>setData({categories:c.data?.categories||[],featured:i.data?.items||[]})).catch(()=>{});},[]);
+ useEffect(()=>{Promise.all([api.get('/api/categories'),api.get('/api/items?limit=8&sort=newest')]).then(([c,i])=>setData({categories:c.data.data?.categories||[],featured:i.data.data?.items||[]})).catch(()=>{});},[]);
  return <><HeroSlideshow/><section className="section"><div className="container"><div className="section-head"><h2>Shop by category</h2></div><div className="grid grid-4">{data.categories.map(c=><Link key={c.slug} to={`/categories/${c.slug}`} className="cat-card"><div className="cat-card-bg"><img src={c.image||'/images/fallback-category.jpg'} alt={c.name}/><div className="cat-card-overlay"/></div><div className="cat-card-content"><h3>{c.name}</h3></div></Link>)}</div></div></section>
  <section className="section" style={{background:'var(--pink-50)'}}><div className="container"><div className="section-head"><div><span className="eyebrow">Inspiration</span><h2>From real FlipsAura weddings</h2></div></div><div className="gallery">{indianWeddingImages.map((img,i)=><div className="gallery-item" key={i}><img src={img.url} alt={img.alt}/></div>)}</div></div></section>
  <section className="section"><div className="container"><div className="section-head"><div><span className="eyebrow">Trending</span><h2>Featured listings</h2></div></div>{data.featured.length?<div className="grid grid-4">{data.featured.map(it=><ItemCard key={it._id} item={it}/>)}</div>:<div className="empty">No listings yet — admins can add categories & items from /admin.</div>}</div></section>

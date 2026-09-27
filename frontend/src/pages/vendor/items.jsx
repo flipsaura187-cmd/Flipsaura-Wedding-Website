@@ -2,19 +2,20 @@
 import { useEffect, useState } from "react";
 import ItemForm from "@/components/vendor/ItemForm";
 
+import api from "@/api/axios";
 export default function AdminItems() {
   const [items, setItems] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [categories, setCategories]= useState([])
 
-  const load = () => fetch("/api/items?limit=48&isVendor=true").then(r => r.json()).then(j => j.ok && setItems(j.data.items));
-  const cate = () => fetch("/api/categories").then(r => r.json()).then(j => j.ok && setCategories(j.data.categories));
+  const load = () => api.get("/api/items?limit=48&isVendor=true").then(r => r.data).then(j => j.ok && setItems(j.data.items));
+  const cate = () => api.get("/api/categories").then(r => r.data).then(j => j.ok && setCategories(j.data.categories));
   useEffect(() => { load(); cate(); }, []);
 
   const remove = async (id) => {
     if (!confirm("Delete this item?")) return;
-    await fetch(`/api/items/${id}`, { method: "DELETE" });
+    await api.delete(`/api/items/${id}`);
     load();
   };
 

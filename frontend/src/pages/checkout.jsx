@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "@/compat/navigation";
 import Script from "@/compat/Script";
 import { useAuth } from "@/context/AuthContext";
 
+import api from "@/api/axios";
 export default function CheckoutPageCom() {
   const sp = useSearchParams();
   const router = useRouter();
@@ -17,8 +18,7 @@ export default function CheckoutPageCom() {
   useEffect(() => {
     if (!itemId) return;
     (async () => {
-      const r = await fetch(`/api/items/${itemId}`);
-      const j = await r.json();
+      const { data: j } = await api.get(`/api/items/${itemId}`);
       if (j.ok) setItem(j.data.item);
     })();
   }, [itemId]);
@@ -32,20 +32,12 @@ export default function CheckoutPageCom() {
     setError(""); setBusy(true);
     try {
       // 1. Create booking
-      const r1 = await fetch("/api/bookings", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId, ...form }),
-      });
-      const j1 = await r1.json();
+      const { data: j1 } = await api.post("/api/bookings", { itemId, ...form });
       if (!j1.ok) throw new Error(j1.error || "Could not create booking");
       const booking = j1.data.booking;
 
       // 2. Create Razorpay order
-      const r2 = await fetch("/api/payment/create-order", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: booking._id }),
-      });
-      const j2 = await r2.json();
+      const { data: j2 } = await api.post("/api/payment/create-order", { bookingId: booking._id });
       if (!j2.ok) throw new Error(j2.error || "Payment init failed");
 
       // 3. Open Razorpay checkout
@@ -59,11 +51,10 @@ export default function CheckoutPageCom() {
         prefill: { name: form.name, email: form.email, contact: form.phone },
         theme: { color: "#e63f87" },
         handler: async (resp) => {
-          const r3 = await fetch("/api/payment/verify", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ bookingId: booking._id, ...resp }),
+          const { data: j3 } = await api.post("/api/payment/verify", {
+            bookingId: booking._id,
+            ...resp,
           });
-          const j3 = await r3.json();
           if (j3.ok) router.push(`/account?booking=${booking._id}`);
           else setError(j3.error || "Verification failed");
         },

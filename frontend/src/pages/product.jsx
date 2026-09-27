@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "@/compat/navigation";
 
+import api from "@/api/axios";
 export default function ProductPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -23,13 +24,13 @@ export default function ProductPage() {
     (async () => {
       try {
         const [itemRes, reviewRes, userRes] = await Promise.all([
-          fetch(`/api/items/${id}`),
-          fetch(`/api/reviews?itemId=${id}`),
-          fetch("/api/auth/me") // adjust endpoint if needed
+          api.get(`/api/items/${id}`),
+          api.get(`/api/reviews?itemId=${id}`),
+          api.get("/api/auth/me") // adjust endpoint if needed
         ]);
-        const itemData = await itemRes.json();
-        const reviewData = await reviewRes.json();
-        const userData = await userRes.json();
+        const itemData = itemRes.data;
+        const reviewData = reviewRes.data;
+        const userData = userRes.data;
 
         if (itemData.ok) setItem(itemData.data.item);
         if (reviewData.ok) setReviews(reviewData.data.reviews);
@@ -64,16 +65,10 @@ export default function ProductPage() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const res = await fetch("/api/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId: id, rating, comment })
-      });
-      const data = await res.json();
+      const { data } = await api.post("/api/reviews", { itemId: id, rating, comment });
       if (!data.ok) throw new Error(data.error || "Failed to submit");
       // Refresh reviews
-      const reviewRes = await fetch(`/api/reviews?itemId=${id}`);
-      const reviewData = await reviewRes.json();
+      const { data: reviewData } = await api.get(`/api/reviews?itemId=${id}`);
       if (reviewData.ok) setReviews(reviewData.data.reviews);
       // Reset form
       setRating(0);

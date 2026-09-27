@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import User from "../models/User.js";
 import { dbConnect } from "../lib/db.js";
-import { sendMail } from "../lib/mailer.js";
+import { sendPasswordResetMail } from "../lib/mailer.js";
 import {
   clearAuthCookie,
   getCurrentUser,
@@ -21,7 +21,7 @@ const RegisterSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(6).max(20).optional(),
   password: z.string().min(6).max(120),
-  role: z.enum(["user", "vendor"]).default("user"),
+  role: z.enum(["user", "customer", "vendor", "admin", "USER", "CUSTOMER", "VENDOR", "ADMIN"]).default("user"),
   businessName: z.string().max(120).optional(),
   aadhar: z.string().max(12).optional(),
   pan: z.string().max(10).optional(),
@@ -39,16 +39,26 @@ function publicUser(user) {
 
 export async function login(req, res) {
   const parsed = LoginSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ ok: false, error: "Invalid input" });
+  if (!parsed.success) return res.status(400).json({ ok: false, error: "Invalid email or password format" });
 
   await dbConnect();
-  const user = await User.findOne({ email: parsed.data.email });
+  const normalizedEmail = parsed.data.email.trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
+
   if (!user || !(await user.verifyPassword(parsed.data.password))) {
     return res.status(401).json({ ok: false, error: "Invalid credentials" });
   }
 
-  setAuthCookie(res, signToken({ uid: String(user._id), role: user.role }));
-  res.json({ ok: true, data: { user: publicUser(user) } });
+  const token = signToken({ uid: String(user._id), role: user.role });
+  setAuthCookie(res, token);
+
+  res.json({
+    ok: true,
+    data: {
+      user: publicUser(user),
+      token,
+    },
+  });
 }
 
 export async function register(req, res) {
@@ -64,24 +74,31 @@ export async function register(req, res) {
   const { name, email, phone, password, role, businessName, aadhar, pan } = parsed.data;
   await dbConnect();
 
-  if (await User.findOne({ email })) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (await User.findOne({ email: normalizedEmail })) {
     return res.status(409).json({ ok: false, error: "Email already in use" });
   }
 
   const passwordHash = await User.hashPassword(password);
+  const normalizedRole = String(role || "user").toLowerCase();
   const user = await User.create({
-    name,
-    email,
+    name: name.trim(),
+    email: normalizedEmail,
     phone,
     passwordHash,
-    role,
+    role: normalizedRole,
     vendorProfile:
-      role === "vendor" ? { businessName, aadhar, pan, approved: false } : undefined,
+      normalizedRole === "vendor" ? { businessName, aadhar, pan, approved: false } : undefined,
   });
+
+  const token = signToken({ uid: String(user._id), role: user.role });
+  setAuthCookie(res, token);
+
   res.status(201).json({
     ok: true,
     data: {
       user: publicUser(user),
+      token,
     },
   });
 }
@@ -98,48 +115,126 @@ export async function me(req, res) {
 
 export async function forgotPassword(req, res) {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email required" });
-
-  await dbConnect();
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.json({ message: "If an account exists, you'll receive a reset link." });
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ ok: false, error: "Email is required" });
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
-  user.resetPasswordToken = token;
-  user.resetPasswordExpires = Date.now() + 3600000;
+  const normalizedEmail = email.trim().toLowerCase();
+  await dbConnect();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  // Prevent account enumeration: return consistent success message
+  if (!user) {
+    return res.json({
+      ok: true,
+      message: "If an account exists with that email, a password reset link has been sent.",
+    });
+  }
+
+  // Rate limiting / Cooldown for resending email (60 seconds)
+  const now = Date.now();
+  if (user.resetPasswordLastSent) {
+    const diffMs = now - new Date(user.resetPasswordLastSent).getTime();
+    if (diffMs < 60000) {
+      const waitSec = Math.ceil((60000 - diffMs) / 1000);
+      return res.status(429).json({
+        ok: false,
+        error: `Please wait ${waitSec} second${waitSec > 1 ? "s" : ""} before requesting another reset email.`,
+        retryAfter: waitSec,
+      });
+    }
+  }
+
+  // Generate secure reset token and store hashed version in database
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  user.resetPasswordToken = hashedToken;
+  user.resetPasswordExpires = new Date(now + 3600000); // 1 hour
+  user.resetPasswordLastSent = new Date(now);
   await user.save();
 
-  const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${token}`;
-  await sendMail({
-    to: user.email,
-    subject: "Reset your FlipsAura password",
-    html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Reset Password</a></p><p>This link expires in 1 hour.</p>`,
-  });
+  const clientUrl = (
+    process.env.CLIENT_URL ||
+    process.env.FRONTEND_ORIGIN ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "http://localhost:5173"
+  ).replace(/\/+$/, "");
 
-  res.json({ message: "Reset email sent (if account exists)." });
+  const resetUrl = `${clientUrl}/reset-password?token=${rawToken}`;
+
+  try {
+    const sendResult = await sendPasswordResetMail({
+      to: user.email,
+      name: user.name,
+      resetUrl,
+    });
+
+    if (sendResult?.skipped) {
+      console.warn("[forgotPassword] SMTP not configured. Token generated:", rawToken);
+      return res.status(500).json({
+        ok: false,
+        error: "Email service is temporarily unavailable. Please contact support.",
+      });
+    }
+
+    res.json({
+      ok: true,
+      message: "A password reset link has been sent to your email.",
+    });
+  } catch (error) {
+    console.error("[forgotPassword] Failed to send email:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Failed to send reset email. Please try again in a few moments.",
+    });
+  }
 }
 
 export async function resetPassword(req, res) {
-  const { token, newPassword } = req.body;
-  if (!token || !newPassword) {
-    return res.status(400).json({ error: "Missing token or password" });
+  const token = req.body.token || req.params.token;
+  const newPassword = req.body.newPassword || req.body.password;
+
+  if (!token) {
+    return res.status(400).json({ ok: false, error: "Reset token is required" });
+  }
+
+  if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
+    return res.status(400).json({
+      ok: false,
+      error: "Password must be at least 6 characters long",
+    });
   }
 
   await dbConnect();
+
+  // Find user with matching unexpired hashed or raw token
+  const rawTokenTrimmed = token.trim();
+  const hashedToken = crypto.createHash("sha256").update(rawTokenTrimmed).digest("hex");
+
   const user = await User.findOne({
-    resetPasswordToken: token,
-    resetPasswordExpires: { $gt: Date.now() },
+    $or: [
+      { resetPasswordToken: hashedToken },
+      { resetPasswordToken: rawTokenTrimmed },
+    ],
+    resetPasswordExpires: { $gt: new Date() },
   });
 
-  if (!user) return res.status(400).json({ error: "Invalid or expired token" });
+  if (!user) {
+    return res.status(400).json({
+      ok: false,
+      error: "Invalid or expired password reset link. Please request a new one.",
+    });
+  }
 
+  // Update password and invalidate reset token
   user.passwordHash = await bcrypt.hash(newPassword, 10);
   user.resetPasswordToken = null;
   user.resetPasswordExpires = null;
   await user.save();
 
-  res.json({ message: "Password updated successfully" });
+  res.json({
+    ok: true,
+    message: "Password has been successfully updated! You can now log in.",
+  });
 }

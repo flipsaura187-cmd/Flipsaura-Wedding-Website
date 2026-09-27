@@ -24,8 +24,8 @@ export default function Navbar() {
         <div className="nav-cta">
           {user ? (
             <>
-              {user.role === "admin" && <Link href="/admin/dashboard" className="btn btn-ghost hide-sm">Admin</Link>}
-              {user.role === "vendor" && <Link href="/vendor/dashboard" className="btn btn-ghost hide-sm">Vendor</Link>}
+              {String(user.role || "").toLowerCase() === "admin" && <Link href="/admin/dashboard" className="btn btn-ghost hide-sm">Admin</Link>}
+              {String(user.role || "").toLowerCase() === "vendor" && <Link href="/vendor/dashboard" className="btn btn-ghost hide-sm">Vendor</Link>}
               <button className="btn btn-outline hide-sm" onClick={logout}>Logout</button>
             </>
           ) : (
@@ -45,8 +45,8 @@ export default function Navbar() {
         {user ? (
           <>
             <Link href="/account" onClick={() => setOpen(false)}>Account</Link>
-            {user.role === "admin" && <Link href="/admin/dashboard" onClick={() => setOpen(false)}>Admin</Link>}
-            {user.role === "vendor" && <Link href="/vendor/dashboard" onClick={() => setOpen(false)}>Vendor</Link>}
+            {String(user.role || "").toLowerCase() === "admin" && <Link href="/admin/dashboard" onClick={() => setOpen(false)}>Admin</Link>}
+            {String(user.role || "").toLowerCase() === "vendor" && <Link href="/vendor/dashboard" onClick={() => setOpen(false)}>Vendor</Link>}
             <a onClick={() => { setOpen(false); logout(); }}>Logout</a>
           </>
         ) : (

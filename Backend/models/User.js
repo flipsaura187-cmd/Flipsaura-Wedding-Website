@@ -7,7 +7,12 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     phone: { type: String, trim: true },
     passwordHash: { type: String, required: true },
-    role: { type: String, enum: ["user", "vendor", "admin"], default: "user", index: true },
+    role: {
+      type: String,
+      enum: ["user", "customer", "vendor", "admin", "USER", "CUSTOMER", "VENDOR", "ADMIN"],
+      default: "user",
+      index: true,
+    },
     vendorProfile: {
       businessName: String,
       about: String,
@@ -15,9 +20,9 @@ const UserSchema = new mongoose.Schema(
       pan: String,
       approved: { type: Boolean, default: false },
     },
-    // add inside schema:
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
+    resetPasswordLastSent: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -25,8 +30,10 @@ const UserSchema = new mongoose.Schema(
 UserSchema.methods.verifyPassword = function (pwd) {
   return bcrypt.compare(pwd, this.passwordHash);
 };
+
 UserSchema.statics.hashPassword = function (pwd) {
   return bcrypt.hash(pwd, 10);
 };
+
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 export default User;

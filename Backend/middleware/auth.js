@@ -19,7 +19,10 @@ export function verifyToken(token) {
 }
 
 export async function getCurrentUser(req) {
-  const token = req.cookies?.[COOKIE_NAME];
+  let token = req.cookies?.[COOKIE_NAME];
+  if (!token && req.headers?.authorization?.startsWith("Bearer ")) {
+    token = req.headers.authorization.substring(7).trim();
+  }
   if (!token) return null;
 
   const decoded = verifyToken(token);
@@ -49,10 +52,12 @@ export function requireAuth(req, res, next) {
 }
 
 export function requireRole(...roles) {
+  const normalizedAllowed = roles.map((r) => String(r).toLowerCase());
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ ok: false, error: "Unauthorized" });
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
+    const userRole = String(req.user.role || "").toLowerCase();
+    if (!normalizedAllowed.includes(userRole)) {
+      return res.status(403).json({ ok: false, error: "Forbidden - Insufficient permissions" });
     }
     next();
   };

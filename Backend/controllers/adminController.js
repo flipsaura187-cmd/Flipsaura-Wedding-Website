@@ -67,7 +67,7 @@ export async function updateUser(req, res) {
 export async function getAdminBlogs(req, res) {
   await dbConnect();
   const blogs = await Blog.find().sort({ createdAt: -1 });
-  res.json(blogs);
+  res.json({ ok: true, data: blogs, blogs });
 }
 
 export async function getVendorStats(req, res) {

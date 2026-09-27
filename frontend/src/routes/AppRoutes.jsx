@@ -30,6 +30,7 @@ import AdminCategories from "@/pages/admin/categories";
 import AdminItems from "@/pages/admin/items";
 import AdminBookings from "@/pages/admin/bookings";
 import AdminBlogs from "@/pages/admin/blogs";
+import AdminBlogCreate from "@/pages/admin/blog-create";
 import AdminUsers from "@/pages/admin/users";
 
 // Vendor pages
@@ -59,6 +60,7 @@ export default function AppRoutes() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/refund-cancellation-policy" element={<RefundPolicy />} />
@@ -72,6 +74,7 @@ export default function AppRoutes() {
               <Route path="items" element={<AdminItems />} />
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="blogs" element={<AdminBlogs />} />
+              <Route path="blogs/create" element={<AdminBlogCreate />} />
               <Route path="users" element={<AdminUsers />} />
             </Route>
 

@@ -7,7 +7,9 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "seed:admin": "node scripts/seedAdmin.js",
-    "seed:blogs": "node scripts/seedBlogs.js"
+    "seed:blogs": "node scripts/seedBlogs.js",
+    "seed:categories": "node scripts/seedCategories.js",
+    "test:vendor": "node scripts/testVendorOnboarding.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -32,12 +32,32 @@ export async function getCurrentUser(req) {
   const user = await User.findById(decoded.uid).lean();
   if (!user) return null;
 
+  const isVendor = String(user.role || "").toLowerCase() === "vendor";
+  const isApproved = Boolean(
+    isVendor &&
+      user.vendorProfile?.approved &&
+      user.vendorProfile?.verificationStatus === "approved"
+  );
+
   return {
     id: String(user._id),
     name: user.name,
     email: user.email,
     role: user.role,
     phone: user.phone,
+    isApproved,
+    verificationStatus: user.vendorProfile?.verificationStatus || (user.vendorProfile?.approved ? "approved" : "profile_incomplete"),
+    vendorProfile: isVendor
+      ? {
+          businessName: user.vendorProfile?.businessName || "",
+          ownerName: user.vendorProfile?.ownerName || user.name || "",
+          vendorType: user.vendorProfile?.vendorType || "Individual",
+          city: user.vendorProfile?.city || "",
+          approved: Boolean(user.vendorProfile?.approved),
+          verificationStatus: user.vendorProfile?.verificationStatus || "profile_incomplete",
+          profilePhoto: user.vendorProfile?.profilePhoto || "",
+        }
+      : undefined,
   };
 }
 

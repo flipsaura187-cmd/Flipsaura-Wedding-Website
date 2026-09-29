@@ -1,6 +1,7 @@
 import { dbConnect } from "../lib/db.js";
 import Booking from "../models/Booking.js";
 import Item from "../models/Item.js";
+import User from "../models/User.js";
 import { sendMail, bookingConfirmationHtml } from "../lib/mailer.js";
 
 export async function getBookings(req, res) {
@@ -80,6 +81,21 @@ export async function getBooking(req, res) {
 
 export async function updateBooking(req, res) {
   await dbConnect();
+
+  if (req.user.role === "vendor") {
+    const dbUser = await User.findById(req.user.id).lean();
+    const isApproved = Boolean(
+      dbUser?.vendorProfile?.approved &&
+      dbUser?.vendorProfile?.verificationStatus === "approved"
+    );
+    if (!isApproved) {
+      return res.status(403).json({
+        ok: false,
+        error: "Vendor account is not approved yet. All vendor features are locked until admin verification and approval.",
+      });
+    }
+  }
+
   const booking = await Booking.findById(req.params.id);
   if (!booking) return res.status(404).json({ ok: false, error: "Not found" });
 

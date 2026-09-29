@@ -34,6 +34,7 @@ export default function AdminLayout() {
 
   const links = [
     { href: "/admin/dashboard", label: "Dashboard", icon: "📊" },
+    { href: "/admin/vendors", label: "Vendors", icon: "🏪" },
     { href: "/admin/blogs", label: "Blogs", icon: "📝" },
     { href: "/admin/categories", label: "Categories", icon: "🏷️" },
     { href: "/admin/items", label: "Items", icon: "📦" },

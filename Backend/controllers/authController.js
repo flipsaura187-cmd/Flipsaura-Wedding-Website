@@ -23,17 +23,45 @@ const RegisterSchema = z.object({
   password: z.string().min(6).max(120),
   role: z.enum(["user", "customer", "vendor", "admin", "USER", "CUSTOMER", "VENDOR", "ADMIN"]).default("user"),
   businessName: z.string().max(120).optional(),
-  aadhar: z.string().max(12).optional(),
-  pan: z.string().max(10).optional(),
+  ownerName: z.string().max(80).optional(),
+  vendorType: z.string().optional(),
+  address: z.string().max(250).optional(),
+  city: z.string().max(80).optional(),
+  state: z.string().max(80).optional(),
+  pincode: z.string().max(20).optional(),
+  profilePhoto: z.string().optional(),
+  coverPhoto: z.string().optional(),
+  aadhar: z.string().max(16).optional(),
+  pan: z.string().max(16).optional(),
 });
 
 function publicUser(user) {
+  const isVendor = String(user.role || "").toLowerCase() === "vendor";
+  const isApproved = Boolean(
+    isVendor &&
+      user.vendorProfile?.approved &&
+      user.vendorProfile?.verificationStatus === "approved"
+  );
+
   return {
     id: String(user._id),
     name: user.name,
     email: user.email,
     role: user.role,
     phone: user.phone,
+    isApproved,
+    verificationStatus: user.vendorProfile?.verificationStatus || (user.vendorProfile?.approved ? "approved" : "profile_incomplete"),
+    vendorProfile: isVendor
+      ? {
+          businessName: user.vendorProfile?.businessName || "",
+          ownerName: user.vendorProfile?.ownerName || user.name || "",
+          vendorType: user.vendorProfile?.vendorType || "Individual",
+          city: user.vendorProfile?.city || "",
+          approved: Boolean(user.vendorProfile?.approved),
+          verificationStatus: user.vendorProfile?.verificationStatus || "profile_incomplete",
+          profilePhoto: user.vendorProfile?.profilePhoto || "",
+        }
+      : undefined,
   };
 }
 
@@ -71,7 +99,25 @@ export async function register(req, res) {
     });
   }
 
-  const { name, email, phone, password, role, businessName, aadhar, pan } = parsed.data;
+  const {
+    name,
+    email,
+    phone,
+    password,
+    role,
+    businessName,
+    ownerName,
+    vendorType,
+    address,
+    city,
+    state,
+    pincode,
+    profilePhoto,
+    coverPhoto,
+    aadhar,
+    pan,
+  } = parsed.data;
+
   await dbConnect();
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -82,13 +128,29 @@ export async function register(req, res) {
   const passwordHash = await User.hashPassword(password);
   const normalizedRole = String(role || "user").toLowerCase();
   const user = await User.create({
-    name: name.trim(),
+    name: (ownerName || name).trim(),
     email: normalizedEmail,
-    phone,
+    phone: phone?.trim(),
     passwordHash,
     role: normalizedRole,
     vendorProfile:
-      normalizedRole === "vendor" ? { businessName, aadhar, pan, approved: false } : undefined,
+      normalizedRole === "vendor"
+        ? {
+            businessName: businessName?.trim() || "",
+            ownerName: (ownerName || name).trim(),
+            vendorType: vendorType || "Individual",
+            address: address?.trim() || "",
+            city: city?.trim() || "",
+            state: state?.trim() || "",
+            pincode: pincode?.trim() || "",
+            profilePhoto: profilePhoto || "",
+            coverPhoto: coverPhoto || "",
+            aadhar: aadhar?.trim() || "",
+            pan: pan?.trim() || "",
+            approved: false,
+            verificationStatus: "profile_incomplete",
+          }
+        : undefined,
   });
 
   const token = signToken({ uid: String(user._id), role: user.role });

@@ -1,6 +1,7 @@
 import { dbConnect } from "../lib/db.js";
 import Item from "../models/Item.js";
 import Category from "../models/Category.js";
+import User from "../models/User.js";
 import { getCurrentUser } from "../middleware/auth.js";
 
 export async function getItems(req, res) {
@@ -57,12 +58,27 @@ export async function createItem(req, res) {
     return res.status(403).json({ ok: false, error: "Forbidden" });
   }
 
+  await dbConnect();
+
+  if (req.user.role === "vendor") {
+    const dbUser = await User.findById(req.user.id).lean();
+    const isApproved = Boolean(
+      dbUser?.vendorProfile?.approved &&
+      dbUser?.vendorProfile?.verificationStatus === "approved"
+    );
+    if (!isApproved) {
+      return res.status(403).json({
+        ok: false,
+        error: "Vendor account is not approved yet. All vendor features are locked until admin verification and approval.",
+      });
+    }
+  }
+
   const { title, category, price } = req.body;
   if (!title || !category || price == null) {
     return res.status(400).json({ ok: false, error: "title, category, price required" });
   }
 
-  await dbConnect();
   const item = await Item.create({
     ...req.body,
     vendor: req.user.role === "vendor" ? req.user.id : req.body.vendor,
@@ -82,6 +98,21 @@ export async function updateItem(req, res) {
   if (!req.user) return res.status(401).json({ ok: false, error: "Unauthorized" });
 
   await dbConnect();
+
+  if (req.user.role === "vendor") {
+    const dbUser = await User.findById(req.user.id).lean();
+    const isApproved = Boolean(
+      dbUser?.vendorProfile?.approved &&
+      dbUser?.vendorProfile?.verificationStatus === "approved"
+    );
+    if (!isApproved) {
+      return res.status(403).json({
+        ok: false,
+        error: "Vendor account is not approved yet. All vendor features are locked until admin verification and approval.",
+      });
+    }
+  }
+
   const item = await Item.findById(req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: "Not found" });
 
@@ -98,6 +129,21 @@ export async function deleteItem(req, res) {
   if (!req.user) return res.status(401).json({ ok: false, error: "Unauthorized" });
 
   await dbConnect();
+
+  if (req.user.role === "vendor") {
+    const dbUser = await User.findById(req.user.id).lean();
+    const isApproved = Boolean(
+      dbUser?.vendorProfile?.approved &&
+      dbUser?.vendorProfile?.verificationStatus === "approved"
+    );
+    if (!isApproved) {
+      return res.status(403).json({
+        ok: false,
+        error: "Vendor account is not approved yet. All vendor features are locked until admin verification and approval.",
+      });
+    }
+  }
+
   const item = await Item.findById(req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: "Not found" });
 

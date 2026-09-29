@@ -26,6 +26,7 @@ import Terms from "@/pages/terms-of-service";
 // Admin pages
 import AdminLayout from "@/pages/admin/layout";
 import AdminDashboard from "@/pages/admin/dashboard";
+import AdminVendors from "@/pages/admin/vendors";
 import AdminCategories from "@/pages/admin/categories";
 import AdminItems from "@/pages/admin/items";
 import AdminBookings from "@/pages/admin/bookings";
@@ -36,6 +37,7 @@ import AdminUsers from "@/pages/admin/users";
 // Vendor pages
 import VendorLayout from "@/pages/vendor/layout";
 import VendorDashboard from "@/pages/vendor/dashboard";
+import VendorOnboardingPage from "@/pages/vendor/onboarding";
 import VendorItems from "@/pages/vendor/items";
 import VendorBookings from "@/pages/vendor/bookings";
 
@@ -70,6 +72,7 @@ export default function AppRoutes() {
             {/* Admin routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="vendors" element={<AdminVendors />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="items" element={<AdminItems />} />
               <Route path="bookings" element={<AdminBookings />} />
@@ -81,6 +84,7 @@ export default function AppRoutes() {
             {/* Vendor routes */}
             <Route path="/vendor" element={<VendorLayout />}>
               <Route path="dashboard" element={<VendorDashboard />} />
+              <Route path="onboarding" element={<VendorOnboardingPage />} />
               <Route path="items" element={<VendorItems />} />
               <Route path="bookings" element={<VendorBookings />} />
             </Route>

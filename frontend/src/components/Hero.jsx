@@ -3,6 +3,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from '@/compat/Link';
 import Image from '@/compat/Image';
 
+const AUTOPLAY_INTERVAL = 5000; // 10 seconds per slide as requested
+
 const slidesData = [
     {
         id: 1,
@@ -11,7 +13,7 @@ const slidesData = [
         description: "Explore hand-picked venues that match your style, budget, and guest count. From heritage palaces to modern banquet halls.",
         primaryCta: { text: "Explore Venues", link: "/categories/venues" },
         secondaryCta: { text: "View Packages", link: "/packages" },
-        image: "https://images.unsplash.com/photo-1505932794465-147d1f1b2c97?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        image: "/images/hero/slide-1.jpg",
         eyebrow: "Weddings, made effortless"
     },
     {
@@ -21,7 +23,7 @@ const slidesData = [
         description: "Award-winning wedding planners & designers who bring your vision to life. End-to-end coordination, decor, and more.",
         primaryCta: { text: "Find a Planner", link: "/categories/planning-decor" },
         secondaryCta: { text: "See Success Stories", link: "/stories" },
-        image: "https://images.unsplash.com/photo-1505932794465-147d1f1b2c97?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        image: "/images/hero/slide-2.jpg",
         eyebrow: "Plan with perfection"
     },
     {
@@ -29,49 +31,52 @@ const slidesData = [
         title: "Stunning decor,",
         highlight: "unforgettable moments",
         description: "Magical home wedding setups, floral arrangements, and thematic decor that leave your guests in awe.",
-        primaryCta: { text: "Browse Decor", link: "/categories/planning-decor" },
+        primaryCta: { text: "Browse Decor", link: "/categories/home-setup-pandal-tent-dj" },
         secondaryCta: { text: "Get Inspired", link: "/gallery" },
-        image: "https://images.unsplash.com/photo-1505932794465-147d1f1b2c97?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        image: "/images/hero/slide-3.jpg",
         eyebrow: "Decor that dazzles"
     }
 ];
 
 const HeroSlideshow = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
     const autoplayRef = useRef(null);
     const touchStartX = useRef(null);
     const touchEndX = useRef(null);
 
     const totalSlides = slidesData.length;
 
-    const goToNext = useCallback(() => {
-        setCurrentIndex((prev) => (prev + 1) % totalSlides);
+    const resetTimer = useCallback(() => {
+        if (autoplayRef.current) {
+            clearInterval(autoplayRef.current);
+        }
+        autoplayRef.current = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % totalSlides);
+        }, AUTOPLAY_INTERVAL);
     }, [totalSlides]);
 
-    const goToPrev = () => {
+    const goToNext = useCallback(() => {
+        setCurrentIndex((prev) => (prev + 1) % totalSlides);
+        resetTimer();
+    }, [totalSlides, resetTimer]);
+
+    const goToPrev = useCallback(() => {
         setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
-    };
+        resetTimer();
+    }, [totalSlides, resetTimer]);
 
     const goToSlide = (index) => {
         setCurrentIndex(index);
+        resetTimer();
     };
 
-    // Autoplay logic
+    // Autoplay logic: change every 10 seconds automatically
     useEffect(() => {
-        if (isAutoPlaying) {
-            autoplayRef.current = setInterval(goToNext, 6000);
-        } else if (autoplayRef.current) {
-            clearInterval(autoplayRef.current);
-        }
-
+        resetTimer();
         return () => {
             if (autoplayRef.current) clearInterval(autoplayRef.current);
         };
-    }, [isAutoPlaying, goToNext]);
-
-    const pauseAutoplay = () => setIsAutoPlaying(false);
-    const resumeAutoplay = () => setIsAutoPlaying(true);
+    }, [resetTimer]);
 
     // Touch handlers for mobile swipe
     const handleTouchStart = (e) => {
@@ -102,21 +107,17 @@ const HeroSlideshow = () => {
         const handleKeyDown = (e) => {
             if (e.key === 'ArrowLeft') {
                 goToPrev();
-                pauseAutoplay();
             } else if (e.key === 'ArrowRight') {
                 goToNext();
-                pauseAutoplay();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [goToNext, goToPrev]);
 
     return (
         <section
             className="hero-slideshow"
-            onMouseEnter={pauseAutoplay}
-            onMouseLeave={resumeAutoplay}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -129,16 +130,16 @@ const HeroSlideshow = () => {
                 {slidesData.map((slide) => (
                     <div key={slide.id} className="slide">
                         {/* Background image with overlay */}
-                        <div
-                            className="slide-bg"
-                        ><Image
+                        <div className="slide-bg">
+                            <Image
                                 src={slide.image}
                                 alt={slide.eyebrow}
                                 fill
                                 sizes="100vw"
                                 style={{ objectFit: 'cover' }}
                                 quality={85}
-                            /></div>
+                            />
+                        </div>
                         <div className="slide-overlay" />
 
                         {/* Content container */}
@@ -148,6 +149,7 @@ const HeroSlideshow = () => {
                                 <h1>
                                     {slide.title} <span>{slide.highlight}</span>
                                 </h1>
+                                <p>{slide.description}</p>
                                 {/* CTA Buttons */}
                                 <div className="slide-cta">
                                     <Link href={slide.primaryCta.link} className="btn btn-primary">
@@ -163,13 +165,32 @@ const HeroSlideshow = () => {
                 ))}
             </div>
 
+            {/* Navigation arrows */}
+            <button
+                type="button"
+                className="slider-arrow prev"
+                onClick={goToPrev}
+                aria-label="Previous slide"
+            >
+                &#x2039;
+            </button>
+            <button
+                type="button"
+                className="slider-arrow next"
+                onClick={goToNext}
+                aria-label="Next slide"
+            >
+                &#x203A;
+            </button>
+
             {/* Dots indicator */}
             <div className="slider-dots">
                 {slidesData.map((_, idx) => (
                     <button
+                        type="button"
                         key={idx}
                         className={`dot ${idx === currentIndex ? 'active' : ''}`}
-                        onClick={() => { goToSlide(idx); pauseAutoplay(); }}
+                        onClick={() => goToSlide(idx)}
                         aria-label={`Go to slide ${idx + 1}`}
                     />
                 ))}

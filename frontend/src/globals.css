@@ -82,17 +82,19 @@ textarea {
 .nav {
   position: sticky;
   top: 0;
-  z-index: 50;
-  background: rgba(255, 255, 255, .92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--line)
+  z-index: 100;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(139, 30, 63, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(139, 30, 63, 0.05);
 }
 
 .nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px
+  height: 74px;
 }
 
 .brand {
@@ -102,34 +104,104 @@ textarea {
   font-family: 'Playfair Display', serif;
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--pink-700)
+  color: var(--pink-700);
+  text-decoration: none;
 }
 
 .brand img {
-  width: 110px;
-  height: auto;
+  height: 108px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.brand:hover img {
+  transform: scale(1.03);
 }
 
 .nav-links {
   display: flex;
-  gap: 24px;
-  align-items: center
+  gap: 22px;
+  align-items: center;
 }
 
 .nav-links a {
   color: var(--ink);
   font-weight: 500;
-  font-size: .95rem
+  font-size: .95rem;
+  position: relative;
+  padding: 6px 2px;
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-.nav-links a:hover {
-  color: var(--pink-600)
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--pink-600);
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--pink-600), #F59E0B);
+  transition: all 0.25s ease;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+  width: 100%;
 }
 
 .nav-cta {
   display: flex;
   gap: 10px;
-  align-items: center
+  align-items: center;
+}
+
+.nav-user-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFF5F8;
+  color: var(--pink-700);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  border: 1px solid rgba(230, 63, 135, 0.2);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.nav-user-tag:hover {
+  background: #FCE7F3;
+  transform: translateY(-1px);
+}
+
+.nav-role-pill {
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.nav-role-pill.admin {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.nav-role-pill.vendor {
+  background: #FCE7F3;
+  color: #9D174D;
+  border: 1px solid #FBCFE8;
 }
 
 .menu-btn {
@@ -247,6 +319,16 @@ textarea {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+.slide-bg img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 .slide-bg>span {
@@ -660,6 +742,21 @@ textarea {
   height: 100%;
 }
 
+.cat-card-bg img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.cat-card:hover .cat-card-bg img {
+  transform: scale(1.08);
+}
+
 /* Next.js Image span wrapper */
 .cat-card-bg>span {
   position: absolute !important;
@@ -673,17 +770,18 @@ textarea {
   position: absolute;
   inset: 0;
   background: linear-gradient(to top,
-      rgba(0, 0, 0, 0.6) 0%,
-      rgba(0, 0, 0, 0.2) 50%,
-      rgba(0, 0, 0, 0.1) 100%);
+      rgba(15, 10, 20, 0.85) 0%,
+      rgba(15, 10, 20, 0.35) 45%,
+      rgba(15, 10, 20, 0.05) 100%);
   z-index: 1;
-  transition: opacity 0.3s ease;
+  transition: background 0.3s ease;
 }
 
 .cat-card:hover .cat-card-overlay {
   background: linear-gradient(to top,
-      rgba(0, 0, 0, 0.7) 0%,
-      rgba(0, 0, 0, 0.3) 100%);
+      rgba(15, 10, 20, 0.92) 0%,
+      rgba(15, 10, 20, 0.45) 50%,
+      rgba(15, 10, 20, 0.1) 100%);
 }
 
 /* Content positioned on top */
@@ -2362,7 +2460,7 @@ table.data tr:last-child td {
   height: auto;
   border-radius: 12px;
   margin: 1.5rem 0;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .blog-content .video-embed {
@@ -2372,7 +2470,7 @@ table.data tr:last-child td {
   overflow: hidden;
   border-radius: 14px;
   margin: 2rem 0;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
   background: #000;
 }
 

@@ -14,10 +14,10 @@ export default function Footer() {
           <h4>Explore</h4>
           <ul>
             <li><Link href="/categories/venues">Venues</Link></li>
-            <li><Link href="/categories/wedding-setup">Wedding Setup</Link></li>
+            <li><Link href="/categories/home-setup-pandal-tent-dj">Home Setup</Link></li>
             <li><Link href="/categories/planning-decor">Planning & Decor</Link></li>
             <li><Link href="/categories/photographer-videographer">Photography</Link></li>
-            <li><Link href="/categories/orchestra">Orchestra</Link></li>
+            <li><Link href="/categories/music-dance">Music & Dance</Link></li>
           </ul>
         </div>
         <div>

@@ -57,12 +57,31 @@ export async function updateUser(req, res) {
 
   if (role) user.role = role;
   if (typeof approved === "boolean" && user.role === "vendor") {
-    user.vendorProfile = {
-      ...(user.vendorProfile || {}),
-      approved,
-      verificationStatus: approved ? "approved" : "under_review",
-      reviewedAt: new Date(),
-    };
+    if (!user.vendorProfile) user.vendorProfile = {};
+    user.vendorProfile.approved = approved;
+    user.vendorProfile.verificationStatus = approved ? "approved" : "under_review";
+    user.vendorProfile.reviewedAt = new Date();
+    if (approved) {
+      user.vendorProfile.rejectionReason = "";
+      if (Array.isArray(user.vendorProfile.documents)) {
+        user.vendorProfile.documents.forEach((d) => {
+          if (d.status === "under_review" || d.status === "pending") {
+            d.status = "verified";
+            d.verifiedAt = new Date();
+          }
+        });
+      }
+      if (user.vendorProfile.bankDetails) {
+        if (
+          user.vendorProfile.bankDetails.status === "under_review" ||
+          user.vendorProfile.bankDetails.status === "pending"
+        ) {
+          user.vendorProfile.bankDetails.status = "verified";
+          user.vendorProfile.bankDetails.verifiedAt = new Date();
+        }
+      }
+    }
+    user.markModified("vendorProfile");
   }
 
   await user.save();

@@ -21,7 +21,24 @@ const app = express();
 const PORT = Number(process.env.PORT || 5000);
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 
-app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isLocalhost =
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:") ||
+        origin === "http://localhost:5173" ||
+        origin === "http://127.0.0.1:5173" ||
+        origin === FRONTEND_ORIGIN;
+      if (isLocalhost) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 

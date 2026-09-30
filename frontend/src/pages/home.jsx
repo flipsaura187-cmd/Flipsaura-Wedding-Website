@@ -46,33 +46,112 @@ const reviews = [
   ],
 ];
 
+const defaultCategories = [
+  {
+    name: "Venues",
+    slug: "venues",
+    image: "/images/categories/venues.jpg",
+  },
+  {
+    name: "Home Setup – Pandal / Tent / DJ / Full Ghar Setup",
+    slug: "home-setup-pandal-tent-dj",
+    image: "/images/categories/home-setup.jpg",
+  },
+  {
+    name: "Planning & Decor",
+    slug: "planning-decor",
+    image: "/images/categories/planning-decor.jpg",
+  },
+  {
+    name: "Photographer & Videographer",
+    slug: "photographer-videographer",
+    image: "/images/categories/photography.jpg",
+  },
+  {
+    name: "Makeup & Grooming",
+    slug: "makeup-grooming",
+    image: "/images/categories/makeup-grooming.jpg",
+  },
+  {
+    name: "Mehndi Services",
+    slug: "mehndi-services",
+    image: "/images/categories/mehndi.jpg",
+  },
+  {
+    name: "Music & Dance",
+    slug: "music-dance",
+    image: "/images/categories/music-dance.jpg",
+  },
+  {
+    name: "Pandit / Priest",
+    slug: "pandit-priest",
+    image: "/images/categories/pandit-priest.jpg",
+  },
+  {
+    name: "Food / Catering",
+    slug: "food-catering",
+    image: "/images/categories/food-catering.jpg",
+  },
+  {
+    name: "Invites & Gifts",
+    slug: "invites-gifts",
+    image: "/images/categories/invites-gifts.jpg",
+  },
+  {
+    name: "Transport – Car / Bus / Auto",
+    slug: "transport-car-bus-auto",
+    image: "/images/categories/transport.jpg",
+  },
+  {
+    name: "Virtual Planning",
+    slug: "virtual-planning",
+    image: "/images/categories/virtual-planning.jpg",
+  },
+];
+
 export default function HomePage() {
   const [data, setData] = useState({
-    categories: [],
+    categories: defaultCategories,
     featured: [],
   });
 
   useEffect(() => {
-    const fetchHomePageData = async () => {
-      try {
-        const [categoriesResponse, itemsResponse] = await Promise.all([
-          api.get("/api/categories"),
-          api.get("/api/items?limit=8&sort=newest"),
-        ]);
+    let isMounted = true;
 
-        setData({
-          categories:
-            categoriesResponse.data?.data?.categories || [],
-          featured:
-            itemsResponse.data?.data?.items || [],
-        });
+    const fetchHomePageData = async () => {
+      // 1. Fetch categories
+      try {
+        const catRes = await api.get("/api/categories");
+        const fetchedCats = catRes.data?.data?.categories;
+        if (isMounted && Array.isArray(fetchedCats) && fetchedCats.length > 0) {
+          setData((prev) => ({ ...prev, categories: fetchedCats }));
+        }
       } catch (error) {
-        console.error("Failed to load homepage data:", error);
+        console.warn("Failed to load categories from API, using fallback:", error);
+      }
+
+      // 2. Fetch featured items independently
+      try {
+        const itemsRes = await api.get("/api/items?limit=8&sort=newest");
+        const fetchedItems = itemsRes.data?.data?.items;
+        if (isMounted && Array.isArray(fetchedItems)) {
+          setData((prev) => ({ ...prev, featured: fetchedItems }));
+        }
+      } catch (error) {
+        console.warn("Failed to load featured items:", error);
       }
     };
 
     fetchHomePageData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  const categoriesToRender =
+    data.categories && data.categories.length > 0
+      ? data.categories
+      : defaultCategories;
 
   return (
     <>
@@ -87,9 +166,10 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-4">
-            {data.categories.map((category) => (
+            {categoriesToRender.map((category) => (
               <Link
                 key={category.slug}
+                href={`/categories/${category.slug}`}
                 to={`/categories/${category.slug}`}
                 className="cat-card"
               >

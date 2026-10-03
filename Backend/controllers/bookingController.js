@@ -43,22 +43,19 @@ export async function createBooking(req, res) {
     status: "pending",
   });
 
-  try {
-    await sendMail({
-      to: booking.email,
-      subject: `FlipsAura — Booking received (#${booking._id})`,
-      html: bookingConfirmationHtml({
-        name: booking.name,
-        itemTitle: item.title,
-        bookingId: booking._id,
-        eventDate: booking.eventDate,
-        amount: booking.amount,
-        status: "pending",
-      }),
-    });
-  } catch (error) {
-    console.error("mail error", error);
-  }
+  // Send email asynchronously in the background so it never blocks or delays checkout
+  sendMail({
+    to: booking.email,
+    subject: `FlipsAura — Booking received (#${booking._id})`,
+    html: bookingConfirmationHtml({
+      name: booking.name,
+      itemTitle: item.title,
+      bookingId: booking._id,
+      eventDate: booking.eventDate,
+      amount: booking.amount,
+      status: "pending",
+    }),
+  }).catch((error) => console.error("booking mail error:", error.message));
 
   res.json({ ok: true, data: { booking } });
 }

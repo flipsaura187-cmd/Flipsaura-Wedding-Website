@@ -72,9 +72,9 @@ export async function verifyPayment(req, res) {
   };
   await booking.save();
 
-  try {
-    const item = await Item.findById(booking.item).lean();
-    await sendMail({
+  // Send email asynchronously in the background so verification responds instantly
+  Item.findById(booking.item).lean().then((item) => {
+    sendMail({
       to: booking.email,
       subject: `FlipsAura — Payment received (#${booking._id})`,
       html: bookingConfirmationHtml({
@@ -85,10 +85,8 @@ export async function verifyPayment(req, res) {
         amount: booking.amount,
         status: "paid",
       }),
-    });
-  } catch (error) {
-    console.error(error);
-  }
+    }).catch((error) => console.error("payment mail error:", error.message));
+  }).catch((err) => console.error("item lookup error:", err.message));
 
   res.json({ ok: true, data: { booking } });
 }

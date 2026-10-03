@@ -5,6 +5,21 @@ import Script from "@/compat/Script";
 import { useAuth } from "@/context/AuthContext";
 
 import api from "@/api/axios";
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function CheckoutPageCom() {
   const sp = useSearchParams();
   const router = useRouter();
@@ -31,16 +46,22 @@ export default function CheckoutPageCom() {
     e.preventDefault();
     setError(""); setBusy(true);
     try {
-      // 1. Create booking
+      // 1. Ensure Razorpay SDK is loaded
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded || !window.Razorpay) {
+        throw new Error("Razorpay payment gateway failed to load. Please check your internet connection.");
+      }
+
+      // 2. Create booking
       const { data: j1 } = await api.post("/api/bookings", { itemId, ...form });
       if (!j1.ok) throw new Error(j1.error || "Could not create booking");
       const booking = j1.data.booking;
 
-      // 2. Create Razorpay order
+      // 3. Create Razorpay order
       const { data: j2 } = await api.post("/api/payment/create-order", { bookingId: booking._id });
       if (!j2.ok) throw new Error(j2.error || "Payment init failed");
 
-      // 3. Open Razorpay checkout
+      // 4. Open Razorpay checkout
       const options = {
         key: j2.data.keyId,
         amount: j2.data.amount,
@@ -51,19 +72,29 @@ export default function CheckoutPageCom() {
         prefill: { name: form.name, email: form.email, contact: form.phone },
         theme: { color: "#e63f87" },
         handler: async (resp) => {
-          const { data: j3 } = await api.post("/api/payment/verify", {
-            bookingId: booking._id,
-            ...resp,
-          });
-          if (j3.ok) router.push(`/account?booking=${booking._id}`);
-          else setError(j3.error || "Verification failed");
+          try {
+            const { data: j3 } = await api.post("/api/payment/verify", {
+              bookingId: booking._id,
+              ...resp,
+            });
+            if (j3.ok) router.push(`/account?booking=${booking._id}`);
+            else setError(j3.error || "Verification failed");
+          } catch (err) {
+            setError(err?.response?.data?.error || err.message || "Payment verification failed");
+          } finally {
+            setBusy(false);
+          }
         },
         modal: { ondismiss: () => setBusy(false) },
       };
       const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (response) {
+        setBusy(false);
+        setError(response.error.description || "Payment failed. Please try again.");
+      });
       rzp.open();
     } catch (e) {
-      setError(e.message);
+      setError(e?.response?.data?.error || e.message);
       setBusy(false);
     }
   };

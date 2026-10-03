@@ -9,6 +9,7 @@
     "seed:admin": "node scripts/seedAdmin.js",
     "seed:blogs": "node scripts/seedBlogs.js",
     "seed:categories": "node scripts/seedCategories.js",
+    "seed:events": "node scripts/seedCivicCupEvent.js",
     "test:vendor": "node scripts/testVendorOnboarding.js"
   },
   "dependencies": {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Link from "@/compat/Link";
 import ItemCard from "@/components/ItemCard";
 import HeroSlideshow from "@/components/Hero";
+import EventNotificationBanner from "@/components/EventNotificationBanner";
 import api from "@/api/axios";
 
 const indianWeddingImages = [
@@ -107,6 +108,16 @@ const defaultCategories = [
     slug: "virtual-planning",
     image: "/images/categories/virtual-planning.jpg",
   },
+  {
+    name: "Hotels & Resorts",
+    slug: "hotels-resorts",
+    image: "/images/categories/hotels.jpg",
+  },
+  {
+    name: "Orchestra & Live Band",
+    slug: "orchestra-live-band",
+    image: "/images/categories/orchestra.jpg",
+  },
 ];
 
 export default function HomePage() {
@@ -119,27 +130,29 @@ export default function HomePage() {
     let isMounted = true;
 
     const fetchHomePageData = async () => {
-      // 1. Fetch categories
-      try {
-        const catRes = await api.get("/api/categories");
-        const fetchedCats = catRes.data?.data?.categories;
-        if (isMounted && Array.isArray(fetchedCats) && fetchedCats.length > 0) {
-          setData((prev) => ({ ...prev, categories: fetchedCats }));
-        }
-      } catch (error) {
-        console.warn("Failed to load categories from API, using fallback:", error);
-      }
-
-      // 2. Fetch featured items independently
-      try {
-        const itemsRes = await api.get("/api/items?limit=8&sort=newest");
-        const fetchedItems = itemsRes.data?.data?.items;
-        if (isMounted && Array.isArray(fetchedItems)) {
-          setData((prev) => ({ ...prev, featured: fetchedItems }));
-        }
-      } catch (error) {
-        console.warn("Failed to load featured items:", error);
-      }
+      // Fetch categories & featured items concurrently in parallel
+      await Promise.allSettled([
+        api.get("/api/categories")
+          .then((catRes) => {
+            const fetchedCats = catRes.data?.data?.categories;
+            if (isMounted && Array.isArray(fetchedCats) && fetchedCats.length > 0) {
+              setData((prev) => ({ ...prev, categories: fetchedCats }));
+            }
+          })
+          .catch((error) => {
+            console.warn("Failed to load categories from API, using fallback:", error);
+          }),
+        api.get("/api/items?limit=8&sort=newest")
+          .then((itemsRes) => {
+            const fetchedItems = itemsRes.data?.data?.items;
+            if (isMounted && Array.isArray(fetchedItems)) {
+              setData((prev) => ({ ...prev, featured: fetchedItems }));
+            }
+          })
+          .catch((error) => {
+            console.warn("Failed to load featured items:", error);
+          }),
+      ]);
     };
 
     fetchHomePageData();
@@ -155,6 +168,9 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Event Notification Banner */}
+      <EventNotificationBanner />
+
       {/* Hero Section */}
       <HeroSlideshow />
 

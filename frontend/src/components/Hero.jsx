@@ -137,6 +137,8 @@ const HeroSlideshow = () => {
                                 fill
                                 sizes="100vw"
                                 style={{ objectFit: 'cover' }}
+                                loading={slide.id === 1 ? "eager" : "lazy"}
+                                fetchPriority={slide.id === 1 ? "high" : "low"}
                                 quality={85}
                             />
                         </div>

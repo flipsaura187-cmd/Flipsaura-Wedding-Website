@@ -110,6 +110,24 @@ export const WEDDING_CATEGORIES = [
     order: 12,
     image: "/images/categories/virtual-planning.jpg",
   },
+
+  {
+    name: "Hotels & Resorts",
+    slug: "hotels-resorts",
+    description:
+      "Luxury wedding hotels, AC guest rooms for barat and family stays, honeymoon suites, and resort room accommodations.",
+    order: 13,
+    image: "/images/categories/hotels.jpg",
+  },
+
+  {
+    name: "Orchestra & Live Band",
+    slug: "orchestra-live-band",
+    description:
+      "Grand wedding orchestra, live musical troupes, stage singers, brass band, shehnai, and Bollywood musical performers.",
+    order: 14,
+    image: "/images/categories/orchestra.jpg",
+  },
 ];
 export async function seedCategories() {
   await dbConnect();

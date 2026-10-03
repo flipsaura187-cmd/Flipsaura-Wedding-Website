@@ -43,6 +43,23 @@ export default function LoginPage() {
           Login to your FlipsAura account.
         </p>
 
+        {sp?.get("registered") === "true" && !error && (
+          <div
+            style={{
+              padding: "12px 16px",
+              borderRadius: 8,
+              marginBottom: 16,
+              background: "#E8F5E9",
+              color: "#2E7D32",
+              border: "1px solid #C8E6C9",
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
+            ✅ Account created successfully! Please sign in to continue.
+          </div>
+        )}
+
         {error && (
           <div
             className="error"

@@ -22,10 +22,18 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import RefundPolicy from "@/pages/refund-cancellation-policy";
 import ShippingPolicy from "@/pages/shipping-policy";
 import Terms from "@/pages/terms-of-service";
+import EventsPage from "@/pages/events";
+import EventDetailPage from "@/pages/event-detail";
+import EventRegisterPage from "@/pages/event-register";
+import EventSuccessPage from "@/pages/event-success";
+import EventFailedPage from "@/pages/event-failed";
 
 // Admin pages
 import AdminLayout from "@/pages/admin/layout";
 import AdminDashboard from "@/pages/admin/dashboard";
+import AdminEvents from "@/pages/admin/events";
+import AdminEventForm from "@/pages/admin/event-form";
+import AdminEventRegistrations from "@/pages/admin/event-registrations";
 import AdminVendors from "@/pages/admin/vendors";
 import AdminCategories from "@/pages/admin/categories";
 import AdminItems from "@/pages/admin/items";
@@ -69,9 +77,20 @@ export default function AppRoutes() {
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/terms-of-service" element={<Terms />} />
 
+            {/* FlipsAura Events Public routes */}
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/events/:slug" element={<EventDetailPage />} />
+            <Route path="/events/:slug/register" element={<EventRegisterPage />} />
+            <Route path="/events/registration/success" element={<EventSuccessPage />} />
+            <Route path="/events/registration/payment-failed" element={<EventFailedPage />} />
+
             {/* Admin routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="events/new" element={<AdminEventForm />} />
+              <Route path="events/:id/edit" element={<AdminEventForm />} />
+              <Route path="events/:id/registrations" element={<AdminEventRegistrations />} />
               <Route path="vendors" element={<AdminVendors />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="items" element={<AdminItems />} />

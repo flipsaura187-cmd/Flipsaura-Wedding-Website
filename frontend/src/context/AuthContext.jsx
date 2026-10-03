@@ -50,12 +50,13 @@ export function AuthProvider({ children }) {
     const { data: j } = await api.post("/api/auth/register", payload);
     if (!j.ok) throw new Error(j.error || "Register failed");
 
-    if (j.data?.token && typeof window !== "undefined") {
-      localStorage.setItem("fa_token", j.data.token);
+    // Do NOT auto-login upon registration
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("fa_token");
     }
+    setUser(null);
 
-    setUser(j.data.user);
-    return j.data.user;
+    return j.data?.user;
   };
 
   const logout = async () => {

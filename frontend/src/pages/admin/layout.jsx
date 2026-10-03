@@ -34,6 +34,7 @@ export default function AdminLayout() {
 
   const links = [
     { href: "/admin/dashboard", label: "Dashboard", icon: "📊" },
+    { href: "/admin/events", label: "Events", icon: "🏆" },
     { href: "/admin/vendors", label: "Vendors", icon: "🏪" },
     { href: "/admin/blogs", label: "Blogs", icon: "📝" },
     { href: "/admin/categories", label: "Categories", icon: "🏷️" },
@@ -51,27 +52,34 @@ export default function AdminLayout() {
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={path === link.href || (link.href === "/admin/blogs" && path.startsWith("/admin/blogs")) ? "active" : ""}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 14px",
-                borderRadius: 8,
-                fontSize: 14,
-                fontWeight: 500,
-                textDecoration: "none",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <span>{link.icon}</span>
-              <span>{link.label}</span>
-            </Link>
-          ))}
+          {links.map((link) => {
+            const isActive =
+              path === link.href ||
+              (link.href === "/admin/blogs" && path.startsWith("/admin/blogs")) ||
+              (link.href === "/admin/events" && path.startsWith("/admin/events"));
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={isActive ? "active" : ""}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 14px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    textDecoration: "none",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <span>{link.icon}</span>
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
         </nav>
       </aside>
 

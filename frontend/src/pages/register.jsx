@@ -62,14 +62,10 @@ export default function RegisterPage() {
         name: form.role === "vendor" ? (form.ownerName || form.name) : form.name,
       };
 
-      const user = await register(payload);
+      await register(payload);
 
-      // Requirement: Redirect vendor directly to Vendor Dashboard after registration
-      if (form.role === "vendor") {
-        router.push("/vendor/dashboard");
-      } else {
-        router.push("/account");
-      }
+      // Redirect user to login page so they must explicitly log in
+      router.push("/login?registered=true");
     } catch (err) {
       setError(err.message || "Registration failed. Please check your inputs.");
     } finally {

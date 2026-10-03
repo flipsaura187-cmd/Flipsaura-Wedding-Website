@@ -154,10 +154,12 @@ export async function register(req, res) {
   });
 
   const token = signToken({ uid: String(user._id), role: user.role });
-  setAuthCookie(res, token);
+  // Do not set auth cookie here: user must explicitly log in after registration
+  clearAuthCookie(res);
 
   res.status(201).json({
     ok: true,
+    message: "Registration successful. Please log in.",
     data: {
       user: publicUser(user),
       token,

@@ -39,6 +39,9 @@ export default function Navbar() {
           >
             Planning & Decor
           </Link>
+          <Link href="/events" className={pathname.startsWith("/events") ? "active" : ""}>
+            Events
+          </Link>
           <Link href="/blogs" className={pathname.startsWith("/blogs") ? "active" : ""}>
             Blogs
           </Link>
@@ -109,6 +112,7 @@ export default function Navbar() {
         <Link href="/categories/venues" onClick={() => setOpen(false)}>Venues</Link>
         <Link href="/categories/home-setup-pandal-tent-dj" onClick={() => setOpen(false)}>Home Setup</Link>
         <Link href="/categories/planning-decor" onClick={() => setOpen(false)}>Planning & Decor</Link>
+        <Link href="/events" onClick={() => setOpen(false)}>Events</Link>
         <Link href="/blogs" onClick={() => setOpen(false)}>Blogs</Link>
 
         {user ? (

@@ -294,6 +294,42 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* About FlipsAura Section */}
+      <section id="about" className="section" style={{ background: "var(--surface, #fff)", borderTop: "1px solid var(--border, #eee)" }}>
+        <div className="container" style={{ maxWidth: 860 }}>
+          <div className="section-head" style={{ textAlign: "center", marginBottom: "2rem" }}>
+            <span className="eyebrow">About FlipsAura</span>
+            <h2>Your Trusted Partner For Seamless Event Planning</h2>
+          </div>
+
+          <div style={{ lineHeight: 1.8, fontSize: "1.05rem", color: "var(--foreground, #333)" }}>
+            <p style={{ marginBottom: "1rem" }}>
+              Welcome to <strong>FlipsAura</strong> — your trusted platform for seamless event and wedding planning solutions.
+              Launched in <strong>May 2026</strong>, FlipsAura was created with a clear vision to simplify how couples and families plan their dream celebrations, uniting trusted venues, planners, caterers, and decorators onto one reliable platform.
+            </p>
+            <p style={{ marginBottom: "1rem" }}>
+              Founded by <strong>Abhishek Kumar</strong>, FlipsAura is built with a strong entrepreneurial spirit to transform the event services industry, especially across <strong>North India</strong>. The idea behind FlipsAura is simple — to eliminate the stress of managing multiple vendors by providing a curated, verified one-stop solution.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem", marginTop: "2rem" }}>
+              <div style={{ padding: "1.5rem", background: "var(--pink-50, #FFF5F7)", borderRadius: "12px", border: "1px solid var(--pink-100, #FCE7EC)" }}>
+                <h4 style={{ color: "var(--wine, #8B1E3F)", marginBottom: "0.5rem", fontSize: "1.1rem" }}>🎯 Our Mission</h4>
+                <p style={{ margin: 0, fontSize: "0.95rem", color: "#555" }}>
+                  To make wedding and event planning transparent, effortless, and stress-free by connecting you with verified, trusted vendors under one roof.
+                </p>
+              </div>
+
+              <div style={{ padding: "1.5rem", background: "var(--pink-50, #FFF5F7)", borderRadius: "12px", border: "1px solid var(--pink-100, #FCE7EC)" }}>
+                <h4 style={{ color: "var(--wine, #8B1E3F)", marginBottom: "0.5rem", fontSize: "1.1rem" }}>🌟 Why Choose FlipsAura</h4>
+                <p style={{ margin: 0, fontSize: "0.95rem", color: "#555" }}>
+                  Curated venues, verified vendors, upfront pricing, dedicated support, and end-to-end coordination for unforgettable celebrations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </>
   );
 }

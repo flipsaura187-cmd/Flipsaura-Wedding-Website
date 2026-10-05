@@ -109,8 +109,8 @@ const defaultCategories = [
     image: "/images/categories/virtual-planning.jpg",
   },
   {
-    name: "Hotels & Resorts",
-    slug: "hotels-resorts",
+    name: "Hotels",
+    slug: "hotels",
     image: "/images/categories/hotels.jpg",
   },
   {

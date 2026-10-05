@@ -22,7 +22,10 @@ export async function getItems(req, res) {
   }
 
   if (req.query.category) {
-    const cat = await Category.findOne({ slug: req.query.category }).lean();
+    const slug = req.query.category;
+    const cat = await Category.findOne({
+      $or: [{ slug }, ...(slug === "hotels-resorts" ? [{ slug: "hotels" }] : [])]
+    }).lean();
     if (!cat) return res.json({ ok: true, data: { items: [], total: 0, page, totalPages: 0 } });
     q.category = cat._id;
   }

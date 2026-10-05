@@ -26,7 +26,10 @@ export async function createCategory(req, res) {
 
 export async function getCategory(req, res) {
   await dbConnect();
-  const category = await Category.findOne({ slug: req.params.slug }).lean();
+  const slug = req.params.slug;
+  const category = await Category.findOne({
+    $or: [{ slug }, ...(slug === "hotels-resorts" ? [{ slug: "hotels" }] : [])]
+  }).lean();
   if (!category) return res.status(404).json({ ok: false, error: "Not found" });
   res.json({ ok: true, data: { category } });
 }

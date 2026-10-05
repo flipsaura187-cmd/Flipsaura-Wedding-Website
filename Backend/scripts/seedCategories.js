@@ -112,10 +112,10 @@ export const WEDDING_CATEGORIES = [
   },
 
   {
-    name: "Hotels & Resorts",
-    slug: "hotels-resorts",
+    name: "Hotels",
+    slug: "hotels",
     description:
-      "Luxury wedding hotels, AC guest rooms for barat and family stays, honeymoon suites, and resort room accommodations.",
+      "Luxury wedding hotels, AC guest rooms for barat and family stays, honeymoon suites, and guest room accommodations.",
     order: 13,
     image: "/images/categories/hotels.jpg",
   },

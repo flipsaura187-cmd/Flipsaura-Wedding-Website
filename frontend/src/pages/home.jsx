@@ -120,6 +120,15 @@ const defaultCategories = [
   },
 ];
 
+function getCategoryImageUrl(image) {
+  if (!image) return "/images/categories/home-setup.jpg";
+  if (image.startsWith("/images/")) {
+    const version = import.meta.env.DEV ? Date.now() : "3";
+    return `${image}?v=${version}`;
+  }
+  return image;
+}
+
 export default function HomePage() {
   const [data, setData] = useState({
     categories: defaultCategories,
@@ -175,13 +184,13 @@ export default function HomePage() {
       <HeroSlideshow />
 
       {/* Categories Section */}
-      <section className="section">
-        <div className="container">
+      <section className="section categories-section">
+        <div className="container-fluid">
           <div className="section-head">
             <h2>Shop by category</h2>
           </div>
 
-          <div className="grid grid-4">
+          <div className="grid-categories">
             {categoriesToRender.map((category) => (
               <Link
                 key={category.slug}
@@ -191,10 +200,7 @@ export default function HomePage() {
               >
                 <div className="cat-card-bg">
                   <img
-                    src={
-                      category.image ||
-                      "/images/categories/home-setup.jpg"
-                    }
+                    src={getCategoryImageUrl(category.image)}
                     alt={category.name}
                     loading="lazy"
                     onError={(e) => {

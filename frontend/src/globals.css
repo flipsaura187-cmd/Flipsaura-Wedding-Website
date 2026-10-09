@@ -67,6 +67,13 @@ h2 {
   padding: 0 12px
 }
 
+.container-fluid {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3.5vw, 48px);
+}
+
 button {
   font: inherit;
   cursor: pointer
@@ -797,10 +804,11 @@ textarea {
 }
 
 .cat-card-content h3 {
-  font-size: 1.2rem;
+  font-size: clamp(0.95rem, 1.15vw, 1.2rem);
   font-weight: 700;
   margin-bottom: 0.3rem;
   color: white;
+  line-height: 1.25;
 }
 
 .cat-card-content span {
@@ -813,6 +821,30 @@ textarea {
   border-radius: 20px;
 }
 
+/* Category Grid (5 images per row) */
+.grid-categories,
+.grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .grid-categories,
+  .grid-5 {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .grid-categories,
+  .grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
 /* Responsive grid adjustments */
 @media (max-width: 880px) {
   .grid.grid-3 {
@@ -821,7 +853,19 @@ textarea {
   }
 
   .cat-card-content h3 {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-categories,
+  .grid-5 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .cat-card-content h3 {
+    font-size: 0.85rem;
   }
 }
 

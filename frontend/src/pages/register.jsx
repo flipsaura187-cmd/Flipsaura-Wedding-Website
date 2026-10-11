@@ -103,22 +103,30 @@ export default function RegisterPage() {
         <form onSubmit={submit}>
           <div className="field" style={{ marginBottom: 18 }}>
             <label style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>I want to register as</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               <button
                 type="button"
                 className={`btn ${form.role === "user" ? "btn-primary" : "btn-ghost"}`}
-                style={{ padding: "10px", fontSize: 14, borderRadius: 8 }}
+                style={{ padding: "10px 6px", fontSize: 13, borderRadius: 8 }}
                 onClick={() => setForm({ ...form, role: "user" })}
               >
                 💍 Customer
               </button>
               <button
                 type="button"
-                className={`btn ${form.role === "vendor" ? "btn-primary" : "btn-ghost"}`}
-                style={{ padding: "10px", fontSize: 14, borderRadius: 8 }}
-                onClick={() => setForm({ ...form, role: "vendor" })}
+                className={`btn ${form.role === "vendor" && form.vendorType !== "Vehicle Provider" ? "btn-primary" : "btn-ghost"}`}
+                style={{ padding: "10px 6px", fontSize: 13, borderRadius: 8 }}
+                onClick={() => setForm({ ...form, role: "vendor", vendorType: "Individual" })}
               >
-                🏪 Vendor / Business
+                🏪 Wedding Vendor
+              </button>
+              <button
+                type="button"
+                className={`btn ${form.role === "vendor" && form.vendorType === "Vehicle Provider" ? "btn-primary" : "btn-ghost"}`}
+                style={{ padding: "10px 6px", fontSize: 13, borderRadius: 8 }}
+                onClick={() => setForm({ ...form, role: "vendor", vendorType: "Vehicle Provider", businessName: form.businessName || "Vehicle Fleet Services" })}
+              >
+                🚗 Vehicle Owner
               </button>
             </div>
           </div>
@@ -127,10 +135,12 @@ export default function RegisterPage() {
             <>
               <div style={{ background: "var(--pink-50)", padding: "16px", borderRadius: 10, marginBottom: 20 }}>
                 <h4 style={{ margin: "0 0 6px", fontSize: 15, color: "var(--pink-700)" }}>
-                  Vendor Registration Details
+                  {form.vendorType === "Vehicle Provider" ? "Vehicle Owner Registration Details" : "Vendor Registration Details"}
                 </h4>
                 <p style={{ margin: 0, fontSize: 13, color: "var(--muted)" }}>
-                  Complete your basic registration to access the dashboard shell. Features unlock upon verification.
+                  {form.vendorType === "Vehicle Provider"
+                    ? "Register your car rental or transport service to manage fleet, set rates, and accept bookings."
+                    : "Complete your basic registration to access the dashboard shell. Features unlock upon verification."}
                 </p>
               </div>
 
@@ -188,6 +198,7 @@ export default function RegisterPage() {
                 >
                   <option value="Individual">Individual (Freelancer / Sole Proprietor)</option>
                   <option value="Business">Business (Registered Company / Agency)</option>
+                  <option value="Vehicle Provider">Vehicle Provider (Cars / Transport / Fleet Owner)</option>
                 </select>
               </div>
 

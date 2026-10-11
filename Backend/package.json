@@ -10,6 +10,8 @@
     "seed:blogs": "node scripts/seedBlogs.js",
     "seed:categories": "node scripts/seedCategories.js",
     "seed:events": "node scripts/seedCivicCupEvent.js",
+    "seed:vehicles": "node scripts/seedVehicles.js",
+    "test:vehicles": "node scripts/testVehicleModule.js",
     "test:vendor": "node scripts/testVendorOnboarding.js"
   },
   "dependencies": {

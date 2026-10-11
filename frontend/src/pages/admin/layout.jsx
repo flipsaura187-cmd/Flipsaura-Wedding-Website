@@ -40,6 +40,8 @@ export default function AdminLayout() {
     { href: "/admin/categories", label: "Categories", icon: "🏷️" },
     { href: "/admin/items", label: "Items", icon: "📦" },
     { href: "/admin/bookings", label: "Bookings", icon: "📅" },
+    { href: "/admin/vehicles", label: "Vehicles Fleet", icon: "🚗" },
+    { href: "/admin/vehicle-bookings", label: "Vehicle Bookings", icon: "📋" },
     { href: "/admin/users", label: "Users", icon: "👥" },
   ];
 

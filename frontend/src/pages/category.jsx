@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "@/compat/navigation";
+import Link from "@/compat/Link";
 import ItemCard from "@/components/ItemCard";
 import Pagination from "@/components/Pagination";
 
@@ -42,6 +43,8 @@ export default function CategoryPage() {
     load();
   };
 
+  const isTransport = String(slug).includes("transport") || String(slug).includes("car");
+
   return (
     <section className="section">
       <div className="container">
@@ -51,6 +54,44 @@ export default function CategoryPage() {
             <h2 style={{ textTransform: "capitalize" }}>{String(slug).replace(/-/g, " ")}</h2>
           </div>
         </div>
+
+        {isTransport && (
+          <div
+            style={{
+              background: "linear-gradient(135deg, #FDF2F4 0%, #F5EEF0 100%)",
+              border: "1px solid #FBCFE8",
+              borderRadius: 14,
+              padding: "20px 24px",
+              marginBottom: 24,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 20 }}>🚗</span>
+                <b style={{ color: "var(--pink-700, #8B1E3F)", fontSize: 16 }}>
+                  FlipsAura Dedicated Vehicle Rentals & Transport Fleet
+                </b>
+              </div>
+              <p style={{ margin: 0, color: "#4B5563", fontSize: 13 }}>
+                Reserve self-drive luxury cars, 4x4 Thar, decorative autos, or book chauffeur-driven Barat coaches and buses with real-time pricing and availability checks.
+              </p>
+            </div>
+
+            <Link
+              href="/vehicles"
+              to="/vehicles"
+              className="btn btn-primary"
+              style={{ fontSize: 13, padding: "9px 18px", whiteSpace: "nowrap" }}
+            >
+              Explore Vehicles Fleet →
+            </Link>
+          </div>
+        )}
 
         <form className="filters" onSubmit={apply}>
           <input placeholder="Search…" value={filters.q} onChange={e => setFilters({ ...filters, q: e.target.value })} />

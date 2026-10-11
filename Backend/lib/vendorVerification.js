@@ -57,26 +57,36 @@ export function calculateVendorCompletion(user) {
     missingCategories.profile.push("PIN Code");
   }
 
+  const isVehicleProvider = Boolean(
+    vp.isVehicleProvider ||
+    user?.isVehicleProvider ||
+    vp.vendorType === "Vehicle Provider" ||
+    vp.vendorType === "Vehicle Owner" ||
+    String(vp.vendorType || "").toLowerCase().includes("vehicle")
+  );
+
   // 2. Service Information
-  if (!vp.serviceDescription?.trim() && !vp.about?.trim()) {
-    missingFields.push("Service Description");
-    missingCategories.services.push("Service Description");
-  }
-  if ((!vp.startingPrice || vp.startingPrice <= 0) && !vp.priceRange?.trim()) {
-    missingFields.push("Starting Price or Price Range");
-    missingCategories.services.push("Starting Price or Price Range");
-  }
-  if (!vp.serviceLocation?.trim() && !vp.city?.trim()) {
-    missingFields.push("Service Location");
-    missingCategories.services.push("Service Location");
-  }
-  if (!vp.experience?.trim()) {
-    missingFields.push("Experience (Years / Background)");
-    missingCategories.services.push("Experience");
-  }
-  if ((!vp.categories || vp.categories.length === 0) && (!vp.servicesList || vp.servicesList.length === 0)) {
-    missingFields.push("Wedding Service Category Selection");
-    missingCategories.services.push("Wedding Category Selection");
+  if (!isVehicleProvider) {
+    if (!vp.serviceDescription?.trim() && !vp.about?.trim()) {
+      missingFields.push("Service Description");
+      missingCategories.services.push("Service Description");
+    }
+    if ((!vp.startingPrice || vp.startingPrice <= 0) && !vp.priceRange?.trim()) {
+      missingFields.push("Starting Price or Price Range");
+      missingCategories.services.push("Starting Price or Price Range");
+    }
+    if (!vp.serviceLocation?.trim() && !vp.city?.trim()) {
+      missingFields.push("Service Location");
+      missingCategories.services.push("Service Location");
+    }
+    if (!vp.experience?.trim()) {
+      missingFields.push("Experience (Years / Background)");
+      missingCategories.services.push("Experience");
+    }
+    if ((!vp.categories || vp.categories.length === 0) && (!vp.servicesList || vp.servicesList.length === 0)) {
+      missingFields.push("Wedding Service Category Selection");
+      missingCategories.services.push("Wedding Category Selection");
+    }
   }
 
   // 3. Mandatory KYC Documents
@@ -138,7 +148,7 @@ export function calculateVendorCompletion(user) {
   const portfolioCount = Array.isArray(vp.portfolio) ? vp.portfolio.length : 0;
 
   // Total checklist items
-  const totalItems = isBusiness ? 19 : 18;
+  const totalItems = isVehicleProvider ? (isBusiness ? 14 : 13) : (isBusiness ? 19 : 18);
   const missingCount = missingFields.length;
   const completedCount = Math.max(0, totalItems - missingCount);
   let percentage = Math.round((completedCount / totalItems) * 100);

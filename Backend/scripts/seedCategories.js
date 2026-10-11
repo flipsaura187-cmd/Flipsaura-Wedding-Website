@@ -4,11 +4,20 @@ import Category from "../models/Category.js";
 
 export const WEDDING_CATEGORIES = [
   {
+    name: "Hotels",
+    slug: "hotels",
+    description:
+      "Luxury wedding hotels, AC guest rooms for barat and family stays, honeymoon suites, and guest room accommodations.",
+    order: 1,
+    image: "/images/categories/hotels.jpg",
+  },
+
+  {
     name: "Venues",
     slug: "venues",
     description:
       "Banquet halls, hotels, marriage lawns, resorts, and community halls for weddings and events.",
-    order: 1,
+    order: 2,
     image: "/images/categories/venues.jpg",
   },
 
@@ -17,17 +26,26 @@ export const WEDDING_CATEGORIES = [
     slug: "home-setup-pandal-tent-dj",
     description:
       "Pandal and tent setup, wedding lighting, DJ and sound systems, and complete ghar pe shaadi packages.",
-    order: 2,
+    order: 3,
     image: "/images/categories/home-setup.jpg",
   },
 
   {
-    name: "Planning & Decor",
-    slug: "planning-decor",
+    name: "Transport – Car / Bus / Auto",
+    slug: "transport-car-bus-auto",
     description:
-      "Wedding planners and decorators for stage, entry, seating, floral decorations, themes, and complete event styling.",
-    order: 3,
-    image: "/images/categories/planning-decor.jpg",
+      "Barat cars, tempo travellers, buses, autos, and small guest vehicles with date and time-based booking options.",
+    order: 4,
+    image: "/images/categories/transport.jpg",
+  },
+
+  {
+    name: "Pandit / Priest",
+    slug: "pandit-priest",
+    description:
+      "Experienced pandits and priests for different wedding rituals, languages, traditions, and sampraday.",
+    order: 5,
+    image: "/images/categories/pandit-priest.jpg",
   },
 
   {
@@ -35,8 +53,17 @@ export const WEDDING_CATEGORIES = [
     slug: "photographer-videographer",
     description:
       "Wedding photography, candid photography, cinematic wedding films, traditional coverage, and pre-wedding shoots.",
-    order: 4,
+    order: 6,
     image: "/images/categories/photography.jpg",
+  },
+
+  {
+    name: "Food / Catering",
+    slug: "food-catering",
+    description:
+      "Full catering, per-plate services, halwai, home cooks, traditional Bihari and UP cuisine, vegetarian and non-vegetarian food, and sweets.",
+    order: 7,
+    image: "/images/categories/food-catering.jpg",
   },
 
   {
@@ -44,7 +71,7 @@ export const WEDDING_CATEGORIES = [
     slug: "makeup-grooming",
     description:
       "Bridal makeup, groom makeup and styling, hair styling, beauty services, and professional grooming.",
-    order: 5,
+    order: 8,
     image: "/images/categories/makeup-grooming.jpg",
   },
 
@@ -53,7 +80,7 @@ export const WEDDING_CATEGORIES = [
     slug: "mehndi-services",
     description:
       "Professional mehndi artists and teams offering bridal mehndi, guest mehndi, Arabic, Rajasthani, and traditional designs.",
-    order: 6,
+    order: 9,
     image: "/images/categories/mehndi.jpg",
   },
 
@@ -62,44 +89,17 @@ export const WEDDING_CATEGORIES = [
     slug: "music-dance",
     description:
       "Orchestra, nautanki, baraati dance groups, live bands, singers, DJs, and folk dance groups for wedding celebrations.",
-    order: 7,
+    order: 10,
     image: "/images/categories/music-dance.jpg",
   },
 
   {
-    name: "Pandit / Priest",
-    slug: "pandit-priest",
+    name: "Orchestra & Live Band",
+    slug: "orchestra-live-band",
     description:
-      "Experienced pandits and priests for different wedding rituals, languages, traditions, and sampraday.",
-    order: 8,
-    image: "/images/categories/pandit-priest.jpg",
-  },
-
-  {
-    name: "Food / Catering",
-    slug: "food-catering",
-    description:
-      "Full catering, per-plate services, halwai, home cooks, traditional Bihari and UP cuisine, vegetarian and non-vegetarian food, and sweets.",
-    order: 9,
-    image: "/images/categories/food-catering.jpg",
-  },
-
-  {
-    name: "Invites & Gifts",
-    slug: "invites-gifts",
-    description:
-      "Printed wedding cards, digital e-invites, return gifts, wedding favours, personalized gifts, and gift hampers.",
-    order: 10,
-    image: "/images/categories/invites-gifts.jpg",
-  },
-
-  {
-    name: "Transport – Car / Bus / Auto",
-    slug: "transport-car-bus-auto",
-    description:
-      "Barat cars, tempo travellers, buses, autos, and small guest vehicles with date and time-based booking options.",
+      "Grand wedding orchestra, live musical troupes, stage singers, brass band, shehnai, and Bollywood musical performers.",
     order: 11,
-    image: "/images/categories/transport.jpg",
+    image: "/images/categories/orchestra.jpg",
   },
 
   {
@@ -112,21 +112,21 @@ export const WEDDING_CATEGORIES = [
   },
 
   {
-    name: "Hotels",
-    slug: "hotels",
+    name: "Planning & Decor",
+    slug: "planning-decor",
     description:
-      "Luxury wedding hotels, AC guest rooms for barat and family stays, honeymoon suites, and guest room accommodations.",
+      "Wedding planners and decorators for stage, entry, seating, floral decorations, themes, and complete event styling.",
     order: 13,
-    image: "/images/categories/hotels.jpg",
+    image: "/images/categories/planning-decor.jpg",
   },
 
   {
-    name: "Orchestra & Live Band",
-    slug: "orchestra-live-band",
+    name: "Invites & Gifts",
+    slug: "invites-gifts",
     description:
-      "Grand wedding orchestra, live musical troupes, stage singers, brass band, shehnai, and Bollywood musical performers.",
+      "Printed wedding cards, digital e-invites, return gifts, wedding favours, personalized gifts, and gift hampers.",
     order: 14,
-    image: "/images/categories/orchestra.jpg",
+    image: "/images/categories/invites-gifts.jpg",
   },
 ];
 export async function seedCategories() {

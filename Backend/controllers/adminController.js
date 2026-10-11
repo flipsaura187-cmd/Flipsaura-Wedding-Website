@@ -5,12 +5,23 @@ import Booking from "../models/Booking.js";
 import Category from "../models/Category.js";
 import Blog from "../models/Blog.js";
 import Review from "../models/Review.js";
+import Vehicle from "../models/Vehicle.js";
 import { calculateVendorCompletion } from "../lib/vendorVerification.js";
 
 export async function getAdminStats(req, res) {
   await dbConnect();
 
-  const [users, items, bookings, categories, revenueAgg, vendorsCount, pendingVendorsCount] = await Promise.all([
+  const [
+    users,
+    items,
+    bookings,
+    categories,
+    revenueAgg,
+    vendorsCount,
+    pendingVendorsCount,
+    vehiclesCount,
+    pendingVehiclesCount,
+  ] = await Promise.all([
     User.countDocuments(),
     Item.countDocuments(),
     Booking.countDocuments(),
@@ -24,6 +35,8 @@ export async function getAdminStats(req, res) {
       role: "vendor",
       "vendorProfile.verificationStatus": { $in: ["under_review", "pending_verification"] },
     }),
+    Vehicle.countDocuments(),
+    Vehicle.countDocuments({ verificationStatus: "pending" }),
   ]);
 
   res.json({
@@ -37,6 +50,8 @@ export async function getAdminStats(req, res) {
         revenue: revenueAgg[0]?.total || 0,
         vendors: vendorsCount,
         pendingVendors: pendingVendorsCount,
+        vehicles: vehiclesCount,
+        pendingVehicles: pendingVehiclesCount,
       },
     },
   });
@@ -146,7 +161,15 @@ export async function getAdminVendors(req, res) {
   const query = { role: "vendor" };
 
   if (vendorType) {
-    query["vendorProfile.vendorType"] = new RegExp(`^${vendorType}$`, "i");
+    if (String(vendorType).toLowerCase().includes("vehicle")) {
+      query.$or = [
+        { "vendorProfile.vendorType": /vehicle/i },
+        { "vendorProfile.isVehicleProvider": true },
+        { isVehicleProvider: true },
+      ];
+    } else {
+      query["vendorProfile.vendorType"] = new RegExp(`^${vendorType}$`, "i");
+    }
   }
 
   if (city) {
@@ -183,6 +206,11 @@ export async function getAdminVendors(req, res) {
 
   const formattedVendors = vendors.map((v) => {
     const comp = calculateVendorCompletion(v);
+    const isVehicleProvider = Boolean(
+      v.vendorProfile?.isVehicleProvider ||
+      v.isVehicleProvider ||
+      String(v.vendorProfile?.vendorType || "").toLowerCase().includes("vehicle")
+    );
     return {
       _id: v._id,
       name: v.name,
@@ -190,7 +218,8 @@ export async function getAdminVendors(req, res) {
       phone: v.phone,
       businessName: v.vendorProfile?.businessName || v.name,
       ownerName: v.vendorProfile?.ownerName || v.name,
-      vendorType: v.vendorProfile?.vendorType || "Individual",
+      vendorType: v.vendorProfile?.vendorType || (isVehicleProvider ? "Vehicle Provider" : "Individual"),
+      isVehicleProvider,
       city: v.vendorProfile?.city || "—",
       state: v.vendorProfile?.state || "—",
       categories: (v.vendorProfile?.categories || []).map((c) => c.name || c),
@@ -208,12 +237,20 @@ export async function getAdminVendors(req, res) {
   });
 
   // Calculate high-level summary counts for tab counters
-  const [totalCount, underReviewCount, approvedCount, incompleteCount, rejectedCount] = await Promise.all([
+  const [totalCount, underReviewCount, approvedCount, incompleteCount, rejectedCount, vehicleProvidersCount] = await Promise.all([
     User.countDocuments({ role: "vendor" }),
     User.countDocuments({ role: "vendor", "vendorProfile.verificationStatus": { $in: ["under_review", "pending_verification"] } }),
     User.countDocuments({ role: "vendor", "vendorProfile.approved": true }),
     User.countDocuments({ role: "vendor", "vendorProfile.verificationStatus": "profile_incomplete" }),
     User.countDocuments({ role: "vendor", "vendorProfile.verificationStatus": "rejected" }),
+    User.countDocuments({
+      role: "vendor",
+      $or: [
+        { "vendorProfile.vendorType": /vehicle/i },
+        { "vendorProfile.isVehicleProvider": true },
+        { isVehicleProvider: true },
+      ],
+    }),
   ]);
 
   res.json({
@@ -226,6 +263,7 @@ export async function getAdminVendors(req, res) {
         approved: approvedCount,
         incomplete: incompleteCount,
         rejected: rejectedCount,
+        vehicleProviders: vehicleProvidersCount,
       },
     },
   });

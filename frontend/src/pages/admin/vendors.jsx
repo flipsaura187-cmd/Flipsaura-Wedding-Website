@@ -4,7 +4,7 @@ import api from "@/api/axios";
 
 export default function AdminVendors() {
   const [vendors, setVendors] = useState([]);
-  const [counts, setCounts] = useState({ total: 0, underReview: 0, approved: 0, incomplete: 0, rejected: 0, vehicleProviders: 0 });
+  const [counts, setCounts] = useState({ total: 0, underReview: 0, approved: 0, incomplete: 0, rejected: 0 });
   const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -30,11 +30,7 @@ export default function AdminVendors() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (filterStatus === "vehicle_providers") {
-        params.append("vendorType", "Vehicle Provider");
-      } else if (filterStatus && filterStatus !== "all") {
-        params.append("status", filterStatus);
-      }
+      if (filterStatus && filterStatus !== "all") params.append("status", filterStatus);
       if (search.trim()) params.append("search", search.trim());
 
       const { data } = await api.get(`/api/admin/vendors?${params.toString()}`);
@@ -52,24 +48,6 @@ export default function AdminVendors() {
   useEffect(() => {
     loadVendors();
   }, [filterStatus]);
-
-  const handleQuickApprove = async (id, name) => {
-    if (!confirm(`Instantly approve ${name}? This will verify documents and unlock all vendor/fleet dashboard features.`)) return;
-    setActionBusy(true);
-    try {
-      const { data } = await api.put(`/api/admin/vendors/${id}/status`, { status: "approved" });
-      if (data.ok) {
-        alert(`✓ ${name} approved successfully!`);
-        loadVendors();
-      } else {
-        alert(data.error || "Failed to approve vendor.");
-      }
-    } catch (err) {
-      alert(err.response?.data?.error || err.message || "Failed to approve vendor.");
-    } finally {
-      setActionBusy(false);
-    }
-  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -216,7 +194,6 @@ export default function AdminVendors() {
         <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
           {[
             { id: "all", label: "All Vendors" },
-            { id: "vehicle_providers", label: `🚗 Vehicle Providers (${counts.vehicleProviders || 0})` },
             { id: "under_review", label: `Under Review (${counts.underReview})` },
             { id: "approved", label: `Approved (${counts.approved})` },
             { id: "profile_incomplete", label: "Incomplete" },
@@ -278,27 +255,15 @@ export default function AdminVendors() {
                     <small style={{ color: "#666" }}>{v.ownerName} • {v.phone || v.email}</small>
                   </td>
                   <td>
-                    {v.isVehicleProvider ? (
-                      <span className="badge" style={{ background: "#ede9fe", color: "#5b21b6", fontWeight: 700 }}>
-                        🚗 Vehicle Provider
-                      </span>
-                    ) : (
-                      <span className="badge" style={{ background: "#f3f4f6", color: "#374151" }}>
-                        {v.vendorType}
-                      </span>
-                    )}
+                    <span className="badge" style={{ background: "#f3f4f6", color: "#374151" }}>
+                      {v.vendorType}
+                    </span>
                   </td>
                   <td>{v.city}</td>
                   <td>
-                    {v.isVehicleProvider ? (
-                      <small style={{ color: "#5b21b6", fontWeight: 600 }}>
-                        🚗 Vehicle Fleet / Rental
-                      </small>
-                    ) : (
-                      <small style={{ color: "var(--pink-700)", fontWeight: 500 }}>
-                        {v.categories?.length > 0 ? v.categories.slice(0, 2).join(", ") + (v.categories.length > 2 ? ` +${v.categories.length - 2}` : "") : "—"}
-                      </small>
-                    )}
+                    <small style={{ color: "var(--pink-700)", fontWeight: 500 }}>
+                      {v.categories?.length > 0 ? v.categories.slice(0, 2).join(", ") + (v.categories.length > 2 ? ` +${v.categories.length - 2}` : "") : "—"}
+                    </small>
                   </td>
                   <td style={{ minWidth: 110 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -324,40 +289,10 @@ export default function AdminVendors() {
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      {!v.approved ? (
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          style={{
-                            fontSize: 11,
-                            padding: "5px 10px",
-                            background: "#059669",
-                            borderColor: "#059669",
-                            fontWeight: 600,
-                          }}
-                          disabled={actionBusy}
-                          onClick={() => handleQuickApprove(v._id, v.businessName || v.name)}
-                        >
-                          ✓ Approve
-                        </button>
-                      ) : (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            color: "#059669",
-                            fontWeight: 700,
-                            padding: "4px 8px",
-                            background: "#ecfdf5",
-                            borderRadius: 4,
-                          }}
-                        >
-                          ✓ Live
-                        </span>
-                      )}
+                    <div style={{ display: "flex", gap: 6 }}>
                       <button
-                        className="btn btn-ghost"
-                        style={{ fontSize: 11, padding: "5px 10px", border: "1px solid #d1d5db" }}
+                        className="btn btn-primary"
+                        style={{ fontSize: 12, padding: "5px 10px" }}
                         onClick={() => openVendorDetail(v._id)}
                       >
                         Review
@@ -409,18 +344,6 @@ export default function AdminVendors() {
                     <div className="progress-bar-fill" style={{ width: `${vendorDetail.completion?.percentage}%` }} />
                   </div>
                 </div>
-
-                {/* Vehicle Provider Highlight Notice */}
-                {(vendorDetail.vendor.vendorProfile?.isVehicleProvider ||
-                  vendorDetail.vendor.vendorProfile?.vendorType === "Vehicle Provider" ||
-                  String(vendorDetail.vendor.vendorProfile?.vendorType || "").toLowerCase().includes("vehicle")) && (
-                  <div style={{ background: "#f5f3ff", border: "1px solid #ddd6fe", borderRadius: 8, padding: "12px 16px", marginBottom: 18 }}>
-                    <b style={{ color: "#5b21b6", fontSize: 14 }}>🚗 Registered Vehicle Owner & Rental Provider</b>
-                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6d28d9" }}>
-                      This account provides cars, four-wheelers, autos, or buses for wedding rentals and transport. Approving this provider activates their fleet dashboard and enables them to list vehicles on FlipsAura.
-                    </p>
-                  </div>
-                )}
 
                 {/* Modal Navigation Tabs */}
                 <div className="onboard-tabs" style={{ marginBottom: 20 }}>

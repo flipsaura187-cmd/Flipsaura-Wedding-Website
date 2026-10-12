@@ -27,8 +27,6 @@ import EventDetailPage from "@/pages/event-detail";
 import EventRegisterPage from "@/pages/event-register";
 import EventSuccessPage from "@/pages/event-success";
 import EventFailedPage from "@/pages/event-failed";
-import VehiclesPage from "@/pages/vehicles";
-import VehicleDetailPage from "@/pages/vehicle-detail";
 
 // Admin pages
 import AdminLayout from "@/pages/admin/layout";
@@ -43,8 +41,6 @@ import AdminBookings from "@/pages/admin/bookings";
 import AdminBlogs from "@/pages/admin/blogs";
 import AdminBlogCreate from "@/pages/admin/blog-create";
 import AdminUsers from "@/pages/admin/users";
-import AdminVehicles from "@/pages/admin/vehicles";
-import AdminVehicleBookings from "@/pages/admin/vehicle-bookings";
 
 // Vendor pages
 import VendorLayout from "@/pages/vendor/layout";
@@ -52,8 +48,6 @@ import VendorDashboard from "@/pages/vendor/dashboard";
 import VendorOnboardingPage from "@/pages/vendor/onboarding";
 import VendorItems from "@/pages/vendor/items";
 import VendorBookings from "@/pages/vendor/bookings";
-import VendorVehicles from "@/pages/vendor/vehicles";
-import VendorVehicleBookings from "@/pages/vendor/vehicle-bookings";
 
 export default function AppRoutes() {
   return (
@@ -83,10 +77,6 @@ export default function AppRoutes() {
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/terms-of-service" element={<Terms />} />
 
-            {/* Vehicle Rental & Booking routes */}
-            <Route path="/vehicles" element={<VehiclesPage />} />
-            <Route path="/vehicles/:id" element={<VehicleDetailPage />} />
-
             {/* FlipsAura Events Public routes */}
             <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:slug" element={<EventDetailPage />} />
@@ -105,8 +95,6 @@ export default function AppRoutes() {
               <Route path="categories" element={<AdminCategories />} />
               <Route path="items" element={<AdminItems />} />
               <Route path="bookings" element={<AdminBookings />} />
-              <Route path="vehicles" element={<AdminVehicles />} />
-              <Route path="vehicle-bookings" element={<AdminVehicleBookings />} />
               <Route path="blogs" element={<AdminBlogs />} />
               <Route path="blogs/create" element={<AdminBlogCreate />} />
               <Route path="users" element={<AdminUsers />} />
@@ -118,8 +106,6 @@ export default function AppRoutes() {
               <Route path="onboarding" element={<VendorOnboardingPage />} />
               <Route path="items" element={<VendorItems />} />
               <Route path="bookings" element={<VendorBookings />} />
-              <Route path="vehicles" element={<VendorVehicles />} />
-              <Route path="vehicle-bookings" element={<VendorVehicleBookings />} />
             </Route>
           </Routes>
         </main>

@@ -29,13 +29,9 @@ export default function AdminDashboard() {
         <div className="stat"><b>{stats.vendors || 0}</b><span>Vendors</span></div>
         <div className="stat" style={{ background: stats.pendingVendors > 0 ? "#eff6ff" : undefined }}>
           <b style={{ color: stats.pendingVendors > 0 ? "#1d4ed8" : undefined }}>{stats.pendingVendors || 0}</b>
-          <span>Pending Vendors</span>
+          <span>Pending Verifications</span>
         </div>
-        <div className="stat"><b>{stats.vehicles || 0}</b><span>Vehicles Fleet</span></div>
-        <div className="stat" style={{ background: stats.pendingVehicles > 0 ? "#fffbeb" : undefined }}>
-          <b style={{ color: stats.pendingVehicles > 0 ? "#b45309" : undefined }}>{stats.pendingVehicles || 0}</b>
-          <span>Pending Vehicles</span>
-        </div>
+        <div className="stat"><b>{stats.items}</b><span>Active Items</span></div>
         <div className="stat"><b>{stats.bookings}</b><span>Bookings</span></div>
         <div className="stat"><b>₹{stats.revenue?.toLocaleString("en-IN")}</b><span>Revenue</span></div>
       </div>
@@ -48,16 +44,6 @@ export default function AdminDashboard() {
           </p>
           <Link href="/admin/vendors?status=under_review" className="btn btn-primary" style={{ fontSize: 12, padding: "6px 14px" }}>
             Open Review Queue →
-          </Link>
-        </div>
-
-        <div style={{ background: "#fff", padding: 20, borderRadius: 12, border: "1px solid #ebdbe2" }}>
-          <h4 style={{ margin: "0 0 6px" }}>🚗 Vehicle Fleet Approvals</h4>
-          <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 0 14px" }}>
-            {stats.pendingVehicles || 0} vehicle listings awaiting verification & plate check.
-          </p>
-          <Link href="/admin/vehicles" className="btn btn-primary" style={{ fontSize: 12, padding: "6px 14px", background: "#059669", borderColor: "#059669" }}>
-            Approve Vehicles ({stats.pendingVehicles || 0}) →
           </Link>
         </div>
 

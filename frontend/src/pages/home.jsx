@@ -49,11 +49,6 @@ const reviews = [
 
 const defaultCategories = [
   {
-    name: "Hotels",
-    slug: "hotels",
-    image: "/images/categories/hotels.jpg",
-  },
-  {
     name: "Venues",
     slug: "venues",
     image: "/images/categories/venues.jpg",
@@ -64,24 +59,14 @@ const defaultCategories = [
     image: "/images/categories/home-setup.jpg",
   },
   {
-    name: "Transport – Car / Bus / Auto",
-    slug: "transport-car-bus-auto",
-    image: "/images/categories/transport.jpg",
-  },
-  {
-    name: "Pandit / Priest",
-    slug: "pandit-priest",
-    image: "/images/categories/pandit-priest.jpg",
+    name: "Planning & Decor",
+    slug: "planning-decor",
+    image: "/images/categories/planning-decor.jpg",
   },
   {
     name: "Photographer & Videographer",
     slug: "photographer-videographer",
     image: "/images/categories/photography.jpg",
-  },
-  {
-    name: "Food / Catering",
-    slug: "food-catering",
-    image: "/images/categories/food-catering.jpg",
   },
   {
     name: "Makeup & Grooming",
@@ -99,9 +84,24 @@ const defaultCategories = [
     image: "/images/categories/music-dance.jpg",
   },
   {
-    name: "Orchestra & Live Band",
-    slug: "orchestra-live-band",
-    image: "/images/categories/orchestra.jpg",
+    name: "Pandit / Priest",
+    slug: "pandit-priest",
+    image: "/images/categories/pandit-priest.jpg",
+  },
+  {
+    name: "Food / Catering",
+    slug: "food-catering",
+    image: "/images/categories/food-catering.jpg",
+  },
+  {
+    name: "Invites & Gifts",
+    slug: "invites-gifts",
+    image: "/images/categories/invites-gifts.jpg",
+  },
+  {
+    name: "Transport – Car / Bus / Auto",
+    slug: "transport-car-bus-auto",
+    image: "/images/categories/transport.jpg",
   },
   {
     name: "Virtual Planning",
@@ -109,21 +109,21 @@ const defaultCategories = [
     image: "/images/categories/virtual-planning.jpg",
   },
   {
-    name: "Planning & Decor",
-    slug: "planning-decor",
-    image: "/images/categories/planning-decor.jpg",
+    name: "Hotels",
+    slug: "hotels",
+    image: "/images/categories/hotels.jpg",
   },
   {
-    name: "Invites & Gifts",
-    slug: "invites-gifts",
-    image: "/images/categories/invites-gifts.jpg",
+    name: "Orchestra & Live Band",
+    slug: "orchestra-live-band",
+    image: "/images/categories/orchestra.jpg",
   },
 ];
 
 function getCategoryImageUrl(image) {
   if (!image) return "/images/categories/home-setup.jpg";
   if (image.startsWith("/images/")) {
-    const version = import.meta.env.DEV ? Date.now() : "4";
+    const version = import.meta.env.DEV ? Date.now() : "3";
     return `${image}?v=${version}`;
   }
   return image;

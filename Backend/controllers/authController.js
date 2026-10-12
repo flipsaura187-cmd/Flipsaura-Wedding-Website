@@ -139,11 +139,6 @@ export async function register(req, res) {
             businessName: businessName?.trim() || "",
             ownerName: (ownerName || name).trim(),
             vendorType: vendorType || "Individual",
-            isVehicleProvider: Boolean(
-              vendorType === "Vehicle Provider" ||
-              vendorType === "Vehicle Owner" ||
-              String(vendorType).toLowerCase().includes("vehicle")
-            ),
             address: address?.trim() || "",
             city: city?.trim() || "",
             state: state?.trim() || "",

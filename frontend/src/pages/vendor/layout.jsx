@@ -54,8 +54,6 @@ export default function VendorLayout() {
     { href: "/vendor/onboarding?tab=portfolio", label: "Portfolio", icon: "🎨", locked: false },
     { href: "/vendor/items", label: "My Services / Items", icon: "📦", locked: !isApproved },
     { href: "/vendor/bookings", label: "Bookings", icon: "📅", locked: !isApproved },
-    { href: "/vendor/vehicles", label: "My Fleet & Vehicles", icon: "🚗", locked: !isApproved },
-    { href: "/vendor/vehicle-bookings", label: "Vehicle Bookings", icon: "📋", locked: !isApproved },
   ];
 
   return (

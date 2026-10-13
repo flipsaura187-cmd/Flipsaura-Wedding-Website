@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-
+import { useState, useRef } from "react";
 import api from "@/api/axios";
 import axios from "axios";
+
 const CATEGORIES = [
   "Wedding Planning",
   "Wedding Decoration",
@@ -43,11 +43,10 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("editor"); // "editor" or "preview"
+  const [activeTab, setActiveTab] = useState("editor");
   const [customSlug, setCustomSlug] = useState(Boolean(initialData?.slug));
   const textareaRef = useRef(null);
 
-  // Auto-generate slug when title changes, unless admin explicitly entered a custom slug
   const handleTitleChange = (e) => {
     const newTitle = e.target.value;
     setForm((prev) => ({
@@ -63,7 +62,6 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Helper to insert formatted text at cursor in textarea
   const insertText = (before, after = "", placeholder = "") => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -107,7 +105,6 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
     );
     if (!input) return;
 
-    // Check YouTube
     const ytMatch = input.match(
       /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i
     );
@@ -120,7 +117,6 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
       return;
     }
 
-    // Check Vimeo
     const vimeoMatch = input.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)/i);
     if (vimeoMatch && vimeoMatch[3]) {
       const embedUrl = `https://player.vimeo.com/video/${vimeoMatch[3]}`;
@@ -130,13 +126,11 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
       return;
     }
 
-    // Fallback: direct HTML5 video
     insertText(
       `\n<div class="video-player" style="margin:24px 0;">\n  <video src="${input}" controls style="max-width:100%;border-radius:12px;"></video>\n</div>\n`
     );
   };
 
-  // Upload Cover Image directly to Cloudinary
   const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -145,7 +139,6 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
     setError("");
 
     try {
-      // 1. Fetch signed parameters from our server
       const { data: sigData } = await api.post("/api/upload", {
         folder: "flipsaura/blogs",
       });
@@ -155,7 +148,6 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
 
       const { signature, timestamp, apiKey, cloudName } = sigData.data;
 
-      // 2. Post to Cloudinary
       const formData = new FormData();
       formData.append("file", file);
       formData.append("api_key", apiKey);
@@ -211,9 +203,8 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
     const method = isEdit ? "PUT" : "POST";
 
     try {
-      const { data } = method === "PUT"
-        ? await api.put(url, payload)
-        : await api.post(url, payload);
+      const { data } =
+        method === "PUT" ? await api.put(url, payload) : await api.post(url, payload);
 
       if (!data.ok) {
         throw new Error(data.error || "Failed to save blog post");
@@ -227,70 +218,71 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
     }
   };
 
+  const inputClass =
+    "w-full px-3.5 py-2.5 rounded-xl border border-brand-200 text-sm text-ink placeholder:text-muted/60 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500";
+  const labelClass = "block text-xs font-semibold text-ink/80 mb-1.5";
+
   return (
-    <div className="blog-editor-card" style={{ background: "#fff", borderRadius: 16, padding: "24px", maxWidth: 960, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, borderBottom: "1px solid #eee", paddingBottom: 16 }}>
+    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-brand-100 shadow-sm space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-100 pb-4">
         <div>
-          <h2 style={{ margin: 0, fontSize: 22, color: "var(--wine, #8B1E3F)" }}>
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink">
             {initialData ? "Edit Wedding Article" : "Create New Wedding Article"}
           </h2>
-          <p style={{ margin: "4px 0 0", fontSize: 13, color: "#666" }}>
+          <p className="text-xs text-muted mt-0.5">
             Publish inspiring guides, vendor stories, and trends for FlipsAura couples.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => setActiveTab(activeTab === "editor" ? "preview" : "editor")}
-            style={{ fontSize: 13, padding: "6px 12px", border: "1px solid #ddd" }}
-          >
-            {activeTab === "editor" ? "👁️ Live Preview" : "✏️ Back to Editor"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab(activeTab === "editor" ? "preview" : "editor")}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-brand-200 text-ink hover:bg-brand-50 text-xs font-semibold transition"
+        >
+          {activeTab === "editor" ? "👁️ Live Preview" : "✏️ Back to Editor"}
+        </button>
       </div>
 
       {error && (
-        <div style={{ padding: "12px 16px", borderRadius: 8, background: "#FFEBEE", color: "#C62828", marginBottom: 20, fontSize: 14 }}>
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl text-sm font-medium">
           {error}
         </div>
       )}
 
       {activeTab === "preview" ? (
-        <div style={{ background: "#FAF8F5", borderRadius: 12, padding: 32, border: "1px solid #E8DFD8" }}>
-          <span style={{ display: "inline-block", background: "var(--wine, #8B1E3F)", color: "#fff", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
+        <div className="bg-surface rounded-2xl p-6 sm:p-8 border border-brand-100 space-y-4">
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-brand-600 text-white">
             {form.category}
           </span>
-          <h1 style={{ fontSize: 28, color: "#222", margin: "0 0 12px" }}>{form.title || "Untitled Article"}</h1>
-          <p style={{ fontSize: 13, color: "#777", marginBottom: 20 }}>
-            By {form.author} • Status: <strong style={{ textTransform: "capitalize", color: form.status === "published" ? "#2E7D32" : "#E65100" }}>{form.status}</strong>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">{form.title || "Untitled Article"}</h1>
+          <p className="text-xs text-muted">
+            By {form.author} • Status:{" "}
+            <strong className="capitalize text-ink">{form.status}</strong>
           </p>
 
           {form.coverImage && (
             <img
               src={form.coverImage}
               alt={form.title}
-              style={{ width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginBottom: 24 }}
+              className="w-full max-h-96 object-cover rounded-2xl border border-brand-100"
             />
           )}
 
           {form.excerpt && (
-            <p style={{ fontSize: 16, fontStyle: "italic", color: "#555", borderLeft: "4px solid var(--wine, #8B1E3F)", paddingLeft: 16, margin: "20px 0" }}>
+            <p className="text-base italic text-ink/80 border-l-4 border-l-brand-600 pl-4 py-1">
               {form.excerpt}
             </p>
           )}
 
           <div
-            className="blog-content-body"
+            className="prose max-w-none text-ink/80 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: form.content || "<p><em>No content written yet.</em></p>" }}
-            style={{ lineHeight: 1.8, fontSize: 16, color: "#333" }}
           />
 
           {form.tags && (
-            <div style={{ marginTop: 32, paddingTop: 16, borderTop: "1px solid #ddd", display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className="pt-4 border-t border-brand-100 flex gap-2 flex-wrap">
               {form.tags.split(",").map((t, idx) => (
-                <span key={idx} style={{ background: "#EDE7F6", color: "#4A148C", padding: "4px 10px", borderRadius: 16, fontSize: 12 }}>
+                <span key={idx} className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full text-xs font-medium">
                   #{t.trim()}
                 </span>
               ))}
@@ -298,13 +290,11 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
           )}
         </div>
       ) : (
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 16 }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Title */}
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
-                Article Title *
-              </label>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Article Title *</label>
               <input
                 type="text"
                 required
@@ -312,16 +302,14 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
                 value={form.title}
                 onChange={handleTitleChange}
                 placeholder="e.g. 10 Breathtaking Wedding Mandap Ideas for 2026"
-                style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #ccc", fontSize: 15 }}
+                className={inputClass}
               />
             </div>
 
             {/* Slug */}
             <div>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13, color: "#555" }}>
-                URL Slug (/blogs/slug)
-              </label>
-              <div style={{ display: "flex", gap: 6 }}>
+              <label className={labelClass}>URL Slug (/blogs/slug)</label>
+              <div className="flex gap-2">
                 <input
                   type="text"
                   required
@@ -329,7 +317,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
                   value={form.slug}
                   onChange={handleChange}
                   placeholder="auto-generated-from-title"
-                  style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", fontSize: 13, background: "#fafafa" }}
+                  className={inputClass}
                 />
                 <button
                   type="button"
@@ -338,7 +326,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
                     setForm((p) => ({ ...p, slug: s }));
                   }}
                   title="Regenerate slug from title"
-                  style={{ padding: "0 12px", borderRadius: 8, border: "1px solid #ddd", background: "#f0f0f0", cursor: "pointer", fontSize: 12 }}
+                  className="px-3 rounded-xl border border-brand-200 bg-surface hover:bg-brand-50 text-xs"
                 >
                   🔄
                 </button>
@@ -347,14 +335,12 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
 
             {/* Category */}
             <div>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13, color: "#555" }}>
-                Category
-              </label>
+              <label className={labelClass}>Category</label>
               <select
                 name="category"
                 value={form.category}
                 onChange={handleChange}
-                style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14 }}
+                className={inputClass}
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -366,29 +352,25 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
 
             {/* Author */}
             <div>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13, color: "#555" }}>
-                Author
-              </label>
+              <label className={labelClass}>Author</label>
               <input
                 type="text"
                 name="author"
                 value={form.author}
                 onChange={handleChange}
                 placeholder="FlipsAura Editorial"
-                style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14 }}
+                className={inputClass}
               />
             </div>
 
             {/* Status */}
             <div>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13, color: "#555" }}>
-                Status
-              </label>
+              <label className={labelClass}>Status</label>
               <select
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14, fontWeight: 600 }}
+                className={inputClass}
               >
                 <option value="draft">Draft (Private)</option>
                 <option value="published">Published (Visible to Customers)</option>
@@ -396,97 +378,67 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
             </div>
           </div>
 
-          {/* Cover Image Upload + Preview */}
-          <div style={{ marginBottom: 20, padding: 16, background: "#FDFBF9", borderRadius: 10, border: "1px dashed #D4AF37" }}>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-              Cover Image (Upload via Cloudinary or enter URL)
-            </label>
-            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+          {/* Cover Image Upload */}
+          <div className="bg-brand-50/40 p-5 rounded-2xl border border-dashed border-brand-200 space-y-3">
+            <label className={labelClass}>Cover Image</label>
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 name="coverImage"
                 value={form.coverImage}
                 onChange={handleChange}
                 placeholder="https://res.cloudinary.com/... or paste image link"
-                style={{ flex: 1, minWidth: 240, padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14 }}
+                className={inputClass}
               />
-              <label
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "8px 16px",
-                  borderRadius: 8,
-                  background: "#8B1E3F",
-                  color: "#fff",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: uploading ? "not-allowed" : "pointer",
-                }}
-              >
+              <label className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold cursor-pointer whitespace-nowrap transition">
                 <span>{uploading ? "Uploading…" : "📁 Upload Image"}</span>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleCoverUpload}
                   disabled={uploading}
-                  style={{ display: "none" }}
+                  className="hidden"
                 />
               </label>
             </div>
 
             {form.coverImage && (
-              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12 }}>
+              <div className="flex items-center gap-3 pt-1">
                 <img
                   src={form.coverImage}
                   alt="Cover Preview"
-                  style={{ width: 120, height: 75, objectFit: "cover", borderRadius: 8, border: "1px solid #ddd" }}
+                  className="w-24 h-16 object-cover rounded-xl border border-brand-200"
                 />
-                <span style={{ fontSize: 12, color: "#666" }}>Preview: Cover will display on blog card & detail hero.</span>
+                <span className="text-xs text-muted">Preview: Cover will display on blog card & detail hero.</span>
               </div>
             )}
           </div>
 
           {/* Excerpt */}
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
-              Short Excerpt (Displayed on blog cards)
-            </label>
+          <div>
+            <label className={labelClass}>Short Excerpt (Displayed on blog cards)</label>
             <textarea
               name="excerpt"
               rows={2}
               value={form.excerpt}
               onChange={handleChange}
-              placeholder="A brief 1-2 sentence preview for search results and social cards..."
-              style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14 }}
+              placeholder="A brief 1-2 sentence preview for search results and cards..."
+              className={inputClass}
             />
           </div>
 
           {/* Rich Content Editor Toolbar */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <label style={{ fontWeight: 600, fontSize: 14 }}>
-                Article Content (Supports Rich HTML, Headings, Lists, Links, Images & Video) *
-              </label>
-            </div>
+          <div className="space-y-1.5">
+            <label className={labelClass}>
+              Article Content (Supports Rich HTML, Headings, Lists, Links, Images & Video) *
+            </label>
 
             {/* Quick Action Toolbar */}
-            <div
-              style={{
-                display: "flex",
-                gap: 6,
-                flexWrap: "wrap",
-                padding: "8px 12px",
-                background: "#f7f7f7",
-                borderRadius: "8px 8px 0 0",
-                border: "1px solid #ccc",
-                borderBottom: "none",
-              }}
-            >
+            <div className="flex flex-wrap gap-1.5 p-2.5 bg-surface rounded-t-2xl border border-brand-200 border-b-0">
               <button
                 type="button"
                 onClick={() => insertText("<h2>", "</h2>", "Subheading")}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12, fontWeight: "bold" }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs font-bold hover:bg-brand-50"
                 title="Heading 2"
               >
                 H2
@@ -494,7 +446,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={() => insertText("<h3>", "</h3>", "Section Title")}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12, fontWeight: "bold" }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs font-bold hover:bg-brand-50"
                 title="Heading 3"
               >
                 H3
@@ -502,7 +454,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={() => insertText("<p>", "</p>", "Write paragraph text here...")}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12 }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs hover:bg-brand-50"
                 title="Paragraph"
               >
                 ¶ Paragraph
@@ -510,7 +462,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={() => insertText("<strong>", "</strong>", "bold text")}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12, fontWeight: "bold" }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs font-bold hover:bg-brand-50"
                 title="Bold"
               >
                 B
@@ -518,7 +470,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={() => insertText("<em>", "</em>", "italic text")}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12, fontStyle: "italic" }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs italic hover:bg-brand-50"
                 title="Italic"
               >
                 I
@@ -526,7 +478,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={() => insertText("<ul>\n  <li>", "</li>\n  <li>Item 2</li>\n</ul>", "Item 1")}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12 }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs hover:bg-brand-50"
                 title="Bullet List"
               >
                 • List
@@ -534,7 +486,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={() => insertText("<ol>\n  <li>", "</li>\n  <li>Step 2</li>\n</ol>", "Step 1")}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12 }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs hover:bg-brand-50"
                 title="Numbered List"
               >
                 1. List
@@ -542,7 +494,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={() => insertText("<blockquote style=\"border-left:4px solid #8B1E3F;padding-left:14px;color:#555;margin:16px 0;\">", "</blockquote>", "Inspiring wedding quote...")}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12 }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs hover:bg-brand-50"
                 title="Blockquote"
               >
                 “ Quote
@@ -550,7 +502,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={handleInsertLink}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12 }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs hover:bg-brand-50"
                 title="Insert Link"
               >
                 🔗 Link
@@ -558,7 +510,7 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={handleInsertImage}
-                style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ddd", background: "#fff", fontSize: 12 }}
+                className="px-2 py-1 rounded bg-white border border-brand-200 text-xs hover:bg-brand-50"
                 title="Insert Image"
               >
                 🖼️ Image
@@ -566,8 +518,8 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
               <button
                 type="button"
                 onClick={handleInsertVideo}
-                style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #D4AF37", background: "#FFF8E7", color: "#855F10", fontSize: 12, fontWeight: 600 }}
-                title="Embed Video (YouTube, Vimeo, MP4)"
+                className="px-2.5 py-1 rounded bg-gold/15 border border-gold/40 text-gold-dark text-xs font-semibold hover:bg-gold/25"
+                title="Embed Video"
               >
                 🎬 Video Embed
               </button>
@@ -576,47 +528,36 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
             <textarea
               ref={textareaRef}
               name="content"
-              rows={14}
+              rows={12}
               required
               value={form.content}
               onChange={handleChange}
               placeholder="<p>Begin writing your inspiring wedding article...</p>"
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "0 0 8px 8px",
-                border: "1px solid #ccc",
-                fontFamily: "monospace, sans-serif",
-                fontSize: 14,
-                lineHeight: 1.6,
-              }}
+              className="w-full p-4 rounded-b-2xl border border-brand-200 font-mono text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
           </div>
 
           {/* Tags */}
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13, color: "#555" }}>
-              Tags (Comma separated)
-            </label>
+          <div>
+            <label className={labelClass}>Tags (Comma separated)</label>
             <input
               type="text"
               name="tags"
               value={form.tags}
               onChange={handleChange}
               placeholder="mehndi, mandap, decor, bridal-wear, photography"
-              style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14 }}
+              className={inputClass}
             />
           </div>
 
           {/* Actions */}
-          <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", borderTop: "1px solid #eee", paddingTop: 20 }}>
+          <div className="flex justify-end gap-3 pt-4 border-t border-brand-100">
             {onCancel && (
               <button
                 type="button"
-                className="btn btn-ghost"
                 onClick={onCancel}
                 disabled={loading}
-                style={{ padding: "10px 20px", borderRadius: 8 }}
+                className="px-5 py-2.5 rounded-xl border border-brand-200 text-ink hover:bg-brand-50 text-sm font-semibold transition"
               >
                 Cancel
               </button>
@@ -624,20 +565,18 @@ export default function BlogForm({ initialData, onSuccess, onCancel }) {
 
             <button
               type="button"
-              className="btn btn-ghost"
               onClick={() => handleSubmit("draft")}
               disabled={loading}
-              style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #ccc" }}
+              className="px-5 py-2.5 rounded-xl border border-brand-200 text-ink hover:bg-brand-50 text-sm font-semibold transition disabled:opacity-50"
             >
               {loading ? "Saving…" : "Save as Draft"}
             </button>
 
             <button
               type="button"
-              className="btn btn-primary"
               onClick={() => handleSubmit("published")}
               disabled={loading}
-              style={{ padding: "10px 24px", borderRadius: 8, background: "var(--wine, #8B1E3F)", color: "#fff", fontWeight: 600 }}
+              className="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold shadow-sm transition disabled:opacity-50"
             >
               {loading ? "Publishing…" : "Publish Live 🚀"}
             </button>

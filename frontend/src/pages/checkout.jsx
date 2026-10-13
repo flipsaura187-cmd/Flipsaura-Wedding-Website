@@ -99,43 +99,170 @@ export default function CheckoutPageCom() {
     }
   };
 
-  if (!itemId) return <div className="container empty">Pick an item first.</div>;
-  if (!item) return <div className="container loading">Loading…</div>;
+  if (!itemId) {
+    return (
+      <div className="max-w-container mx-auto px-4 py-20 text-center text-muted">
+        Pick an item first before checking out.
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div className="max-w-container mx-auto px-4 py-20 text-center text-brand-600 font-semibold animate-pulse">
+        Loading checkout details…
+      </div>
+    );
+  }
 
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
-      <section className="section">
-        <div className="container checkout">
-          <div>
-            <h1>Checkout</h1>
-            <p style={{ color: "var(--muted)" }}>Fill in your details to confirm the booking.</p>
-            {error && <div className="error">{error}</div>}
-            <form onSubmit={submit} style={{ marginTop: 20 }}>
-              <div className="field"><label>Full name</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="field"><label>Email</label><input type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
-              <div className="field"><label>Phone</label><input required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
-              <div className="field"><label>Event date</label><input type="date" value={form.eventDate} onChange={e => setForm({ ...form, eventDate: e.target.value })} /></div>
-              <div className="field"><label>Address</label><textarea rows={3} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
-              <div className="field"><label>Notes (optional)</label><textarea rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
-              <button className="btn btn-primary btn-block" disabled={busy}>{busy ? "Processing…" : `Pay ₹${item.price.toLocaleString("en-IN")} with Razorpay`}</button>
-            </form>
-          </div>
-          <aside className="summary">
-            <h3>Order summary</h3>
-            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-              {item.images?.[0] && <img src={item.images[0]} alt="" style={{ width: 80, height: 80, borderRadius: 10, objectFit: "cover" }} />}
-              <div>
-                <b>{item.title}</b>
-                <div className="card-meta">{item.city}</div>
-              </div>
+      <section className="py-12 md:py-16 bg-white min-h-[80vh]">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Form */}
+            <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-2xl border border-brand-100 shadow-xl shadow-brand-500/5">
+              <h1 className="font-serif text-3xl font-bold text-ink mb-1">Checkout</h1>
+              <p className="text-muted text-sm mb-6">
+                Fill in your details to confirm your wedding service booking.
+              </p>
+
+              {error && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl font-medium mb-6">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={submit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                    Full Name *
+                  </label>
+                  <input
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                      Phone *
+                    </label>
+                    <input
+                      required
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                    Event Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={form.eventDate}
+                    onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                    Venue / Event Address *
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    placeholder="Any special requests or instructions for the vendor"
+                    className="w-full px-4 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-base bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-lg shadow-brand-500/25 disabled:opacity-50 transition-all cursor-pointer mt-4"
+                >
+                  {busy ? "Processing Payment…" : `Pay ₹${item.price.toLocaleString("en-IN")} with Razorpay`}
+                </button>
+              </form>
             </div>
-            <div className="row"><span>Item price</span><b>₹{item.price.toLocaleString("en-IN")}</b></div>
-            <div className="row"><span>Taxes & fees</span><b>Included</b></div>
-            <div className="row total"><span>Total</span><span>₹{item.price.toLocaleString("en-IN")}</span></div>
-          </aside>
+
+            {/* Order summary */}
+            <aside className="lg:col-span-5 bg-brand-50/70 p-6 sm:p-8 rounded-2xl border border-brand-100 space-y-5 lg:sticky lg:top-24">
+              <h3 className="font-serif text-xl font-bold text-ink">Order Summary</h3>
+
+              <div className="flex gap-3.5 items-center pb-4 border-b border-brand-100">
+                {item.images?.[0] && (
+                  <img
+                    src={item.images[0]}
+                    alt=""
+                    className="w-20 h-20 rounded-xl object-cover border border-brand-200 shrink-0"
+                  />
+                )}
+                <div>
+                  <h4 className="font-bold text-ink text-sm line-clamp-2">{item.title}</h4>
+                  <div className="text-xs text-muted mt-1">📍 {item.city || "India"}</div>
+                </div>
+              </div>
+
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between text-muted">
+                  <span>Item price</span>
+                  <span className="font-semibold text-ink">₹{item.price.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="flex justify-between text-muted">
+                  <span>Taxes & fees</span>
+                  <span className="font-semibold text-emerald-600">Included</span>
+                </div>
+                <div className="flex justify-between text-base font-bold text-ink pt-3 border-t border-brand-200">
+                  <span>Total Amount</span>
+                  <span className="text-brand-700">₹{item.price.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+
+              <div className="text-xs text-muted pt-2 border-t border-brand-100 text-center">
+                🔒 256-bit SSL encrypted secure Razorpay payment
+              </div>
+            </aside>
+          </div>
         </div>
       </section>
     </>
   );
 }
+

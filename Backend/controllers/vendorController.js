@@ -2,6 +2,7 @@ import { dbConnect } from "../lib/db.js";
 import User from "../models/User.js";
 import Category from "../models/Category.js";
 import { calculateVendorCompletion } from "../lib/vendorVerification.js";
+import { syncVendorServicesToItems } from "../lib/vendorSync.js";
 
 /**
  * Get the logged-in vendor's full profile, KYC documents, bank details, portfolio, and completion metrics.
@@ -11,6 +12,7 @@ export async function getVendorProfile(req, res) {
   const user = await User.findById(req.user.id)
     .populate("vendorProfile.categories")
     .populate("vendorProfile.servicesList.category")
+    .populate("vendorProfile.facilities.category")
     .populate("vendorProfile.portfolio.serviceCategory");
 
   if (!user) {
@@ -68,6 +70,7 @@ export async function updateVendorProfile(req, res) {
     additionalServices,
     categories,
     servicesList,
+    facilities,
     phone,
   } = req.body;
 
@@ -94,9 +97,56 @@ export async function updateVendorProfile(req, res) {
   if (experience !== undefined) user.vendorProfile.experience = String(experience).trim();
   if (Array.isArray(additionalServices)) user.vendorProfile.additionalServices = additionalServices;
   if (Array.isArray(categories)) user.vendorProfile.categories = categories;
-  if (Array.isArray(servicesList)) user.vendorProfile.servicesList = servicesList;
+  if (Array.isArray(servicesList)) {
+    user.vendorProfile.servicesList = servicesList
+      .filter((s) => s && (s.category || s.categoryName))
+      .map((s) => ({
+        category: s.category || null,
+        categoryName: s.categoryName ? s.categoryName.trim() : "",
+        serviceName: s.serviceName ? s.serviceName.trim() : (s.categoryName || ""),
+        description: (s.description || s.serviceDescription || "").trim(),
+        startingPrice: Number(s.startingPrice) || 0,
+        priceRange: (s.priceRange || "").trim(),
+        location: (s.location || s.serviceLocation || "").trim(),
+        serviceLocation: (s.serviceLocation || s.location || "").trim(),
+        experience: String(s.experience || "").trim(),
+        additionalServices: Array.isArray(s.additionalServices)
+          ? s.additionalServices.map((x) => String(x).trim()).filter(Boolean)
+          : typeof s.additionalServices === "string"
+          ? s.additionalServices.split(",").map((x) => x.trim()).filter(Boolean)
+          : [],
+      }));
+
+    // For backwards compatibility, sync primary category values to root
+    if (user.vendorProfile.servicesList.length > 0) {
+      const primaryS = user.vendorProfile.servicesList[0];
+      if (!user.vendorProfile.startingPrice) user.vendorProfile.startingPrice = primaryS.startingPrice;
+      if (!user.vendorProfile.priceRange) user.vendorProfile.priceRange = primaryS.priceRange;
+      if (!user.vendorProfile.serviceLocation) user.vendorProfile.serviceLocation = primaryS.serviceLocation;
+      if (!user.vendorProfile.serviceDescription) user.vendorProfile.serviceDescription = primaryS.description;
+      if (!user.vendorProfile.experience) user.vendorProfile.experience = primaryS.experience;
+    }
+  }
+
+  if (Array.isArray(facilities)) {
+    user.vendorProfile.facilities = facilities
+      .filter((f) => f && f.name && f.name.trim())
+      .map((f) => ({
+        category: f.category || null,
+        categoryName: f.categoryName ? f.categoryName.trim() : "",
+        group: f.group && f.group.trim() ? f.group.trim() : "Popular Amenities",
+        name: f.name.trim(),
+        icon: f.icon || "",
+        highlight: Boolean(f.highlight),
+      }));
+  }
 
   if (phone !== undefined) user.phone = phone.trim();
+
+  // If user was a regular customer, promote to vendor upon completing vendor profile
+  if (user.role === "user") {
+    user.role = "vendor";
+  }
 
   // Check if previously registered or profile incomplete
   if (user.vendorProfile.verificationStatus === "registered") {
@@ -105,8 +155,19 @@ export async function updateVendorProfile(req, res) {
 
   await user.save();
 
+  // If vendor is approved, immediately sync services & facilities to public Items
+  if (user.vendorProfile?.approved) {
+    try {
+      await syncVendorServicesToItems(user._id);
+    } catch (syncErr) {
+      console.error("Auto-sync vendor items on update error:", syncErr);
+    }
+  }
+
   // Re-populate for response
   await user.populate("vendorProfile.categories");
+  await user.populate("vendorProfile.servicesList.category");
+  await user.populate("vendorProfile.facilities.category");
 
   const completion = calculateVendorCompletion(user);
 

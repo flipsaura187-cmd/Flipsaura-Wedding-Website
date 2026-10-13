@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Link from "@/compat/Link";
+import { useRouter } from "@/compat/navigation";
+import { useAuth } from "@/context/AuthContext";
 import ItemCard from "@/components/ItemCard";
 import HeroSlideshow from "@/components/Hero";
 import EventNotificationBanner from "@/components/EventNotificationBanner";
@@ -7,28 +9,28 @@ import api from "@/api/axios";
 
 const indianWeddingImages = [
   {
-    url: "https://images.unsplash.com/photo-1611106211090-8f3c79eb8552?q=80&w=687&auto=format&fit=crop",
-    alt: "Indian bride in red lehenga",
+    url: "/images/categories/venues.jpg",
+    alt: "Grand Wedding Venue",
   },
   {
-    url: "https://images.unsplash.com/photo-1597157639073-69284dc0fdaf?q=80&w=1174&auto=format&fit=crop",
-    alt: "Indian groom and baraat",
+    url: "/images/hero/slide-2.jpg",
+    alt: "Indian groom and wedding celebrations",
   },
   {
-    url: "https://images.unsplash.com/photo-1635919254233-38ea27301900?q=80&w=1170&auto=format&fit=crop",
-    alt: "Mehndi ceremony",
+    url: "/images/categories/mehndi.jpg",
+    alt: "Traditional Mehndi ceremony",
   },
   {
-    url: "https://images.unsplash.com/photo-1735052712489-f45220126a0c?q=80&w=680&auto=format&fit=crop",
-    alt: "Decorated mandap",
+    url: "/images/categories/planning-decor.jpg",
+    alt: "Decorated mandap and stage",
   },
   {
-    url: "https://images.unsplash.com/photo-1587271339318-2e78fdf79586?q=80&w=1169&auto=format&fit=crop",
-    alt: "Wedding ceremony",
+    url: "/images/categories/photography.jpg",
+    alt: "Cinematic wedding photography",
   },
   {
-    url: "https://images.unsplash.com/photo-1601121141503-c4796ffc4b52?q=80&w=1170&auto=format&fit=crop",
-    alt: "Indian wedding food",
+    url: "/images/categories/food-catering.jpg",
+    alt: "Indian wedding food & catering feast",
   },
 ];
 
@@ -49,6 +51,11 @@ const reviews = [
 
 const defaultCategories = [
   {
+    name: "Hotels",
+    slug: "hotels",
+    image: "/images/categories/hotels.jpg",
+  },
+  {
     name: "Venues",
     slug: "venues",
     image: "/images/categories/venues.jpg",
@@ -59,9 +66,19 @@ const defaultCategories = [
     image: "/images/categories/home-setup.jpg",
   },
   {
-    name: "Planning & Decor",
-    slug: "planning-decor",
-    image: "/images/categories/planning-decor.jpg",
+    name: "Transport – Car / Bus / Auto",
+    slug: "transport-car-bus-auto",
+    image: "/images/categories/transport.jpg",
+  },
+  {
+    name: "Pandit / Priest",
+    slug: "pandit-priest",
+    image: "/images/categories/pandit-priest.jpg",
+  },
+  {
+    name: "Food / Catering",
+    slug: "food-catering",
+    image: "/images/categories/food-catering.jpg",
   },
   {
     name: "Photographer & Videographer",
@@ -84,24 +101,9 @@ const defaultCategories = [
     image: "/images/categories/music-dance.jpg",
   },
   {
-    name: "Pandit / Priest",
-    slug: "pandit-priest",
-    image: "/images/categories/pandit-priest.jpg",
-  },
-  {
-    name: "Food / Catering",
-    slug: "food-catering",
-    image: "/images/categories/food-catering.jpg",
-  },
-  {
-    name: "Invites & Gifts",
-    slug: "invites-gifts",
-    image: "/images/categories/invites-gifts.jpg",
-  },
-  {
-    name: "Transport – Car / Bus / Auto",
-    slug: "transport-car-bus-auto",
-    image: "/images/categories/transport.jpg",
+    name: "Orchestra & Live Band",
+    slug: "orchestra-live-band",
+    image: "/images/categories/orchestra.jpg",
   },
   {
     name: "Virtual Planning",
@@ -109,33 +111,41 @@ const defaultCategories = [
     image: "/images/categories/virtual-planning.jpg",
   },
   {
-    name: "Hotels",
-    slug: "hotels",
-    image: "/images/categories/hotels.jpg",
+    name: "Planning & Decor",
+    slug: "planning-decor",
+    image: "/images/categories/planning-decor.jpg",
   },
   {
-    name: "Orchestra & Live Band",
-    slug: "orchestra-live-band",
-    image: "/images/categories/orchestra.jpg",
+    name: "Invites & Gifts",
+    slug: "invites-gifts",
+    image: "/images/categories/invites-gifts.jpg",
   },
 ];
 
 function getCategoryImageUrl(image) {
   if (!image) return "/images/categories/home-setup.jpg";
-  if (image.startsWith("/images/")) {
-    const version = import.meta.env.DEV ? Date.now() : "3";
-    return `${image}?v=${version}`;
-  }
   return image;
 }
 
 export default function HomePage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  const isVendor = !authLoading && user && String(user.role || "").toLowerCase() === "vendor";
+
+  useEffect(() => {
+    if (isVendor) {
+      router.replace("/vendor/dashboard");
+    }
+  }, [isVendor, router]);
+
   const [data, setData] = useState({
     categories: defaultCategories,
     featured: [],
   });
 
   useEffect(() => {
+    if (isVendor) return;
     let isMounted = true;
 
     const fetchHomePageData = async () => {
@@ -170,10 +180,45 @@ export default function HomePage() {
     };
   }, []);
 
-  const categoriesToRender =
+  const orderedSlugs = [
+    "hotels",                     // 1. Hotel
+    "venues",                     // 2. Venue
+    "home-setup-pandal-tent-dj",  // 3. Home setup
+    "transport-car-bus-auto",     // 4. Cars
+    "pandit-priest",              // 5. Pandit ji ka photo
+    "food-catering",              // 6. Food catering
+    "photographer-videographer",  // Photography
+    "makeup-grooming",            // Makeup
+    "mehndi-services",            // Mehndi
+    "music-dance",                // Music & Dance
+    "orchestra-live-band",        // Orchestra
+    "virtual-planning",           // Virtual Planning
+    "planning-decor",             // Planning decor neeche
+    "invites-gifts",              // Invite gift sbse neeche
+  ];
+
+  const rawCategories =
     data.categories && data.categories.length > 0
       ? data.categories
       : defaultCategories;
+
+  const categoriesToRender = [...rawCategories].sort((a, b) => {
+    const idxA = orderedSlugs.indexOf(a.slug);
+    const idxB = orderedSlugs.indexOf(b.slug);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return 0;
+  });
+
+  if (isVendor) {
+    return (
+      <div className="min-h-[75vh] flex flex-col items-center justify-center p-4 bg-surface">
+        <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mb-4" />
+        <p className="text-muted text-base font-medium">Opening Vendor Portal...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -184,21 +229,26 @@ export default function HomePage() {
       <HeroSlideshow />
 
       {/* Categories Section */}
-      <section className="section categories-section">
-        <div className="container-fluid">
-          <div className="section-head">
-            <h2>Shop by category</h2>
+      <section className="py-16 md:py-20 bg-white w-full">
+        <div className="w-full px-4 sm:px-6 lg:px-10">
+          <div className="text-center max-w-xl mx-auto mb-10">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-1.5 block">
+              Curated Services
+            </span>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-ink">
+              Shop by category
+            </h2>
           </div>
 
-          <div className="grid-categories">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 sm:gap-5 md:gap-6">
             {categoriesToRender.map((category) => (
               <Link
                 key={category.slug}
                 href={`/categories/${category.slug}`}
                 to={`/categories/${category.slug}`}
-                className="cat-card"
+                className="group relative rounded-2xl overflow-hidden aspect-[4/5] shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 block border border-brand-100/60"
               >
-                <div className="cat-card-bg">
+                <div className="w-full h-full relative">
                   <img
                     src={getCategoryImageUrl(category.image)}
                     alt={category.name}
@@ -207,13 +257,15 @@ export default function HomePage() {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = "/images/categories/home-setup.jpg";
                     }}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-
-                  <div className="cat-card-overlay" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/30 to-transparent" />
                 </div>
 
-                <div className="cat-card-content">
-                  <h3>{category.name}</h3>
+                <div className="absolute bottom-0 inset-x-0 p-3.5 text-center">
+                  <h3 className="text-white font-serif font-bold text-xs sm:text-sm line-clamp-2 group-hover:text-brand-200 transition-colors">
+                    {category.name}
+                  </h3>
                 </div>
               </Link>
             ))}
@@ -222,22 +274,29 @@ export default function HomePage() {
       </section>
 
       {/* Wedding Inspiration Section */}
-      <section
-        className="section"
-        style={{ background: "var(--pink-50)" }}
-      >
-        <div className="container">
-          <div className="section-head">
-            <div>
-              <span className="eyebrow">Inspiration</span>
-              <h2>From real FlipsAura weddings</h2>
-            </div>
+      <section className="py-16 bg-brand-50">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="mb-10 text-center sm:text-left">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-1.5 block">
+              Inspiration
+            </span>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-ink">
+              From real FlipsAura weddings
+            </h2>
           </div>
 
-          <div className="gallery">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
             {indianWeddingImages.map((image, index) => (
-              <div className="gallery-item" key={index}>
-                <img src={image.url} alt={image.alt} />
+              <div
+                key={index}
+                className="aspect-[3/4] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
+              >
+                <img
+                  src={image.url}
+                  alt={image.alt}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
               </div>
             ))}
           </div>
@@ -245,54 +304,61 @@ export default function HomePage() {
       </section>
 
       {/* Featured Listings Section */}
-      <section className="section">
-        <div className="container">
-          <div className="section-head">
-            <div>
-              <span className="eyebrow">Trending</span>
-              <h2>Featured listings</h2>
-            </div>
+      <section className="py-16 bg-white">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="mb-10 text-center sm:text-left">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-1.5 block">
+              Trending
+            </span>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-ink">
+              Featured listings
+            </h2>
           </div>
 
           {data.featured.length > 0 ? (
-            <div className="grid grid-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {data.featured.map((item) => (
-                <ItemCard
-                  key={item._id}
-                  item={item}
-                />
+                <ItemCard key={item._id} item={item} />
               ))}
             </div>
           ) : (
-            <div className="empty">
+            <div className="p-12 text-center bg-brand-50/50 rounded-2xl border border-brand-100 text-muted">
               No listings yet — admins can add categories & items from{" "}
-              <strong>/admin</strong>.
+              <Link href="/admin" className="font-bold text-brand-700 underline">
+                /admin
+              </Link>.
             </div>
           )}
         </div>
       </section>
 
       {/* Reviews Section */}
-      <section
-        className="section"
-        style={{ background: "var(--pink-50)" }}
-      >
-        <div className="container">
-          <div className="section-head">
-            <div>
-              <span className="eyebrow">Loved by couples</span>
-              <h2>Stories from our brides & grooms</h2>
-            </div>
+      <section className="py-16 bg-brand-50">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="mb-10 text-center sm:text-left">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-1.5 block">
+              Loved by couples
+            </span>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-ink">
+              Stories from our brides & grooms
+            </h2>
           </div>
 
-          <div className="grid grid-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {reviews.map(([name, text]) => (
-              <div className="review" key={name}>
-                <div className="stars">★★★★★</div>
-
-                <p>"{text}"</p>
-
-                <div className="review-author">
+              <div
+                key={name}
+                className="bg-white p-6 md:p-8 rounded-2xl border border-brand-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+              >
+                <div>
+                  <div className="text-amber-400 text-base tracking-widest mb-3">
+                    ★★★★★
+                  </div>
+                  <p className="text-muted italic text-sm md:text-base leading-relaxed">
+                    "{text}"
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-brand-50 font-serif font-bold text-ink text-sm">
                   — {name}
                 </div>
               </div>
@@ -302,33 +368,41 @@ export default function HomePage() {
       </section>
 
       {/* About FlipsAura Section */}
-      <section id="about" className="section" style={{ background: "var(--surface, #fff)", borderTop: "1px solid var(--border, #eee)" }}>
-        <div className="container" style={{ maxWidth: 860 }}>
-          <div className="section-head" style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <span className="eyebrow">About FlipsAura</span>
-            <h2>Your Trusted Partner For Seamless Event Planning</h2>
+      <section id="about" className="py-16 bg-white border-t border-brand-100">
+        <div className="max-w-[860px] mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-1.5 block">
+              About FlipsAura
+            </span>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-ink">
+              Your Trusted Partner For Seamless Event Planning
+            </h2>
           </div>
 
-          <div style={{ lineHeight: 1.8, fontSize: "1.05rem", color: "var(--foreground, #333)" }}>
-            <p style={{ marginBottom: "1rem" }}>
-              Welcome to <strong>FlipsAura</strong> — your trusted platform for seamless event and wedding planning solutions.
-              Launched in <strong>May 2026</strong>, FlipsAura was created with a clear vision to simplify how couples and families plan their dream celebrations, uniting trusted venues, planners, caterers, and decorators onto one reliable platform.
+          <div className="text-muted text-base leading-relaxed space-y-4">
+            <p>
+              Welcome to <strong className="text-ink">FlipsAura</strong> — your trusted platform for seamless event and wedding planning solutions.
+              Launched in <strong className="text-ink">May 2026</strong>, FlipsAura was created with a clear vision to simplify how couples and families plan their dream celebrations, uniting trusted venues, planners, caterers, and decorators onto one reliable platform.
             </p>
-            <p style={{ marginBottom: "1rem" }}>
-              Founded by <strong>Abhishek Kumar</strong>, FlipsAura is built with a strong entrepreneurial spirit to transform the event services industry, especially across <strong>North India</strong>. The idea behind FlipsAura is simple — to eliminate the stress of managing multiple vendors by providing a curated, verified one-stop solution.
+            <p>
+              Founded by <strong className="text-ink">Abhishek Kumar</strong>, FlipsAura is built with a strong entrepreneurial spirit to transform the event services industry, especially across <strong className="text-ink">North India</strong>. The idea behind FlipsAura is simple — to eliminate the stress of managing multiple vendors by providing a curated, verified one-stop solution.
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem", marginTop: "2rem" }}>
-              <div style={{ padding: "1.5rem", background: "var(--pink-50, #FFF5F7)", borderRadius: "12px", border: "1px solid var(--pink-100, #FCE7EC)" }}>
-                <h4 style={{ color: "var(--wine, #8B1E3F)", marginBottom: "0.5rem", fontSize: "1.1rem" }}>🎯 Our Mission</h4>
-                <p style={{ margin: 0, fontSize: "0.95rem", color: "#555" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6">
+              <div className="p-6 bg-brand-50 rounded-2xl border border-brand-100">
+                <h4 className="text-wine font-bold text-base mb-2 flex items-center gap-2">
+                  <span>🎯</span> Our Mission
+                </h4>
+                <p className="text-sm text-muted m-0">
                   To make wedding and event planning transparent, effortless, and stress-free by connecting you with verified, trusted vendors under one roof.
                 </p>
               </div>
 
-              <div style={{ padding: "1.5rem", background: "var(--pink-50, #FFF5F7)", borderRadius: "12px", border: "1px solid var(--pink-100, #FCE7EC)" }}>
-                <h4 style={{ color: "var(--wine, #8B1E3F)", marginBottom: "0.5rem", fontSize: "1.1rem" }}>🌟 Why Choose FlipsAura</h4>
-                <p style={{ margin: 0, fontSize: "0.95rem", color: "#555" }}>
+              <div className="p-6 bg-brand-50 rounded-2xl border border-brand-100">
+                <h4 className="text-wine font-bold text-base mb-2 flex items-center gap-2">
+                  <span>🌟</span> Why Choose FlipsAura
+                </h4>
+                <p className="text-sm text-muted m-0">
                   Curated venues, verified vendors, upfront pricing, dedicated support, and end-to-end coordination for unforgettable celebrations.
                 </p>
               </div>

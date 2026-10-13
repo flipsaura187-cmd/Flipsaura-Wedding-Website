@@ -205,7 +205,6 @@ export default function EventRegisterPage() {
       }
 
       const { registrationDocId, orderId, amount, currency, keyId } = regRes.data.data;
-
       const primaryContact = participants[0];
 
       // 4. Configure Razorpay checkout options
@@ -292,17 +291,24 @@ export default function EventRegisterPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "75vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "var(--muted)" }}>Loading registration portal...</p>
+      <div className="min-h-[75vh] flex items-center justify-center">
+        <div className="text-center text-muted">
+          <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm font-medium">Loading registration portal...</p>
+        </div>
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="container" style={{ padding: "80px 16px", textAlign: "center" }}>
-        <h2>Event Not Found</h2>
-        <Link href="/events" to="/events" className="btn btn-primary" style={{ marginTop: "16px", display: "inline-block" }}>
+      <div className="max-w-xl mx-auto px-4 py-20 text-center">
+        <h2 className="text-2xl font-serif font-bold text-ink mb-3">Event Not Found</h2>
+        <Link
+          href="/events"
+          to="/events"
+          className="inline-flex items-center px-6 py-2.5 rounded-full bg-brand-600 text-white font-medium hover:bg-brand-700 transition"
+        >
           Browse Events
         </Link>
       </div>
@@ -311,115 +317,87 @@ export default function EventRegisterPage() {
 
   if (event.isRegistrationOpen === false || event.status !== "PUBLISHED") {
     return (
-      <div className="container" style={{ padding: "80px 16px", textAlign: "center", maxWidth: "600px" }}>
-        <div style={{ fontSize: "3rem", marginBottom: "16px" }}>🔒</div>
-        <h2>Registration Closed</h2>
-        <p style={{ color: "var(--muted)", margin: "14px 0 24px", lineHeight: 1.6 }}>
+      <div className="max-w-xl mx-auto px-4 py-20 text-center">
+        <div className="text-5xl mb-4">🔒</div>
+        <h2 className="text-2xl font-serif font-bold text-ink mb-3">Registration Closed</h2>
+        <p className="text-muted mb-6 leading-relaxed">
           Registrations for <strong>{event.title}</strong> are currently closed.
         </p>
-        <Link href={`/events/${event.slug}`} to={`/events/${event.slug}`} className="btn btn-primary">
+        <Link
+          href={`/events/${event.slug}`}
+          to={`/events/${event.slug}`}
+          className="inline-flex items-center px-6 py-2.5 rounded-full bg-brand-600 text-white font-medium hover:bg-brand-700 transition"
+        >
           Back to Event Overview
         </Link>
       </div>
     );
   }
 
+  const inputClass = (hasError) =>
+    `w-full px-4 py-2.5 rounded-xl border text-sm text-ink placeholder:text-muted/60 bg-white transition focus:outline-none focus:ring-2 focus:ring-brand-500/20 ${
+      hasError ? "border-rose-400 focus:border-rose-500" : "border-brand-200 focus:border-brand-500"
+    }`;
+
   return (
-    <div style={{ minHeight: "90vh", background: "#faf7f9", padding: "40px 16px 80px" }}>
-      <div className="container" style={{ maxWidth: "900px" }}>
+    <div className="min-h-[90vh] bg-surface py-10 px-4 sm:px-6 lg:px-8 pb-20">
+      <div className="max-w-3xl mx-auto">
         {/* Header Breadcrumb & Title */}
-        <div style={{ marginBottom: "28px" }}>
+        <div className="mb-7">
           <Link
             href={`/events/${event.slug}`}
             to={`/events/${event.slug}`}
-            style={{ color: "var(--pink-600)", fontSize: "0.9rem", fontWeight: 600, textDecoration: "none" }}
+            className="text-brand-600 hover:text-brand-700 text-sm font-semibold inline-flex items-center gap-1 transition"
           >
             ← Back to {event.title}
           </Link>
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
-              margin: "12px 0 6px",
-              color: "var(--ink, #2a1726)",
-            }}
-          >
+          <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl text-ink font-bold mt-2.5 mb-1.5">
             Register for {event.title}
           </h1>
-          <p style={{ color: "var(--muted)", margin: 0, fontSize: "1rem" }}>
-            Organized by: <strong>{event.organizer}</strong> • Venue: <strong>{event.city || event.venue}</strong>
+          <p className="text-sm text-muted">
+            Organized by: <strong className="text-ink">{event.organizer}</strong> • Venue: <strong className="text-ink">{event.city || event.venue}</strong>
           </p>
         </div>
 
         {errorMessage && (
-          <div
-            style={{
-              background: "#fee2e2",
-              border: "1px solid #ef4444",
-              color: "#991b1b",
-              padding: "14px 18px",
-              borderRadius: "10px",
-              marginBottom: "24px",
-              fontSize: "0.95rem",
-              fontWeight: 500,
-            }}
-          >
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl mb-6 text-sm font-medium">
             {errorMessage}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* STEP 1: Participation Type Selection */}
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "16px",
-              padding: "28px",
-              border: "1px solid #f3d9e4",
-              marginBottom: "24px",
-              boxShadow: "0 4px 16px rgba(42, 23, 38, 0.04)",
-            }}
-          >
-            <h3 style={{ margin: "0 0 8px", fontSize: "1.2rem", color: "var(--ink)" }}>
+          <div className="bg-white rounded-2xl p-6 sm:p-7 border border-brand-100 shadow-sm">
+            <h3 className="text-lg font-bold text-ink mb-1">
               Step 1: Choose Participation Type
             </h3>
-            <p style={{ margin: "0 0 18px", fontSize: "0.9rem", color: "var(--muted)" }}>
+            <p className="text-xs sm:text-sm text-muted mb-4">
               Select whether you are competing as an Individual or as a Team of 3.
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {["Individual", "Team of 3"].map((type) => {
                 const selected = participationType === type;
                 return (
                   <div
                     key={type}
                     onClick={() => setParticipationType(type)}
-                    style={{
-                      border: selected ? "2px solid var(--pink-600, #e63f87)" : "1.5px solid #e5d8de",
-                      background: selected ? "#fff5f9" : "#ffffff",
-                      borderRadius: "12px",
-                      padding: "18px 20px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "14px",
-                      transition: "all 0.2s ease",
-                      boxShadow: selected ? "0 4px 14px rgba(230, 63, 135, 0.15)" : "none",
-                    }}
+                    className={`border rounded-xl p-4 sm:p-5 cursor-pointer flex items-center gap-3.5 transition-all ${
+                      selected
+                        ? "border-brand-600 bg-brand-50/50 shadow-sm shadow-brand-500/10"
+                        : "border-brand-200 bg-white hover:border-brand-300"
+                    }`}
                   >
                     <div
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "50%",
-                        border: selected ? "6px solid var(--pink-600)" : "2px solid #bbb",
-                        background: "#fff",
-                        flexShrink: 0,
-                      }}
-                    />
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                        selected ? "border-brand-600 bg-brand-600" : "border-slate-300 bg-white"
+                      }`}
+                    >
+                      {selected && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--ink)" }}>{type}</div>
-                      <div style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                      <div className="font-bold text-sm sm:text-base text-ink">{type}</div>
+                      <div className="text-xs text-muted">
                         {type === "Individual" ? "1 Participant" : "3 Participants (1 Leader + 2 Members)"}
                       </div>
                     </div>
@@ -430,118 +408,109 @@ export default function EventRegisterPage() {
           </div>
 
           {/* STEP 2: Participant Details */}
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "16px",
-              padding: "28px",
-              border: "1px solid #f3d9e4",
-              marginBottom: "24px",
-              boxShadow: "0 4px 16px rgba(42, 23, 38, 0.04)",
-            }}
-          >
+          <div className="bg-white rounded-2xl p-6 sm:p-7 border border-brand-100 shadow-sm">
             {participationType === "Individual" ? (
               <>
-                <h3 style={{ margin: "0 0 18px", fontSize: "1.2rem", color: "var(--ink)" }}>
+                <h3 className="text-lg font-bold text-ink mb-4">
                   Step 2: Participant Details
                 </h3>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label style={labelStyle}>1. Full Name *</label>
+                    <label className="block text-xs font-semibold text-ink/80 mb-1.5">1. Full Name *</label>
                     <input
                       type="text"
                       placeholder="e.g. Rahul Kumar"
                       value={individualData.fullName}
                       onChange={(e) => handleIndividualChange("fullName", e.target.value)}
-                      style={inputStyle(errors.fullName)}
+                      className={inputClass(errors.fullName)}
                     />
-                    {errors.fullName && <div style={errorStyle}>{errors.fullName}</div>}
+                    {errors.fullName && <div className="text-xs text-rose-600 mt-1">{errors.fullName}</div>}
                   </div>
 
                   <div>
-                    <label style={labelStyle}>2. Mobile Number (10 digits) *</label>
+                    <label className="block text-xs font-semibold text-ink/80 mb-1.5">2. Mobile Number (10 digits) *</label>
                     <input
                       type="tel"
                       placeholder="e.g. 9876543210"
                       maxLength={10}
                       value={individualData.mobileNumber}
                       onChange={(e) => handleIndividualChange("mobileNumber", e.target.value)}
-                      style={inputStyle(errors.mobileNumber)}
+                      className={inputClass(errors.mobileNumber)}
                     />
-                    {errors.mobileNumber && <div style={errorStyle}>{errors.mobileNumber}</div>}
+                    {errors.mobileNumber && <div className="text-xs text-rose-600 mt-1">{errors.mobileNumber}</div>}
                   </div>
 
                   <div>
-                    <label style={labelStyle}>3. Email Address *</label>
+                    <label className="block text-xs font-semibold text-ink/80 mb-1.5">3. Email Address *</label>
                     <input
                       type="email"
                       placeholder="e.g. rahul@example.com"
                       value={individualData.email}
                       onChange={(e) => handleIndividualChange("email", e.target.value)}
-                      style={inputStyle(errors.email)}
+                      className={inputClass(errors.email)}
                     />
-                    {errors.email && <div style={errorStyle}>{errors.email}</div>}
+                    {errors.email && <div className="text-xs text-rose-600 mt-1">{errors.email}</div>}
                   </div>
 
                   <div>
-                    <label style={labelStyle}>4. College / School Name *</label>
+                    <label className="block text-xs font-semibold text-ink/80 mb-1.5">4. College / School Name *</label>
                     <input
                       type="text"
                       placeholder="e.g. Patna Science College"
                       value={individualData.college}
                       onChange={(e) => handleIndividualChange("college", e.target.value)}
-                      style={inputStyle(errors.college)}
+                      className={inputClass(errors.college)}
                     />
-                    {errors.college && <div style={errorStyle}>{errors.college}</div>}
+                    {errors.college && <div className="text-xs text-rose-600 mt-1">{errors.college}</div>}
                   </div>
 
                   <div>
-                    <label style={labelStyle}>5. Course / Class *</label>
+                    <label className="block text-xs font-semibold text-ink/80 mb-1.5">5. Course / Class *</label>
                     <input
                       type="text"
                       placeholder="e.g. B.Tech / B.Sc / 12th"
                       value={individualData.course}
                       onChange={(e) => handleIndividualChange("course", e.target.value)}
-                      style={inputStyle(errors.course)}
+                      className={inputClass(errors.course)}
                     />
-                    {errors.course && <div style={errorStyle}>{errors.course}</div>}
+                    {errors.course && <div className="text-xs text-rose-600 mt-1">{errors.course}</div>}
                   </div>
 
                   <div>
-                    <label style={labelStyle}>6. Year / Semester *</label>
+                    <label className="block text-xs font-semibold text-ink/80 mb-1.5">6. Year / Semester *</label>
                     <input
                       type="text"
                       placeholder="e.g. 2nd Year / 4th Sem"
                       value={individualData.year}
                       onChange={(e) => handleIndividualChange("year", e.target.value)}
-                      style={inputStyle(errors.year)}
+                      className={inputClass(errors.year)}
                     />
-                    {errors.year && <div style={errorStyle}>{errors.year}</div>}
+                    {errors.year && <div className="text-xs text-rose-600 mt-1">{errors.year}</div>}
                   </div>
 
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={labelStyle}>7. City *</label>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-ink/80 mb-1.5">7. City *</label>
                     <input
                       type="text"
                       placeholder="e.g. Patna, Bihar"
                       value={individualData.city}
                       onChange={(e) => handleIndividualChange("city", e.target.value)}
-                      style={inputStyle(errors.city)}
+                      className={inputClass(errors.city)}
                     />
-                    {errors.city && <div style={errorStyle}>{errors.city}</div>}
+                    {errors.city && <div className="text-xs text-rose-600 mt-1">{errors.city}</div>}
                   </div>
                 </div>
               </>
             ) : (
               <>
-                <h3 style={{ margin: "0 0 18px", fontSize: "1.2rem", color: "var(--ink)" }}>
+                <h3 className="text-lg font-bold text-ink mb-4">
                   Step 2: Team & Participant Details (Team of 3)
                 </h3>
 
                 {/* Team Name */}
-                <div style={{ marginBottom: "24px" }}>
-                  <label style={labelStyle}>Team Name *</label>
+                <div className="mb-6">
+                  <label className="block text-xs font-semibold text-ink/80 mb-1.5">Team Name *</label>
                   <input
                     type="text"
                     placeholder="e.g. The Quizzards"
@@ -550,167 +519,144 @@ export default function EventRegisterPage() {
                       setTeamName(e.target.value);
                       if (errors.teamName) setErrors((prev) => ({ ...prev, teamName: null }));
                     }}
-                    style={inputStyle(errors.teamName)}
+                    className={inputClass(errors.teamName)}
                   />
-                  {errors.teamName && <div style={errorStyle}>{errors.teamName}</div>}
+                  {errors.teamName && <div className="text-xs text-rose-600 mt-1">{errors.teamName}</div>}
                 </div>
 
                 {/* 3 Members */}
-                {teamMembers.map((member, idx) => {
-                  const isLeader = idx === 0;
-                  const prefix = `member_${idx}_`;
+                <div className="space-y-4">
+                  {teamMembers.map((member, idx) => {
+                    const isLeader = idx === 0;
+                    const prefix = `member_${idx}_`;
 
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        padding: "20px",
-                        borderRadius: "14px",
-                        background: isLeader ? "#fffafc" : "#faf8f9",
-                        border: isLeader ? "1.5px solid #f3c2d6" : "1px solid #e8e2e5",
-                        marginBottom: idx < 2 ? "20px" : "0",
-                      }}
-                    >
+                    return (
                       <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: "14px",
-                          paddingBottom: "8px",
-                          borderBottom: "1px solid rgba(0,0,0,0.06)",
-                        }}
+                        key={idx}
+                        className={`p-5 rounded-xl border ${
+                          isLeader ? "bg-brand-50/40 border-brand-200" : "bg-surface border-brand-100"
+                        }`}
                       >
-                        <div style={{ fontWeight: 700, fontSize: "1.05rem", color: isLeader ? "var(--pink-700)" : "var(--ink)" }}>
-                          {isLeader ? "👑 TEAM LEADER / MEMBER 1 (PRIMARY CONTACT)" : `MEMBER ${idx + 1}`}
+                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-brand-100">
+                          <div className={`font-bold text-xs sm:text-sm tracking-wide uppercase ${isLeader ? "text-brand-700" : "text-ink"}`}>
+                            {isLeader ? "👑 TEAM LEADER / MEMBER 1 (PRIMARY CONTACT)" : `MEMBER ${idx + 1}`}
+                          </div>
+                          {isLeader && (
+                            <span className="text-[10px] bg-brand-600 text-white px-2 py-0.5 rounded font-bold uppercase">
+                              Primary Contact
+                            </span>
+                          )}
                         </div>
-                        {isLeader && (
-                          <span
-                            style={{
-                              fontSize: "0.75rem",
-                              background: "var(--pink-600)",
-                              color: "#fff",
-                              padding: "2px 8px",
-                              borderRadius: "4px",
-                              fontWeight: 700,
-                            }}
-                          >
-                            Primary Contact
-                          </span>
-                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                          <div>
+                            <label className="block text-xs font-medium text-ink/75 mb-1">Full Name *</label>
+                            <input
+                              type="text"
+                              placeholder="Full name"
+                              value={member.fullName}
+                              onChange={(e) => handleMemberChange(idx, "fullName", e.target.value)}
+                              className={inputClass(errors[`${prefix}fullName`])}
+                            />
+                            {errors[`${prefix}fullName`] && (
+                              <div className="text-[11px] text-rose-600 mt-1">{errors[`${prefix}fullName`]}</div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-ink/75 mb-1">Mobile Number *</label>
+                            <input
+                              type="tel"
+                              maxLength={10}
+                              placeholder="10-digit mobile"
+                              value={member.mobileNumber}
+                              onChange={(e) => handleMemberChange(idx, "mobileNumber", e.target.value)}
+                              className={inputClass(errors[`${prefix}mobileNumber`])}
+                            />
+                            {errors[`${prefix}mobileNumber`] && (
+                              <div className="text-[11px] text-rose-600 mt-1">{errors[`${prefix}mobileNumber`]}</div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-ink/75 mb-1">Email Address *</label>
+                            <input
+                              type="email"
+                              placeholder="Email"
+                              value={member.email}
+                              onChange={(e) => handleMemberChange(idx, "email", e.target.value)}
+                              className={inputClass(errors[`${prefix}email`])}
+                            />
+                            {errors[`${prefix}email`] && (
+                              <div className="text-[11px] text-rose-600 mt-1">{errors[`${prefix}email`]}</div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-ink/75 mb-1">College / School Name *</label>
+                            <input
+                              type="text"
+                              placeholder="College / School"
+                              value={member.college}
+                              onChange={(e) => handleMemberChange(idx, "college", e.target.value)}
+                              className={inputClass(errors[`${prefix}college`])}
+                            />
+                            {errors[`${prefix}college`] && (
+                              <div className="text-[11px] text-rose-600 mt-1">{errors[`${prefix}college`]}</div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-ink/75 mb-1">Course / Class *</label>
+                            <input
+                              type="text"
+                              placeholder="Course / Class"
+                              value={member.course}
+                              onChange={(e) => handleMemberChange(idx, "course", e.target.value)}
+                              className={inputClass(errors[`${prefix}course`])}
+                            />
+                            {errors[`${prefix}course`] && (
+                              <div className="text-[11px] text-rose-600 mt-1">{errors[`${prefix}course`]}</div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-ink/75 mb-1">Year / Semester *</label>
+                            <input
+                              type="text"
+                              placeholder="Year / Semester"
+                              value={member.year}
+                              onChange={(e) => handleMemberChange(idx, "year", e.target.value)}
+                              className={inputClass(errors[`${prefix}year`])}
+                            />
+                            {errors[`${prefix}year`] && (
+                              <div className="text-[11px] text-rose-600 mt-1">{errors[`${prefix}year`]}</div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
-                        <div>
-                          <label style={labelStyle}>Full Name *</label>
-                          <input
-                            type="text"
-                            placeholder="Full name"
-                            value={member.fullName}
-                            onChange={(e) => handleMemberChange(idx, "fullName", e.target.value)}
-                            style={inputStyle(errors[`${prefix}fullName`])}
-                          />
-                          {errors[`${prefix}fullName`] && <div style={errorStyle}>{errors[`${prefix}fullName`]}</div>}
-                        </div>
-
-                        <div>
-                          <label style={labelStyle}>Mobile Number *</label>
-                          <input
-                            type="tel"
-                            maxLength={10}
-                            placeholder="10-digit mobile"
-                            value={member.mobileNumber}
-                            onChange={(e) => handleMemberChange(idx, "mobileNumber", e.target.value)}
-                            style={inputStyle(errors[`${prefix}mobileNumber`])}
-                          />
-                          {errors[`${prefix}mobileNumber`] && <div style={errorStyle}>{errors[`${prefix}mobileNumber`]}</div>}
-                        </div>
-
-                        <div>
-                          <label style={labelStyle}>Email Address *</label>
-                          <input
-                            type="email"
-                            placeholder="Email"
-                            value={member.email}
-                            onChange={(e) => handleMemberChange(idx, "email", e.target.value)}
-                            style={inputStyle(errors[`${prefix}email`])}
-                          />
-                          {errors[`${prefix}email`] && <div style={errorStyle}>{errors[`${prefix}email`]}</div>}
-                        </div>
-
-                        <div>
-                          <label style={labelStyle}>College / School Name *</label>
-                          <input
-                            type="text"
-                            placeholder="College / School"
-                            value={member.college}
-                            onChange={(e) => handleMemberChange(idx, "college", e.target.value)}
-                            style={inputStyle(errors[`${prefix}college`])}
-                          />
-                          {errors[`${prefix}college`] && <div style={errorStyle}>{errors[`${prefix}college`]}</div>}
-                        </div>
-
-                        <div>
-                          <label style={labelStyle}>Course / Class *</label>
-                          <input
-                            type="text"
-                            placeholder="Course / Class"
-                            value={member.course}
-                            onChange={(e) => handleMemberChange(idx, "course", e.target.value)}
-                            style={inputStyle(errors[`${prefix}course`])}
-                          />
-                          {errors[`${prefix}course`] && <div style={errorStyle}>{errors[`${prefix}course`]}</div>}
-                        </div>
-
-                        <div>
-                          <label style={labelStyle}>Year / Semester *</label>
-                          <input
-                            type="text"
-                            placeholder="Year / Semester"
-                            value={member.year}
-                            onChange={(e) => handleMemberChange(idx, "year", e.target.value)}
-                            style={inputStyle(errors[`${prefix}year`])}
-                          />
-                          {errors[`${prefix}year`] && <div style={errorStyle}>{errors[`${prefix}year`]}</div>}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </>
             )}
           </div>
 
           {/* STEP 3: Additional Information */}
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "16px",
-              padding: "28px",
-              border: "1px solid #f3d9e4",
-              marginBottom: "24px",
-              boxShadow: "0 4px 16px rgba(42, 23, 38, 0.04)",
-            }}
-          >
-            <h3 style={{ margin: "0 0 18px", fontSize: "1.2rem", color: "var(--ink)" }}>
+          <div className="bg-white rounded-2xl p-6 sm:p-7 border border-brand-100 shadow-sm">
+            <h3 className="text-lg font-bold text-ink mb-4">
               Step 3: Additional Information
             </h3>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <label style={labelStyle}>How did you hear about {event.title}?</label>
+                <label className="block text-xs font-semibold text-ink/80 mb-1.5">
+                  How did you hear about {event.title}?
+                </label>
                 <select
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    border: "1.5px solid #d5ccd1",
-                    background: "#fff",
-                    fontSize: "0.95rem",
-                    outline: "none",
-                  }}
+                  className="w-full px-4 py-2.5 rounded-xl border border-brand-200 text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 >
                   <option value="">Select an option</option>
                   <option value="Instagram">Instagram</option>
@@ -724,17 +670,19 @@ export default function EventRegisterPage() {
               </div>
 
               <div>
-                <label style={labelStyle}>Previous quiz participation?</label>
-                <div style={{ display: "flex", gap: "24px", marginTop: "10px" }}>
+                <label className="block text-xs font-semibold text-ink/80 mb-2">
+                  Previous quiz participation?
+                </label>
+                <div className="flex gap-6 mt-2">
                   {["No", "Yes"].map((opt) => (
-                    <label key={opt} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.95rem" }}>
+                    <label key={opt} className="flex items-center gap-2 cursor-pointer text-sm text-ink">
                       <input
                         type="radio"
                         name="previousQuiz"
                         value={opt}
                         checked={previousQuizParticipation === opt}
                         onChange={(e) => setPreviousQuizParticipation(e.target.value)}
-                        style={{ accentColor: "var(--pink-600)" }}
+                        className="accent-brand-600 w-4 h-4 cursor-pointer"
                       />
                       {opt}
                     </label>
@@ -745,33 +693,16 @@ export default function EventRegisterPage() {
           </div>
 
           {/* STEP 4: Terms & Order Summary */}
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "16px",
-              padding: "28px",
-              border: "1px solid #f3d9e4",
-              marginBottom: "32px",
-              boxShadow: "0 4px 16px rgba(42, 23, 38, 0.04)",
-            }}
-          >
-            <h3 style={{ margin: "0 0 16px", fontSize: "1.2rem", color: "var(--ink)" }}>
+          <div className="bg-white rounded-2xl p-6 sm:p-7 border border-brand-100 shadow-sm">
+            <h3 className="text-lg font-bold text-ink mb-4">
               Step 4: Terms & Payment Summary
             </h3>
 
             {/* Terms Checkbox */}
-            <div
-              style={{
-                background: "#fff9fc",
-                padding: "18px",
-                borderRadius: "12px",
-                border: "1px solid #f3d9e4",
-                marginBottom: "24px",
-              }}
-            >
-              <div style={{ fontSize: "0.9rem", color: "#443", marginBottom: "12px", lineHeight: 1.6 }}>
-                <strong>Terms & Conditions:</strong>
-                <ul style={{ margin: "6px 0 0", paddingLeft: "20px" }}>
+            <div className="bg-brand-50/50 p-4 sm:p-5 rounded-xl border border-brand-100 mb-6">
+              <div className="text-xs text-ink/80 mb-3 leading-relaxed">
+                <strong className="text-ink">Terms & Conditions:</strong>
+                <ul className="list-disc list-inside mt-1.5 space-y-1">
                   <li>I confirm that all information provided is accurate and complete.</li>
                   <li>I agree to follow the rules and regulations of {event.title}.</li>
                   <li>I understand that the registration fee is ₹{Number(event.registrationFee).toLocaleString("en-IN")}.</li>
@@ -779,7 +710,7 @@ export default function EventRegisterPage() {
                 </ul>
               </div>
 
-              <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", cursor: "pointer" }}>
+              <label className="flex items-start gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={termsAccepted}
@@ -787,37 +718,25 @@ export default function EventRegisterPage() {
                     setTermsAccepted(e.target.checked);
                     if (errors.terms) setErrors((prev) => ({ ...prev, terms: null }));
                   }}
-                  style={{ width: "18px", height: "18px", accentColor: "var(--pink-600)", marginTop: "2px" }}
+                  className="w-4 h-4 accent-brand-600 rounded mt-0.5 cursor-pointer"
                 />
-                <span style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--ink)" }}>
+                <span className="text-xs sm:text-sm font-semibold text-ink">
                   I have read and agree to all the terms, conditions, and rules of the event *
                 </span>
               </label>
-              {errors.terms && <div style={{ ...errorStyle, marginTop: "8px" }}>{errors.terms}</div>}
+              {errors.terms && <div className="text-xs text-rose-600 mt-2">{errors.terms}</div>}
             </div>
 
             {/* Fee summary card */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "16px",
-                padding: "20px",
-                background: "linear-gradient(135deg, #2a1726, #4a1936)",
-                color: "#ffffff",
-                borderRadius: "14px",
-              }}
-            >
+            <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-xl bg-gradient-to-r from-ink to-[#4a1936] text-white">
               <div>
-                <div style={{ fontSize: "0.85rem", color: "#ffb3d1", textTransform: "uppercase" }}>
+                <div className="text-xs text-brand-200 uppercase tracking-wider font-semibold">
                   Total Registration Fee
                 </div>
-                <div style={{ fontSize: "1.8rem", fontWeight: 800, color: "#ffffff" }}>
+                <div className="text-2xl sm:text-3xl font-extrabold text-white my-0.5 font-sans">
                   ₹{Number(event.registrationFee).toLocaleString("en-IN")}
                 </div>
-                <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.7)" }}>
+                <div className="text-xs text-white/70">
                   {participationType} ({participationType === "Individual" ? "1 Person" : "Team of 3"})
                 </div>
               </div>
@@ -825,16 +744,7 @@ export default function EventRegisterPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="btn btn-primary"
-                style={{
-                  padding: "14px 32px",
-                  fontSize: "1.05rem",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  boxShadow: "0 6px 18px rgba(230, 63, 135, 0.4)",
-                  cursor: submitting ? "not-allowed" : "pointer",
-                  opacity: submitting ? 0.7 : 1,
-                }}
+                className="px-6 sm:px-8 py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-bold text-sm sm:text-base shadow-lg shadow-brand-600/40 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? "Opening Razorpay..." : `Pay ₹${Number(event.registrationFee).toLocaleString("en-IN")} & Register`}
               </button>
@@ -845,30 +755,3 @@ export default function EventRegisterPage() {
     </div>
   );
 }
-
-const labelStyle = {
-  display: "block",
-  fontSize: "0.88rem",
-  fontWeight: 600,
-  color: "#3a2333",
-  marginBottom: "6px",
-};
-
-const inputStyle = (hasError) => ({
-  width: "100%",
-  padding: "10px 14px",
-  borderRadius: "8px",
-  border: hasError ? "1.5px solid #ef4444" : "1.5px solid #d5ccd1",
-  background: "#ffffff",
-  fontSize: "0.95rem",
-  color: "#2a1726",
-  outline: "none",
-  transition: "border 0.2s ease",
-});
-
-const errorStyle = {
-  color: "#dc2626",
-  fontSize: "0.8rem",
-  marginTop: "4px",
-  fontWeight: 500,
-};

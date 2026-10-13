@@ -43,35 +43,75 @@ export default function CategoryPage() {
   };
 
   return (
-    <section className="section">
-      <div className="container">
-        <div className="section-head">
-          <div>
-            <span className="eyebrow">Category</span>
-            <h2 style={{ textTransform: "capitalize" }}>{String(slug).replace(/-/g, " ")}</h2>
-          </div>
+    <section className="py-12 md:py-16 bg-white min-h-[70vh]">
+      <div className="max-w-container mx-auto px-4 sm:px-6">
+        <div className="mb-8">
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-1.5 block">
+            Category
+          </span>
+          <h1 className="font-serif text-3xl md:text-4xl font-bold text-ink capitalize">
+            {String(slug).replace(/-/g, " ")}
+          </h1>
         </div>
 
-        <form className="filters" onSubmit={apply}>
-          <input placeholder="Search…" value={filters.q} onChange={e => setFilters({ ...filters, q: e.target.value })} />
-          <input placeholder="City" value={filters.city} onChange={e => setFilters({ ...filters, city: e.target.value })} />
-          <input placeholder="Min ₹" type="number" value={filters.minPrice} onChange={e => setFilters({ ...filters, minPrice: e.target.value })} />
-          <input placeholder="Max ₹" type="number" value={filters.maxPrice} onChange={e => setFilters({ ...filters, maxPrice: e.target.value })} />
-          <select value={filters.sort} onChange={e => setFilters({ ...filters, sort: e.target.value })}>
+        <form
+          className="bg-brand-50/70 p-4 rounded-2xl border border-brand-100 mb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3"
+          onSubmit={apply}
+        >
+          <input
+            className="px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            placeholder="Search…"
+            value={filters.q}
+            onChange={e => setFilters({ ...filters, q: e.target.value })}
+          />
+          <input
+            className="px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            placeholder="City"
+            value={filters.city}
+            onChange={e => setFilters({ ...filters, city: e.target.value })}
+          />
+          <input
+            className="px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            placeholder="Min ₹"
+            type="number"
+            value={filters.minPrice}
+            onChange={e => setFilters({ ...filters, minPrice: e.target.value })}
+          />
+          <input
+            className="px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            placeholder="Max ₹"
+            type="number"
+            value={filters.maxPrice}
+            onChange={e => setFilters({ ...filters, maxPrice: e.target.value })}
+          />
+          <select
+            className="px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            value={filters.sort}
+            onChange={e => setFilters({ ...filters, sort: e.target.value })}
+          >
             <option value="newest">Newest</option>
-            <option value="priceAsc">Price ↑</option>
-            <option value="priceDesc">Price ↓</option>
-            <option value="rating">Top rated</option>
+            <option value="priceAsc">Price: Low to High</option>
+            <option value="priceDesc">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
           </select>
-          <button className="btn btn-primary" type="submit">Apply</button>
+          <button
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition-all cursor-pointer"
+            type="submit"
+          >
+            Apply
+          </button>
         </form>
 
         {loading ? (
-          <div className="loading">Loading…</div>
+          <div className="py-20 text-center text-brand-600 font-semibold animate-pulse">
+            Loading items…
+          </div>
         ) : items.length === 0 ? (
-          <div className="empty">No items match your filters.</div>
+          <div className="p-12 text-center bg-brand-50/50 rounded-2xl border border-brand-100 text-muted">
+            No items match your filters in this category.
+          </div>
         ) : (
-          <div className="grid grid-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {items.map(it => <ItemCard key={it._id} item={it} />)}
           </div>
         )}
@@ -81,3 +121,4 @@ export default function CategoryPage() {
     </section>
   );
 }
+

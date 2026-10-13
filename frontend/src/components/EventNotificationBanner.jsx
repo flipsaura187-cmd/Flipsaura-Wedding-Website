@@ -47,99 +47,31 @@ export default function EventNotificationBanner() {
       : "Free Registration";
 
   return (
-    <div
-      style={{
-        background: "linear-gradient(90deg, #2a1726 0%, #4a1936 50%, #2a1726 100%)",
-        color: "#ffffff",
-        position: "relative",
-        borderBottom: "2px solid rgba(212, 175, 122, 0.4)",
-        boxShadow: "0 4px 20px rgba(42, 23, 38, 0.18)",
-        overflow: "hidden",
-        zIndex: 40,
-      }}
-    >
+    <div className="relative overflow-hidden z-40 bg-gradient-to-r from-[#2a1726] via-[#4a1936] to-[#2a1726] text-white border-b-2 border-gold/40 shadow-lg">
       {/* Decorative accent glow */}
-      <div
-        style={{
-          position: "absolute",
-          top: "-50%",
-          left: "20%",
-          width: "300px",
-          height: "100px",
-          background: "radial-gradient(circle, rgba(230, 63, 135, 0.35) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
+      <div className="absolute -top-1/2 left-[20%] w-72 h-24 bg-brand-500/30 rounded-full blur-2xl pointer-events-none" />
 
-      <div
-        className="container"
-        style={{
-          padding: "10px 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "12px",
-          position: "relative",
-        }}
-      >
+      <div className="max-w-container mx-auto px-4 py-2.5 flex items-center justify-between flex-wrap gap-3 relative">
         {/* Left: Badge & Info */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          <span
-            style={{
-              background: "linear-gradient(135deg, #e63f87 0%, #ff8ab8 100%)",
-              color: "#ffffff",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              padding: "4px 10px",
-              borderRadius: "20px",
-              letterSpacing: "0.5px",
-              textTransform: "uppercase",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              boxShadow: "0 2px 8px rgba(230, 63, 135, 0.35)",
-            }}
-          >
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="inline-flex items-center gap-1 bg-gradient-to-r from-brand-600 to-brand-400 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md shadow-brand-500/25">
             🎉 UPCOMING EVENT
           </span>
 
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px", flexWrap: "wrap" }}>
-            <span
-              style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: "1.05rem",
-                fontWeight: 700,
-                color: "#ffe6f0",
-                letterSpacing: "0.2px",
-              }}
-            >
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="font-serif text-base md:text-lg font-bold text-brand-100 tracking-wide">
               {event.title}
             </span>
             {event.type && (
-              <span
-                style={{
-                  fontSize: "0.85rem",
-                  color: "#d4af7a",
-                  fontWeight: 600,
-                }}
-              >
+              <span className="text-xs md:text-sm font-semibold text-gold">
                 • {event.type}
               </span>
             )}
-            <span
-              style={{
-                fontSize: "0.85rem",
-                color: "#ffb3d1",
-                background: "rgba(255, 255, 255, 0.08)",
-                padding: "2px 8px",
-                borderRadius: "4px",
-              }}
-            >
+            <span className="text-xs md:text-sm text-brand-200 bg-white/10 px-2 py-0.5 rounded font-medium">
               {feeDisplay}
             </span>
             {event.city && (
-              <span style={{ fontSize: "0.82rem", color: "rgba(255, 255, 255, 0.75)" }}>
+              <span className="text-xs md:text-sm text-white/75">
                 📍 {event.city}
               </span>
             )}
@@ -147,23 +79,16 @@ export default function EventNotificationBanner() {
         </div>
 
         {/* Right: Actions & Carousel controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "auto" }}>
+        <div className="flex items-center gap-2.5 ml-auto">
           {events.length > 1 && (
-            <div style={{ display: "flex", alignItems: "center", gap: "4px", marginRight: "6px" }}>
+            <div className="flex items-center gap-1 mr-1">
               {events.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentIndex(idx)}
-                  style={{
-                    width: idx === currentIndex ? "16px" : "6px",
-                    height: "6px",
-                    borderRadius: "3px",
-                    background: idx === currentIndex ? "#e63f87" : "rgba(255,255,255,0.3)",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                  }}
+                  className={`h-1.5 rounded-full transition-all duration-200 ${
+                    idx === currentIndex ? "w-4 bg-brand-500" : "w-1.5 bg-white/30"
+                  }`}
                   title={`Event ${idx + 1}`}
                   aria-label={`Go to event ${idx + 1}`}
                 />
@@ -174,18 +99,7 @@ export default function EventNotificationBanner() {
           <Link
             href={`/events/${event.slug}`}
             to={`/events/${event.slug}`}
-            style={{
-              padding: "6px 14px",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-              borderRadius: "6px",
-              color: "#ffffff",
-              background: "rgba(255, 255, 255, 0.12)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              textDecoration: "none",
-              transition: "all 0.15s ease",
-              display: "inline-block",
-            }}
+            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-white bg-white/15 hover:bg-white/25 border border-white/20 transition-all inline-block"
           >
             View Event
           </Link>
@@ -194,49 +108,19 @@ export default function EventNotificationBanner() {
             <Link
               href={`/events/${event.slug}/register`}
               to={`/events/${event.slug}/register`}
-              style={{
-                padding: "6px 16px",
-                fontSize: "0.82rem",
-                fontWeight: 700,
-                borderRadius: "6px",
-                color: "#ffffff",
-                background: "linear-gradient(135deg, #e63f87 0%, #b32a68 100%)",
-                border: "none",
-                textDecoration: "none",
-                boxShadow: "0 2px 10px rgba(230, 63, 135, 0.4)",
-                transition: "all 0.15s ease",
-                display: "inline-block",
-              }}
+              className="px-4 py-1.5 text-xs font-bold rounded-lg text-white bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-md shadow-brand-600/40 transition-all inline-block"
             >
               Register Now
             </Link>
           ) : (
-            <span
-              style={{
-                padding: "6px 12px",
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                borderRadius: "6px",
-                background: "rgba(255, 255, 255, 0.1)",
-                color: "#ffb3b3",
-              }}
-            >
+            <span className="px-3 py-1 text-xs font-semibold rounded-lg bg-white/10 text-rose-200">
               Registration Closed
             </span>
           )}
 
           <button
             onClick={() => setDismissed(true)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "rgba(255, 255, 255, 0.5)",
-              fontSize: "16px",
-              cursor: "pointer",
-              padding: "4px",
-              lineHeight: 1,
-              marginLeft: "4px",
-            }}
+            className="text-white/60 hover:text-white text-lg leading-none p-1 transition-colors ml-1"
             title="Dismiss"
             aria-label="Dismiss banner"
           >
@@ -247,3 +131,4 @@ export default function EventNotificationBanner() {
     </div>
   );
 }
+

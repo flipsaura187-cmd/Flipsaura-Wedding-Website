@@ -14,7 +14,7 @@ import {
 } from "../controllers/vendorController.js";
 
 const router = express.Router();
-const vendorAuth = [requireAuth, requireRole("vendor", "admin")];
+const vendorAuth = [requireAuth, requireRole("user", "vendor", "admin")];
 
 // Profile & Completion
 router.get("/profile", ...vendorAuth, getVendorProfile);

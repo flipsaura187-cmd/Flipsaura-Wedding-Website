@@ -118,96 +118,41 @@ export default function EventFailedPage() {
   };
 
   return (
-    <div style={{ minHeight: "85vh", background: "#faf7f9", padding: "60px 16px 80px" }}>
-      <div className="container" style={{ maxWidth: "600px" }}>
-        <div
-          style={{
-            background: "#ffffff",
-            borderRadius: "20px",
-            border: "1.5px solid #fecaca",
-            padding: "40px 32px",
-            textAlign: "center",
-            boxShadow: "0 10px 30px rgba(220, 38, 38, 0.08)",
-          }}
-        >
+    <div className="min-h-[85vh] bg-surface py-16 px-4 sm:px-6 lg:px-8 pb-20">
+      <div className="max-w-md mx-auto">
+        <div className="bg-white rounded-3xl border border-rose-200 p-8 sm:p-10 text-center shadow-xl shadow-rose-950/5">
           {/* Warning Icon */}
-          <div
-            style={{
-              width: "64px",
-              height: "64px",
-              borderRadius: "50%",
-              background: "#fee2e2",
-              color: "#dc2626",
-              fontSize: "2rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 16px",
-            }}
-          >
+          <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 text-2xl font-bold flex items-center justify-center mx-auto mb-4">
             ✕
           </div>
 
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: "1.9rem",
-              color: "var(--ink, #2a1726)",
-              margin: "0 0 10px",
-            }}
-          >
+          <h1 className="font-serif text-2xl sm:text-3xl text-ink font-bold mb-2">
             Payment Was Not Completed
           </h1>
 
-          <p
-            style={{
-              fontSize: "1.05rem",
-              color: "#dc2626",
-              fontWeight: 600,
-              margin: "0 0 14px",
-            }}
-          >
+          <p className="text-sm sm:text-base text-rose-600 font-semibold mb-3">
             Your registration is still pending payment.
           </p>
 
-          <p style={{ color: "var(--muted)", fontSize: "0.95rem", lineHeight: 1.5, margin: "0 0 24px" }}>
+          <p className="text-sm text-muted leading-relaxed mb-6">
             Don't worry, your registration form data is safely saved. You can retry payment below
             without having to re-enter your details.
           </p>
 
           {errorMessage && (
-            <div
-              style={{
-                background: "#fef2f2",
-                border: "1px solid #f87171",
-                color: "#991b1b",
-                padding: "12px 16px",
-                borderRadius: "10px",
-                fontSize: "0.88rem",
-                textAlign: "left",
-                marginBottom: "28px",
-              }}
-            >
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl text-xs sm:text-sm text-left mb-6 leading-relaxed">
               <strong>Reason: </strong> {errorMessage}
             </div>
           )}
 
           {/* Action Buttons */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="space-y-3">
             {regDocId && (
               <button
                 type="button"
                 onClick={handleRetryPayment}
                 disabled={retrying}
-                className="btn btn-primary"
-                style={{
-                  padding: "14px 24px",
-                  fontSize: "1.05rem",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  boxShadow: "0 4px 16px rgba(230, 63, 135, 0.35)",
-                  cursor: retrying ? "not-allowed" : "pointer",
-                }}
+                className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-bold text-sm sm:text-base shadow-lg shadow-brand-600/30 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {retrying ? "Opening Razorpay..." : "🔄 Retry Payment"}
               </button>
@@ -216,14 +161,7 @@ export default function EventFailedPage() {
             <Link
               href="/events"
               to="/events"
-              className="btn btn-outline"
-              style={{
-                padding: "12px 24px",
-                fontSize: "0.95rem",
-                fontWeight: 600,
-                borderRadius: "10px",
-                textDecoration: "none",
-              }}
+              className="w-full block py-3 px-6 rounded-xl border border-brand-200 hover:bg-brand-50 text-ink font-semibold text-sm transition"
             >
               Browse Events
             </Link>

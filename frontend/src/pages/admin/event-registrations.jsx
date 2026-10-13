@@ -80,175 +80,113 @@ export default function AdminEventRegistrationsPage() {
   // Metrics summary
   const totalCount = registrations.length;
   const paidCount = registrations.filter((r) => r.paymentStatus === "PAID").length;
-  const pendingCount = registrations.filter((r) => r.paymentStatus !== "PAID" && r.registrationStatus !== "CONFIRMED").length;
+  const pendingCount = registrations.filter(
+    (r) => r.paymentStatus !== "PAID" && r.registrationStatus !== "CONFIRMED"
+  ).length;
   const totalRevenue = registrations
     .filter((r) => r.paymentStatus === "PAID")
     .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div style={{ marginBottom: "24px" }}>
+      <div>
         <Link
           href="/admin/events"
           to="/admin/events"
-          style={{ color: "var(--wine, #8B1E3F)", fontSize: "0.88rem", fontWeight: 600, textDecoration: "none" }}
+          className="text-brand-600 hover:text-brand-700 text-sm font-semibold inline-flex items-center gap-1 transition"
         >
           ← Back to Events List
         </Link>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "16px",
-            marginTop: "8px",
-          }}
-        >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
           <div>
-            <h1
-              style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: "1.8rem",
-                margin: "0 0 4px",
-                color: "var(--wine, #8B1E3F)",
-              }}
-            >
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">
               Registrations: {event?.title || "Event Dashboard"}
             </h1>
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.95rem" }}>
+            <p className="text-sm text-muted mt-0.5">
               Live registration records, payment verification IDs, and CSV data export.
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
               type="button"
               onClick={handleExportCsv}
               disabled={registrations.length === 0}
-              className="btn btn-outline"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "9px 18px",
-                fontSize: "0.9rem",
-                fontWeight: 600,
-                borderRadius: "8px",
-                cursor: registrations.length === 0 ? "not-allowed" : "pointer",
-              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-brand-200 text-ink hover:bg-brand-50 text-xs sm:text-sm font-semibold transition disabled:opacity-50"
             >
-              📊 Export to CSV / Excel
+              📊 Export CSV
             </button>
 
-            <Link
-              href={`/events/${event?.slug}`}
-              to={`/events/${event?.slug}`}
-              target="_blank"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "9px 16px",
-                fontSize: "0.9rem",
-                fontWeight: 600,
-                borderRadius: "8px",
-                background: "#f3f4f6",
-                color: "#374151",
-                textDecoration: "none",
-              }}
-            >
-              🔗 View Public Page
-            </Link>
+            {event?.slug && (
+              <Link
+                href={`/events/${event.slug}`}
+                to={`/events/${event.slug}`}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface hover:bg-brand-50 text-ink border border-brand-200 text-xs sm:text-sm font-semibold transition"
+              >
+                🔗 View Public Page
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
       {/* Metrics Row */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "16px",
-          marginBottom: "24px",
-        }}
-      >
-        <div style={metricCardStyle}>
-          <div style={metricLabelStyle}>Total Records</div>
-          <div style={metricValueStyle}>{totalCount}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm flex flex-col justify-between">
+          <div className="text-xs text-muted font-semibold uppercase tracking-wider">Total Records</div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-ink mt-2 font-sans">{totalCount}</div>
         </div>
-        <div style={metricCardStyle}>
-          <div style={metricLabelStyle}>Paid / Confirmed</div>
-          <div style={{ ...metricValueStyle, color: "#16a34a" }}>{paidCount}</div>
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm flex flex-col justify-between">
+          <div className="text-xs text-muted font-semibold uppercase tracking-wider">Paid / Confirmed</div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-2 font-sans">{paidCount}</div>
         </div>
-        <div style={metricCardStyle}>
-          <div style={metricLabelStyle}>Pending / Incomplete</div>
-          <div style={{ ...metricValueStyle, color: "#ea580c" }}>{pendingCount}</div>
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm flex flex-col justify-between">
+          <div className="text-xs text-muted font-semibold uppercase tracking-wider">Pending / Incomplete</div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-2 font-sans">{pendingCount}</div>
         </div>
-        <div style={metricCardStyle}>
-          <div style={metricLabelStyle}>Revenue Collected</div>
-          <div style={{ ...metricValueStyle, color: "var(--wine, #8B1E3F)" }}>
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm flex flex-col justify-between">
+          <div className="text-xs text-muted font-semibold uppercase tracking-wider">Revenue Collected</div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-brand-700 mt-2 font-sans truncate">
             ₹{totalRevenue.toLocaleString("en-IN")}
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div
-        style={{
-          background: "#ffffff",
-          borderRadius: "14px",
-          border: "1px solid var(--line, #f3d9e4)",
-          padding: "16px 20px",
-          marginBottom: "20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "16px",
-        }}
-      >
-        {/* Filters */}
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-          <span style={{ fontSize: "0.85rem", color: "var(--muted)", fontWeight: 600 }}>Filter:</span>
+      <div className="bg-white rounded-2xl border border-brand-100 p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        {/* Filter chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted font-bold uppercase tracking-wider mr-1">Status:</span>
           {["ALL", "PAID", "PENDING", "FAILED"].map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setStatusFilter(s)}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "20px",
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                border: statusFilter === s ? "none" : "1px solid #e5d8de",
-                background: statusFilter === s ? "var(--pink-600, #e63f87)" : "#ffffff",
-                color: statusFilter === s ? "#ffffff" : "var(--ink)",
-                cursor: "pointer",
-              }}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                statusFilter === s
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "bg-surface text-ink/75 hover:bg-brand-50"
+              }`}
             >
               {s}
             </button>
           ))}
 
-          <span style={{ color: "#ccc", margin: "0 4px" }}>|</span>
+          <span className="text-brand-200 mx-1">|</span>
 
+          <span className="text-xs text-muted font-bold uppercase tracking-wider mr-1">Type:</span>
           {["ALL", "Individual", "Team of 3"].map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTypeFilter(t)}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "20px",
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                border: typeFilter === t ? "none" : "1px solid #e5d8de",
-                background: typeFilter === t ? "#4a1936" : "#ffffff",
-                color: typeFilter === t ? "#ffffff" : "var(--ink)",
-                cursor: "pointer",
-              }}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                typeFilter === t
+                  ? "bg-ink text-white shadow-sm"
+                  : "bg-surface text-ink/75 hover:bg-brand-50"
+              }`}
             >
               {t}
             </button>
@@ -256,25 +194,17 @@ export default function AdminEventRegistrationsPage() {
         </div>
 
         {/* Search */}
-        <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "8px" }}>
+        <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full lg:w-auto">
           <input
             type="text"
             placeholder="Search by ID, name, email, phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "8px",
-              border: "1.5px solid #d5ccd1",
-              fontSize: "0.88rem",
-              width: "260px",
-              outline: "none",
-            }}
+            className="flex-1 lg:w-64 px-3.5 py-1.5 rounded-xl border border-brand-200 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{ padding: "8px 16px", fontSize: "0.85rem", borderRadius: "8px" }}
+            className="px-4 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-sm transition"
           >
             Search
           </button>
@@ -282,206 +212,146 @@ export default function AdminEventRegistrationsPage() {
       </div>
 
       {error && (
-        <div style={{ background: "#fee2e2", color: "#991b1b", padding: "12px 16px", borderRadius: "8px", marginBottom: "20px" }}>
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl text-sm font-medium">
           {error}
         </div>
       )}
 
       {/* Table */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
-          <p>Loading registrations...</p>
+        <div className="bg-white rounded-2xl border border-brand-100 p-12 text-center text-muted">
+          <div className="w-8 h-8 border-3 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm">Loading registrations...</p>
         </div>
       ) : registrations.length === 0 ? (
-        <div
-          style={{
-            background: "#ffffff",
-            borderRadius: "14px",
-            border: "1px solid var(--line, #f3d9e4)",
-            padding: "60px 20px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>👥</div>
-          <h3 style={{ margin: "0 0 6px" }}>No Registrations Found</h3>
-          <p style={{ color: "var(--muted)", margin: 0, fontSize: "0.92rem" }}>
+        <div className="py-16 px-6 text-center bg-white rounded-3xl border border-brand-100">
+          <div className="text-4xl mb-2">👥</div>
+          <h3 className="font-serif text-lg font-bold text-ink mb-1">No Registrations Found</h3>
+          <p className="text-muted text-xs">
             No participant records matched your filter or search query.
           </p>
         </div>
       ) : (
-        <div
-          style={{
-            background: "#ffffff",
-            borderRadius: "14px",
-            border: "1px solid var(--line, #f3d9e4)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.03)",
-            overflowX: "auto",
-          }}
-        >
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
-            <thead>
-              <tr style={{ background: "#faf7f9", borderBottom: "1px solid #f3d9e4" }}>
-                <th style={thStyle}>Reg ID</th>
-                <th style={thStyle}>Participation & Team</th>
-                <th style={thStyle}>Primary Contact / Leader</th>
-                <th style={thStyle}>College & City</th>
-                <th style={thStyle}>Participants</th>
-                <th style={thStyle}>Payment</th>
-                <th style={thStyle}>Razorpay Info</th>
-                <th style={thStyle}>Registered At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {registrations.map((r) => {
-                const isPaid = r.paymentStatus === "PAID";
-                const isConfirmed = r.registrationStatus === "CONFIRMED";
+        <div className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs sm:text-sm text-ink/80">
+              <thead className="bg-surface text-[11px] font-bold text-muted uppercase tracking-wider border-b border-brand-100">
+                <tr>
+                  <th className="px-4 py-3.5">Reg ID</th>
+                  <th className="px-4 py-3.5">Participation</th>
+                  <th className="px-4 py-3.5">Primary Contact / Leader</th>
+                  <th className="px-4 py-3.5">College & City</th>
+                  <th className="px-4 py-3.5">Participants</th>
+                  <th className="px-4 py-3.5">Payment</th>
+                  <th className="px-4 py-3.5">Razorpay Info</th>
+                  <th className="px-4 py-3.5">Registered At</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-100/70">
+                {registrations.map((r) => {
+                  const isPaid = r.paymentStatus === "PAID";
+                  const isConfirmed = r.registrationStatus === "CONFIRMED";
 
-                const dateStr = r.createdAt
-                  ? new Date(r.createdAt).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "–";
+                  const dateStr = r.createdAt
+                    ? new Date(r.createdAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "–";
 
-                return (
-                  <tr key={r._id} style={{ borderBottom: "1px solid #f5edf1" }}>
-                    {/* Reg ID */}
-                    <td style={tdStyle}>
-                      <span
-                        style={{
-                          fontFamily: "monospace",
-                          fontWeight: 700,
-                          fontSize: "0.92rem",
-                          color: r.registrationId ? "var(--pink-700)" : "#999",
-                        }}
-                      >
-                        {r.registrationId || "PENDING"}
-                      </span>
-                    </td>
+                  return (
+                    <tr key={r._id} className="hover:bg-brand-50/30 transition-colors">
+                      {/* Reg ID */}
+                      <td className="px-4 py-3.5 align-top">
+                        <span
+                          className={`font-mono font-bold text-xs ${
+                            r.registrationId ? "text-brand-700" : "text-muted"
+                          }`}
+                        >
+                          {r.registrationId || "PENDING"}
+                        </span>
+                      </td>
 
-                    {/* Participation & Team */}
-                    <td style={tdStyle}>
-                      <div style={{ fontWeight: 600 }}>{r.participationType}</div>
-                      {r.teamName && (
-                        <div style={{ fontSize: "0.8rem", color: "var(--pink-600)", fontWeight: 600 }}>
-                          Team: {r.teamName}
+                      {/* Participation & Team */}
+                      <td className="px-4 py-3.5 align-top">
+                        <div className="font-semibold text-ink">{r.participationType}</div>
+                        {r.teamName && (
+                          <div className="text-[11px] text-brand-600 font-bold mt-0.5">
+                            Team: {r.teamName}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Primary Contact / Leader */}
+                      <td className="px-4 py-3.5 align-top">
+                        <div className="font-bold text-ink">{r.primaryName}</div>
+                        <div className="text-xs text-ink/70">{r.primaryPhone}</div>
+                        <div className="text-xs text-muted truncate max-w-[160px]">{r.primaryEmail}</div>
+                      </td>
+
+                      {/* College & City */}
+                      <td className="px-4 py-3.5 align-top">
+                        <div className="text-ink">{r.primaryCollege || "–"}</div>
+                        <div className="text-xs text-muted">{r.city || "–"}</div>
+                      </td>
+
+                      {/* Participants list */}
+                      <td className="px-4 py-3.5 align-top">
+                        <div className="space-y-0.5 text-xs">
+                          {Array.isArray(r.participants) &&
+                            r.participants.map((p, idx) => (
+                              <div key={idx}>
+                                • <strong>{p.name || p.fullName}</strong>
+                                {p.isLeader && " (Leader)"}
+                              </div>
+                            ))}
                         </div>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Primary Contact / Leader */}
-                    <td style={tdStyle}>
-                      <div style={{ fontWeight: 700, color: "var(--ink)" }}>{r.primaryName}</div>
-                      <div style={{ fontSize: "0.8rem", color: "#555" }}>{r.primaryPhone}</div>
-                      <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>{r.primaryEmail}</div>
-                    </td>
-
-                    {/* College & City */}
-                    <td style={tdStyle}>
-                      <div>{r.primaryCollege || "–"}</div>
-                      <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>{r.city || "–"}</div>
-                    </td>
-
-                    {/* Participants list */}
-                    <td style={tdStyle}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                        {Array.isArray(r.participants) &&
-                          r.participants.map((p, idx) => (
-                            <div key={idx} style={{ fontSize: "0.8rem" }}>
-                              • <strong>{p.name || p.fullName}</strong>
-                              {p.isLeader && " (Leader)"}
-                            </div>
-                          ))}
-                      </div>
-                    </td>
-
-                    {/* Payment Status */}
-                    <td style={tdStyle}>
-                      <span
-                        style={{
-                          background: isPaid ? "#dcfce7" : isConfirmed ? "#e0e7ff" : "#fee2e2",
-                          color: isPaid ? "#15803d" : isConfirmed ? "#3730a3" : "#b91c1c",
-                          fontSize: "0.76rem",
-                          fontWeight: 700,
-                          padding: "3px 8px",
-                          borderRadius: "10px",
-                          display: "inline-block",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        {r.paymentStatus}
-                      </span>
-                      <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>
-                        ₹{Number(r.amount).toLocaleString("en-IN")}
-                      </div>
-                    </td>
-
-                    {/* Razorpay Info */}
-                    <td style={tdStyle}>
-                      <div style={{ fontSize: "0.78rem", fontFamily: "monospace", color: "#555" }}>
-                        Pay ID: {r.payment?.paymentId || "–"}
-                      </div>
-                      <div style={{ fontSize: "0.75rem", fontFamily: "monospace", color: "#888" }}>
-                        Ord ID: {r.payment?.orderId || "–"}
-                      </div>
-                      {r.payment?.failureReason && (
-                        <div style={{ fontSize: "0.75rem", color: "#dc2626" }}>
-                          Fail: {r.payment.failureReason}
+                      {/* Payment Status */}
+                      <td className="px-4 py-3.5 align-top">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold border mb-1 ${
+                            isPaid
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                              : isConfirmed
+                              ? "bg-indigo-100 text-indigo-800 border-indigo-200"
+                              : "bg-rose-100 text-rose-800 border-rose-200"
+                          }`}
+                        >
+                          {r.paymentStatus}
+                        </span>
+                        <div className="font-extrabold text-ink font-sans text-xs sm:text-sm">
+                          ₹{Number(r.amount).toLocaleString("en-IN")}
                         </div>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Date */}
-                    <td style={{ ...tdStyle, fontSize: "0.8rem", color: "var(--muted)" }}>
-                      {dateStr}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {/* Razorpay Info */}
+                      <td className="px-4 py-3.5 align-top text-[11px] font-mono text-muted space-y-0.5">
+                        <div>Pay ID: {r.payment?.paymentId || "–"}</div>
+                        <div>Ord ID: {r.payment?.orderId || "–"}</div>
+                        {r.payment?.failureReason && (
+                          <div className="text-rose-600 font-sans">
+                            Fail: {r.payment.failureReason}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Date */}
+                      <td className="px-4 py-3.5 align-top text-xs text-muted whitespace-nowrap">
+                        {dateStr}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
   );
 }
-
-const metricCardStyle = {
-  background: "#ffffff",
-  borderRadius: "12px",
-  padding: "18px 20px",
-  border: "1px solid var(--line, #f3d9e4)",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-};
-
-const metricLabelStyle = {
-  fontSize: "0.82rem",
-  color: "var(--muted)",
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-  fontWeight: 600,
-};
-
-const metricValueStyle = {
-  fontSize: "1.7rem",
-  fontWeight: 800,
-  color: "var(--ink)",
-  marginTop: "4px",
-};
-
-const thStyle = {
-  padding: "12px 14px",
-  color: "var(--ink)",
-  fontWeight: 700,
-  fontSize: "0.82rem",
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-};
-
-const tdStyle = {
-  padding: "12px 14px",
-  verticalAlign: "top",
-};

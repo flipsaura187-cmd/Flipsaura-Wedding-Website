@@ -57,11 +57,8 @@ export function calculateVendorCompletion(user) {
     missingCategories.profile.push("PIN Code");
   }
 
-  // 2. Service Information
-  if (!vp.serviceDescription?.trim() && !vp.about?.trim()) {
-    missingFields.push("Service Description");
-    missingCategories.services.push("Service Description");
-  }
+  // 2. Service Information (Service Description is optional)
+
   if ((!vp.startingPrice || vp.startingPrice <= 0) && !vp.priceRange?.trim()) {
     missingFields.push("Starting Price or Price Range");
     missingCategories.services.push("Starting Price or Price Range");

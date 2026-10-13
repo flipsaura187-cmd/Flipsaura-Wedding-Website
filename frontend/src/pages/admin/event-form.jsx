@@ -127,11 +127,9 @@ export default function AdminEventFormPage() {
     };
   }, [id, isEditing]);
 
-  // Handlers for Basic info
   const handleInputChange = (field, value) => {
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
-      // auto slugify title if not editing an existing slug
       if (field === "title" && !isEditing) {
         updated.slug = value
           .toLowerCase()
@@ -143,7 +141,7 @@ export default function AdminEventFormPage() {
     });
   };
 
-  // Prizes Handlers
+  // Dynamic Array Handlers
   const addPrize = () => {
     setFormData((prev) => ({
       ...prev,
@@ -166,7 +164,6 @@ export default function AdminEventFormPage() {
     }));
   };
 
-  // Benefits Handlers
   const addBenefit = () => {
     setFormData((prev) => ({ ...prev, benefits: [...prev.benefits, ""] }));
   };
@@ -183,7 +180,6 @@ export default function AdminEventFormPage() {
     setFormData((prev) => ({ ...prev, benefits: prev.benefits.filter((_, i) => i !== index) }));
   };
 
-  // Rounds / Event Format Handlers
   const addRound = () => {
     setFormData((prev) => ({
       ...prev,
@@ -206,7 +202,6 @@ export default function AdminEventFormPage() {
     }));
   };
 
-  // Rules Handlers
   const addRule = () => {
     setFormData((prev) => ({ ...prev, rules: [...prev.rules, ""] }));
   };
@@ -223,7 +218,6 @@ export default function AdminEventFormPage() {
     setFormData((prev) => ({ ...prev, rules: prev.rules.filter((_, i) => i !== index) }));
   };
 
-  // FAQs Handlers
   const addFaq = () => {
     setFormData((prev) => ({
       ...prev,
@@ -246,12 +240,11 @@ export default function AdminEventFormPage() {
     }));
   };
 
-  // Toggle Participation Type
   const toggleParticipationType = (type) => {
     setFormData((prev) => {
       const current = prev.participationTypes || [];
       if (current.includes(type)) {
-        if (current.length === 1) return prev; // Keep at least one
+        if (current.length === 1) return prev;
         return { ...prev, participationTypes: current.filter((t) => t !== type) };
       } else {
         return { ...prev, participationTypes: [...current, type] };
@@ -259,7 +252,6 @@ export default function AdminEventFormPage() {
     });
   };
 
-  // Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ type: "", text: "" });
@@ -303,29 +295,35 @@ export default function AdminEventFormPage() {
   };
 
   if (loading) {
-    return <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--muted)" }}>Loading event editor...</div>;
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center text-muted">
+        <div className="text-center">
+          <div className="w-8 h-8 border-3 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm">Loading event editor...</p>
+        </div>
+      </div>
+    );
   }
 
+  const inputClass =
+    "w-full px-3.5 py-2.5 rounded-xl border border-brand-200 text-sm text-ink placeholder:text-muted/60 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500";
+  const labelClass = "block text-xs font-semibold text-ink/80 mb-1.5";
+  const sectionCardClass = "bg-white rounded-2xl p-6 sm:p-7 border border-brand-100 shadow-sm space-y-4";
+  const sectionTitleClass = "font-serif text-lg sm:text-xl font-bold text-ink";
+
   return (
-    <div style={{ maxWidth: "980px" }}>
-      {/* Top Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Link
             href="/admin/events"
             to="/admin/events"
-            style={{ color: "var(--wine, #8B1E3F)", fontSize: "0.88rem", fontWeight: 600, textDecoration: "none" }}
+            className="text-brand-600 hover:text-brand-700 text-sm font-semibold inline-flex items-center gap-1 transition"
           >
             ← Back to Events List
           </Link>
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: "1.8rem",
-              margin: "6px 0 0",
-              color: "var(--wine, #8B1E3F)",
-            }}
-          >
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink mt-1">
             {isEditing ? `Edit Event: ${formData.title}` : "Create New Event"}
           </h1>
         </div>
@@ -334,8 +332,7 @@ export default function AdminEventFormPage() {
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="btn btn-primary"
-          style={{ padding: "10px 24px", fontWeight: 700, borderRadius: "8px" }}
+          className="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-sm transition disabled:opacity-50"
         >
           {submitting ? "Saving..." : isEditing ? "Save Changes" : "Create Event"}
         </button>
@@ -343,55 +340,51 @@ export default function AdminEventFormPage() {
 
       {message.text && (
         <div
-          style={{
-            background: message.type === "success" ? "#dcfce7" : "#fee2e2",
-            border: `1px solid ${message.type === "success" ? "#86efac" : "#fca5a5"}`,
-            color: message.type === "success" ? "#166534" : "#991b1b",
-            padding: "14px 18px",
-            borderRadius: "10px",
-            marginBottom: "24px",
-            fontWeight: 500,
-          }}
+          className={`p-4 rounded-xl text-sm font-medium border ${
+            message.type === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-rose-50 border-rose-200 text-rose-800"
+          }`}
         >
           {message.text}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* SECTION 1: Basic Information */}
-        <div style={cardStyle}>
-          <h3 style={sectionHeadingStyle}>1. Basic Information</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+        <div className={sectionCardClass}>
+          <h3 className={sectionTitleClass}>1. Basic Information</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label style={labelStyle}>Event Title *</label>
+              <label className={labelClass}>Event Title *</label>
               <input
                 type="text"
                 required
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
                 placeholder="e.g. THE CIVIC CUP"
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Slug (URL identifier) *</label>
+              <label className={labelClass}>Slug (URL identifier) *</label>
               <input
                 type="text"
                 required
                 value={formData.slug}
                 onChange={(e) => handleInputChange("slug", e.target.value)}
                 placeholder="e.g. the-civic-cup"
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Event Type</label>
+              <label className={labelClass}>Event Type</label>
               <select
                 value={formData.type}
                 onChange={(e) => handleInputChange("type", e.target.value)}
-                style={inputStyle}
+                className={inputClass}
               >
                 <option value="Quiz Competition">Quiz Competition</option>
                 <option value="College Event">College Event</option>
@@ -403,18 +396,18 @@ export default function AdminEventFormPage() {
             </div>
 
             <div>
-              <label style={labelStyle}>Organizer</label>
+              <label className={labelClass}>Organizer</label>
               <input
                 type="text"
                 value={formData.organizer}
                 onChange={(e) => handleInputChange("organizer", e.target.value)}
                 placeholder="e.g. Flipsaura × Marritcredence"
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Registration Fee (₹) *</label>
+              <label className={labelClass}>Registration Fee (₹) *</label>
               <input
                 type="number"
                 min="0"
@@ -422,199 +415,196 @@ export default function AdminEventFormPage() {
                 value={formData.registrationFee}
                 onChange={(e) => handleInputChange("registrationFee", Number(e.target.value))}
                 placeholder="1000"
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Banner Image URL</label>
+              <label className={labelClass}>Banner Image URL</label>
               <input
                 type="url"
                 value={formData.bannerImage}
                 onChange={(e) => handleInputChange("bannerImage", e.target.value)}
                 placeholder="https://... or /images/..."
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Short Description (Shown on cards & banner)</label>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Short Description (Shown on cards & banner)</label>
               <input
                 type="text"
                 value={formData.shortDescription}
                 onChange={(e) => handleInputChange("shortDescription", e.target.value)}
                 placeholder="Brief summary of the event"
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Full Description / About Event *</label>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Full Description / About Event *</label>
               <textarea
-                rows={5}
+                rows={4}
                 required
                 value={formData.description}
                 onChange={(e) => handleInputChange("description", e.target.value)}
                 placeholder="Full details of the competition or event..."
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
           </div>
         </div>
 
         {/* SECTION 2: Date, Time & Venue */}
-        <div style={cardStyle}>
-          <h3 style={sectionHeadingStyle}>2. Date, Time & Venue</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+        <div className={sectionCardClass}>
+          <h3 className={sectionTitleClass}>2. Date, Time & Venue</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label style={labelStyle}>Event Date</label>
+              <label className={labelClass}>Event Date</label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleInputChange("date", e.target.value)}
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Start Time</label>
+              <label className={labelClass}>Start Time</label>
               <input
                 type="text"
                 placeholder="e.g. 10:00 AM"
                 value={formData.startTime}
                 onChange={(e) => handleInputChange("startTime", e.target.value)}
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>End Time</label>
+              <label className={labelClass}>End Time</label>
               <input
                 type="text"
                 placeholder="e.g. 05:00 PM"
                 value={formData.endTime}
                 onChange={(e) => handleInputChange("endTime", e.target.value)}
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
-            <div>
-              <label style={labelStyle}>City</label>
+            <div className="sm:col-span-1">
+              <label className={labelClass}>City</label>
               <input
                 type="text"
                 placeholder="e.g. Patna, Bihar"
                 value={formData.city}
                 onChange={(e) => handleInputChange("city", e.target.value)}
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Full Venue Address</label>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Full Venue Address</label>
               <input
                 type="text"
-                placeholder="e.g. Gyan Bhavan / Auditorium Name, Gandhi Maidan, Patna"
+                placeholder="e.g. Gyan Bhavan, Gandhi Maidan, Patna"
                 value={formData.venue}
                 onChange={(e) => handleInputChange("venue", e.target.value)}
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
           </div>
         </div>
 
         {/* SECTION 3: Cash Prizes & Rewards */}
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h3 style={{ ...sectionHeadingStyle, margin: 0 }}>3. Cash Prizes & Rewards</h3>
+        <div className={sectionCardClass}>
+          <div className="flex justify-between items-center">
+            <h3 className={sectionTitleClass}>3. Cash Prizes & Rewards</h3>
             <button
               type="button"
               onClick={addPrize}
-              style={actionBtnStyle}
+              className="px-3 py-1 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 text-xs font-semibold border border-brand-200 transition"
             >
               + Add Prize
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="space-y-3">
             {formData.prizes.map((prize, idx) => (
               <div
                 key={idx}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "160px 140px 1fr 40px",
-                  gap: "10px",
-                  alignItems: "center",
-                  background: "#faf8f9",
-                  padding: "12px 14px",
-                  borderRadius: "8px",
-                  border: "1px solid #ebdbe2",
-                }}
+                className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-surface p-3.5 rounded-xl border border-brand-100"
               >
-                <input
-                  type="text"
-                  placeholder="Rank / Title"
-                  value={prize.rank}
-                  onChange={(e) => updatePrize(idx, "rank", e.target.value)}
-                  style={inputStyle}
-                />
-                <input
-                  type="number"
-                  placeholder="Amount ₹"
-                  value={prize.amount}
-                  onChange={(e) => updatePrize(idx, "amount", Number(e.target.value))}
-                  style={inputStyle}
-                />
-                <input
-                  type="text"
-                  placeholder="Description / Trophy (optional)"
-                  value={prize.description}
-                  onChange={(e) => updatePrize(idx, "description", e.target.value)}
-                  style={inputStyle}
-                />
-                <button
-                  type="button"
-                  onClick={() => removePrize(idx)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#dc2626",
-                    cursor: "pointer",
-                    fontSize: "1.2rem",
-                  }}
-                  title="Remove prize"
-                >
-                  ×
-                </button>
+                <div className="sm:col-span-4">
+                  <input
+                    type="text"
+                    placeholder="Rank / Title"
+                    value={prize.rank}
+                    onChange={(e) => updatePrize(idx, "rank", e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <input
+                    type="number"
+                    placeholder="Amount ₹"
+                    value={prize.amount}
+                    onChange={(e) => updatePrize(idx, "amount", Number(e.target.value))}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <input
+                    type="text"
+                    placeholder="Description / Trophy"
+                    value={prize.description}
+                    onChange={(e) => updatePrize(idx, "description", e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="sm:col-span-1 text-center">
+                  <button
+                    type="button"
+                    onClick={() => removePrize(idx)}
+                    className="text-rose-600 hover:text-rose-800 text-lg font-bold"
+                    title="Remove prize"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         {/* SECTION 4: Benefits / Why Participate */}
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h3 style={{ ...sectionHeadingStyle, margin: 0 }}>4. Why Participate / Benefits</h3>
-            <button type="button" onClick={addBenefit} style={actionBtnStyle}>
+        <div className={sectionCardClass}>
+          <div className="flex justify-between items-center">
+            <h3 className={sectionTitleClass}>4. Why Participate / Benefits</h3>
+            <button
+              type="button"
+              onClick={addBenefit}
+              className="px-3 py-1 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 text-xs font-semibold border border-brand-200 transition"
+            >
               + Add Benefit
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div className="space-y-2.5">
             {formData.benefits.map((benefit, idx) => (
-              <div key={idx} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <div key={idx} className="flex gap-2 items-center">
                 <input
                   type="text"
                   value={benefit}
                   onChange={(e) => updateBenefit(idx, e.target.value)}
                   placeholder="e.g. Test knowledge and quick-thinking ability"
-                  style={inputStyle}
+                  className={inputClass}
                 />
                 <button
                   type="button"
                   onClick={() => removeBenefit(idx)}
-                  style={{ background: "transparent", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "1.2rem" }}
+                  className="text-rose-600 hover:text-rose-800 text-lg font-bold px-2"
                 >
-                  ×
+                  ✕
                 </button>
               </div>
             ))}
@@ -622,81 +612,86 @@ export default function AdminEventFormPage() {
         </div>
 
         {/* SECTION 5: Event Format / Rounds */}
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h3 style={{ ...sectionHeadingStyle, margin: 0 }}>5. Event Format & Rounds</h3>
-            <button type="button" onClick={addRound} style={actionBtnStyle}>
+        <div className={sectionCardClass}>
+          <div className="flex justify-between items-center">
+            <h3 className={sectionTitleClass}>5. Event Format & Rounds</h3>
+            <button
+              type="button"
+              onClick={addRound}
+              className="px-3 py-1 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 text-xs font-semibold border border-brand-200 transition"
+            >
               + Add Round
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="space-y-3">
             {formData.eventFormat.map((r, idx) => (
               <div
                 key={idx}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "220px 1fr 40px",
-                  gap: "10px",
-                  alignItems: "center",
-                  background: "#faf8f9",
-                  padding: "12px 14px",
-                  borderRadius: "8px",
-                  border: "1px solid #ebdbe2",
-                }}
+                className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-surface p-3.5 rounded-xl border border-brand-100"
               >
-                <input
-                  type="text"
-                  placeholder="Round Title"
-                  value={r.round}
-                  onChange={(e) => updateRound(idx, "round", e.target.value)}
-                  style={inputStyle}
-                />
-                <input
-                  type="text"
-                  placeholder="Round description & rules"
-                  value={r.details}
-                  onChange={(e) => updateRound(idx, "details", e.target.value)}
-                  style={inputStyle}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeRound(idx)}
-                  style={{ background: "transparent", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "1.2rem" }}
-                >
-                  ×
-                </button>
+                <div className="sm:col-span-4">
+                  <input
+                    type="text"
+                    placeholder="Round Title"
+                    value={r.round}
+                    onChange={(e) => updateRound(idx, "round", e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="sm:col-span-7">
+                  <input
+                    type="text"
+                    placeholder="Round description & rules"
+                    value={r.details}
+                    onChange={(e) => updateRound(idx, "details", e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="sm:col-span-1 text-center">
+                  <button
+                    type="button"
+                    onClick={() => removeRound(idx)}
+                    className="text-rose-600 hover:text-rose-800 text-lg font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         {/* SECTION 6: Rules & Regulations */}
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h3 style={{ ...sectionHeadingStyle, margin: 0 }}>6. Rules & Regulations</h3>
-            <button type="button" onClick={addRule} style={actionBtnStyle}>
+        <div className={sectionCardClass}>
+          <div className="flex justify-between items-center">
+            <h3 className={sectionTitleClass}>6. Rules & Regulations</h3>
+            <button
+              type="button"
+              onClick={addRule}
+              className="px-3 py-1 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 text-xs font-semibold border border-brand-200 transition"
+            >
               + Add Rule
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div className="space-y-2.5">
             {formData.rules.map((rule, idx) => (
-              <div key={idx} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <span style={{ fontSize: "0.9rem", color: "#777", width: "24px" }}>{idx + 1}.</span>
+              <div key={idx} className="flex gap-2 items-center">
+                <span className="text-xs text-muted w-6 text-center font-bold">{idx + 1}.</span>
                 <input
                   type="text"
                   value={rule}
                   onChange={(e) => updateRule(idx, e.target.value)}
                   placeholder="Rule description..."
-                  style={inputStyle}
+                  className={inputClass}
                 />
                 <button
                   type="button"
                   onClick={() => removeRule(idx)}
-                  style={{ background: "transparent", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "1.2rem" }}
+                  className="text-rose-600 hover:text-rose-800 text-lg font-bold px-2"
                 >
-                  ×
+                  ✕
                 </button>
               </div>
             ))}
@@ -704,60 +699,49 @@ export default function AdminEventFormPage() {
         </div>
 
         {/* SECTION 7: FAQs */}
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h3 style={{ ...sectionHeadingStyle, margin: 0 }}>7. Frequently Asked Questions</h3>
-            <button type="button" onClick={addFaq} style={actionBtnStyle}>
+        <div className={sectionCardClass}>
+          <div className="flex justify-between items-center">
+            <h3 className={sectionTitleClass}>7. Frequently Asked Questions</h3>
+            <button
+              type="button"
+              onClick={addFaq}
+              className="px-3 py-1 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 text-xs font-semibold border border-brand-200 transition"
+            >
               + Add FAQ
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="space-y-3">
             {formData.faqs.map((faq, idx) => (
               <div
                 key={idx}
-                style={{
-                  background: "#faf8f9",
-                  padding: "14px",
-                  borderRadius: "8px",
-                  border: "1px solid #ebdbe2",
-                  position: "relative",
-                }}
+                className="bg-surface p-4 rounded-xl border border-brand-100 relative space-y-3"
               >
                 <button
                   type="button"
                   onClick={() => removeFaq(idx)}
-                  style={{
-                    position: "absolute",
-                    top: "10px",
-                    right: "10px",
-                    background: "transparent",
-                    border: "none",
-                    color: "#dc2626",
-                    fontSize: "1.2rem",
-                    cursor: "pointer",
-                  }}
+                  className="absolute top-3 right-3 text-rose-600 hover:text-rose-800 text-base font-bold"
                 >
-                  ×
+                  ✕
                 </button>
-                <div style={{ marginBottom: "8px", paddingRight: "30px" }}>
-                  <label style={labelStyle}>Question</label>
+                <div className="pr-8">
+                  <label className={labelClass}>Question</label>
                   <input
                     type="text"
                     value={faq.question}
                     onChange={(e) => updateFaq(idx, "question", e.target.value)}
                     placeholder="e.g. Can school students participate?"
-                    style={inputStyle}
+                    className={inputClass}
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Answer</label>
+                  <label className={labelClass}>Answer</label>
                   <textarea
                     rows={2}
                     value={faq.answer}
                     onChange={(e) => updateFaq(idx, "answer", e.target.value)}
                     placeholder="e.g. Yes, all registered students with ID are eligible."
-                    style={inputStyle}
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -766,12 +750,12 @@ export default function AdminEventFormPage() {
         </div>
 
         {/* SECTION 8: Contact & Registration Settings */}
-        <div style={cardStyle}>
-          <h3 style={sectionHeadingStyle}>8. Contact & Publishing Settings</h3>
+        <div className={sectionCardClass}>
+          <h3 className={sectionTitleClass}>8. Contact & Publishing Settings</h3>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div>
-              <label style={labelStyle}>Support Email</label>
+              <label className={labelClass}>Support Email</label>
               <input
                 type="email"
                 value={formData.contactInformation.email}
@@ -781,12 +765,12 @@ export default function AdminEventFormPage() {
                     contactInformation: { ...prev.contactInformation, email: e.target.value },
                   }))
                 }
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Support Phone / WhatsApp</label>
+              <label className={labelClass}>Support Phone / WhatsApp</label>
               <input
                 type="text"
                 value={formData.contactInformation.phone}
@@ -796,16 +780,16 @@ export default function AdminEventFormPage() {
                     contactInformation: { ...prev.contactInformation, phone: e.target.value },
                   }))
                 }
-                style={inputStyle}
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Publication Status</label>
+              <label className={labelClass}>Publication Status</label>
               <select
                 value={formData.status}
                 onChange={(e) => handleInputChange("status", e.target.value)}
-                style={inputStyle}
+                className={inputClass}
               >
                 <option value="DRAFT">DRAFT (Admin only)</option>
                 <option value="PUBLISHED">PUBLISHED (Visible to public)</option>
@@ -816,68 +800,66 @@ export default function AdminEventFormPage() {
           </div>
 
           {/* Participation Types Checkboxes */}
-          <div style={{ marginBottom: "20px" }}>
-            <label style={labelStyle}>Allowed Participation Types</label>
-            <div style={{ display: "flex", gap: "20px", marginTop: "6px" }}>
+          <div className="mb-4">
+            <label className={labelClass}>Allowed Participation Types</label>
+            <div className="flex gap-5 mt-1.5">
               {["Individual", "Team of 3"].map((type) => (
-                <label key={type} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <label key={type} className="flex items-center gap-2 cursor-pointer text-sm text-ink font-semibold">
                   <input
                     type="checkbox"
                     checked={formData.participationTypes.includes(type)}
                     onChange={() => toggleParticipationType(type)}
-                    style={{ accentColor: "var(--pink-600)" }}
+                    className="w-4 h-4 accent-brand-600 rounded cursor-pointer"
                   />
-                  <span style={{ fontSize: "0.95rem", fontWeight: 600 }}>{type}</span>
+                  {type}
                 </label>
               ))}
             </div>
           </div>
 
           {/* Featured & Registration Toggles */}
-          <div style={{ display: "flex", gap: "30px", flexWrap: "wrap", paddingTop: "14px", borderTop: "1px solid #ebdbe2" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+          <div className="flex flex-wrap gap-8 pt-4 border-t border-brand-100">
+            <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.featured}
                 onChange={(e) => handleInputChange("featured", e.target.checked)}
-                style={{ width: "18px", height: "18px", accentColor: "var(--pink-600)" }}
+                className="w-4 h-4 accent-brand-600 rounded cursor-pointer"
               />
               <div>
-                <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>⭐ Featured Event</div>
-                <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>Show on Homepage Top Notification Banner</div>
+                <div className="font-semibold text-sm text-ink">⭐ Featured Event</div>
+                <div className="text-xs text-muted">Show on Homepage Top Notification Banner</div>
               </div>
             </label>
 
-            <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+            <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.isRegistrationOpen}
                 onChange={(e) => handleInputChange("isRegistrationOpen", e.target.checked)}
-                style={{ width: "18px", height: "18px", accentColor: "var(--pink-600)" }}
+                className="w-4 h-4 accent-brand-600 rounded cursor-pointer"
               />
               <div>
-                <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>Registration Open</div>
-                <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>Accept new participant registrations</div>
+                <div className="font-semibold text-sm text-ink">Registration Open</div>
+                <div className="text-xs text-muted">Accept new participant registrations</div>
               </div>
             </label>
           </div>
         </div>
 
         {/* Submit Bar */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "10px" }}>
+        <div className="flex justify-end gap-3 pt-2">
           <Link
             href="/admin/events"
             to="/admin/events"
-            className="btn btn-outline"
-            style={{ padding: "12px 24px", borderRadius: "8px" }}
+            className="px-6 py-2.5 rounded-xl border border-brand-200 text-ink hover:bg-brand-50 text-sm font-semibold transition"
           >
             Cancel
           </Link>
           <button
             type="submit"
             disabled={submitting}
-            className="btn btn-primary"
-            style={{ padding: "12px 36px", fontSize: "1rem", fontWeight: 700, borderRadius: "8px" }}
+            className="px-8 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md transition disabled:opacity-50"
           >
             {submitting ? "Saving..." : isEditing ? "Save Changes" : "Create Event"}
           </button>
@@ -886,48 +868,3 @@ export default function AdminEventFormPage() {
     </div>
   );
 }
-
-const cardStyle = {
-  background: "#ffffff",
-  borderRadius: "14px",
-  padding: "24px 26px",
-  border: "1px solid var(--line, #f3d9e4)",
-  boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
-};
-
-const sectionHeadingStyle = {
-  fontSize: "1.2rem",
-  color: "var(--wine, #8B1E3F)",
-  marginTop: 0,
-  marginBottom: "18px",
-};
-
-const labelStyle = {
-  display: "block",
-  fontSize: "0.85rem",
-  fontWeight: 600,
-  color: "#3a2333",
-  marginBottom: "6px",
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "9px 12px",
-  borderRadius: "8px",
-  border: "1.5px solid #d5ccd1",
-  background: "#fff",
-  fontSize: "0.92rem",
-  outline: "none",
-  color: "#2a1726",
-};
-
-const actionBtnStyle = {
-  padding: "6px 14px",
-  borderRadius: "6px",
-  fontSize: "0.82rem",
-  fontWeight: 600,
-  background: "var(--pink-50, #fff5f9)",
-  color: "var(--pink-700, #b32a68)",
-  border: "1px solid var(--pink-200, #ffd0e2)",
-  cursor: "pointer",
-};

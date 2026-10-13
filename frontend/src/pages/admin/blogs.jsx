@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "@/compat/Link";
 import BlogForm from "@/components/admin/BlogForm";
-
 import api from "@/api/axios";
+
 export default function AdminBlogs() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,22 +65,22 @@ export default function AdminBlogs() {
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, color: "var(--wine, #8B1E3F)" }}>Wedding Articles & Guides</h1>
-          <p style={{ margin: "4px 0 0", color: "#666", fontSize: 14 }}>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">Wedding Articles & Guides</h1>
+          <p className="text-sm text-muted mt-0.5">
             Create and manage inspirational blogs visible to couples and vendors.
           </p>
         </div>
 
         <button
-          className="btn btn-primary"
+          type="button"
           onClick={() => {
             setEditingBlog(null);
             setShowModal(true);
           }}
-          style={{ background: "var(--wine, #8B1E3F)", color: "#fff", padding: "10px 18px", borderRadius: 8, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition"
         >
           <span>✍️</span>
           <span>Create Article</span>
@@ -90,23 +89,17 @@ export default function AdminBlogs() {
 
       {feedback.message && (
         <div
-          style={{
-            padding: "12px 16px",
-            borderRadius: 8,
-            marginBottom: 20,
-            background: feedback.type === "error" ? "#FFEBEE" : "#E8F5E9",
-            color: feedback.type === "error" ? "#C62828" : "#2E7D32",
-            border: `1px solid ${feedback.type === "error" ? "#FFCDD2" : "#C8E6C9"}`,
-            fontSize: 14,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
+          className={`px-4 py-3 rounded-xl text-sm font-medium flex items-center justify-between border ${
+            feedback.type === "error"
+              ? "bg-rose-50 border-rose-200 text-rose-800"
+              : "bg-emerald-50 border-emerald-200 text-emerald-800"
+          }`}
         >
           <span>{feedback.message}</span>
           <button
+            type="button"
             onClick={() => setFeedback({ type: "", message: "" })}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", fontWeight: "bold" }}
+            className="text-muted hover:text-ink font-bold ml-3"
           >
             ✕
           </button>
@@ -114,226 +107,158 @@ export default function AdminBlogs() {
       )}
 
       {loading ? (
-        <div style={{ padding: "40px", textAlign: "center", color: "#888" }}>
-          Loading articles…
+        <div className="bg-white rounded-2xl border border-brand-100 p-12 text-center text-muted">
+          <div className="w-8 h-8 border-3 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm">Loading articles...</p>
         </div>
       ) : blogs.length === 0 ? (
-        <div style={{ padding: "60px 20px", textAlign: "center", background: "#FAF8F5", borderRadius: 16, border: "1px dashed #D4AF37" }}>
-          <span style={{ fontSize: 48 }}>📰</span>
-          <h3 style={{ margin: "12px 0 6px", color: "var(--wine, #8B1E3F)" }}>No articles published yet</h3>
-          <p style={{ color: "#666", maxWidth: 420, margin: "0 auto 20px", fontSize: 14 }}>
+        <div className="py-16 px-6 text-center bg-white rounded-3xl border-2 border-dashed border-brand-200">
+          <span className="text-5xl block mb-3">📰</span>
+          <h3 className="font-serif text-xl font-bold text-ink mb-1.5">No articles published yet</h3>
+          <p className="text-muted max-w-md mx-auto mb-6 text-sm">
             Start sharing wedding inspiration, decor trends, budget advice, and vendor highlights.
           </p>
           <button
-            className="btn btn-primary"
+            type="button"
             onClick={() => {
               setEditingBlog(null);
               setShowModal(true);
             }}
+            className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition"
           >
             Create Your First Article
           </button>
         </div>
       ) : (
-        <div style={{ overflowX: "auto", background: "#fff", borderRadius: 12, border: "1px solid #EAE0D7", boxShadow: "0 2px 12px rgba(0,0,0,0.03)" }}>
-          <table className="data" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-            <thead>
-              <tr style={{ background: "#FAF8F5", borderBottom: "1px solid #EAE0D7", fontSize: 13, textTransform: "uppercase", color: "#666", letterSpacing: "0.5px" }}>
-                <th style={{ padding: "14px 16px" }}>Cover</th>
-                <th style={{ padding: "14px 16px" }}>Title & Slug</th>
-                <th style={{ padding: "14px 16px" }}>Category</th>
-                <th style={{ padding: "14px 16px" }}>Status</th>
-                <th style={{ padding: "14px 16px" }}>Created</th>
-                <th style={{ padding: "14px 16px" }}>Published</th>
-                <th style={{ padding: "14px 16px", textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {blogs.map((blog) => {
-                const isPublished = blog.status === "published";
-                const img = blog.coverImage || blog.featuredImage;
+        <div className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-ink/80">
+              <thead className="bg-surface text-xs font-semibold text-muted uppercase tracking-wider border-b border-brand-100">
+                <tr>
+                  <th className="px-5 py-4">Cover</th>
+                  <th className="px-5 py-4">Title & Slug</th>
+                  <th className="px-5 py-4">Category</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4">Created</th>
+                  <th className="px-5 py-4">Published</th>
+                  <th className="px-5 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-100/70">
+                {blogs.map((blog) => {
+                  const isPublished = blog.status === "published";
+                  const img = blog.coverImage || blog.featuredImage;
 
-                return (
-                  <tr key={blog._id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                    {/* Cover image */}
-                    <td style={{ padding: "12px 16px", width: 70 }}>
-                      {img ? (
-                        <img
-                          src={img}
-                          alt={blog.title}
-                          style={{ width: 60, height: 40, objectFit: "cover", borderRadius: 6, border: "1px solid #eee" }}
-                        />
-                      ) : (
-                        <div style={{ width: 60, height: 40, background: "#f0f0f0", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                          📷
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Title */}
-                    <td style={{ padding: "12px 16px", maxWidth: 280 }}>
-                      <div style={{ fontWeight: 600, color: "#222", fontSize: 14 }}>{blog.title}</div>
-                      <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>/blogs/{blog.slug}</div>
-                    </td>
-
-                    {/* Category */}
-                    <td style={{ padding: "12px 16px", fontSize: 13 }}>
-                      <span style={{ background: "#F5EFF2", color: "var(--wine, #8B1E3F)", padding: "3px 8px", borderRadius: 12, fontSize: 12, fontWeight: 500 }}>
-                        {blog.category || "Wedding"}
-                      </span>
-                    </td>
-
-                    {/* Status */}
-                    <td style={{ padding: "12px 16px" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "4px 10px",
-                          borderRadius: 16,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          background: isPublished ? "#E8F5E9" : "#FFF3E0",
-                          color: isPublished ? "#2E7D32" : "#E65100",
-                          border: `1px solid ${isPublished ? "#C8E6C9" : "#FFE0B2"}`,
-                          textTransform: "capitalize",
-                        }}
-                      >
-                        {isPublished ? "● Published" : "○ Draft"}
-                      </span>
-                    </td>
-
-                    {/* Created Date */}
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: "#666" }}>
-                      {blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : "-"}
-                    </td>
-
-                    {/* Published Date */}
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: "#666" }}>
-                      {isPublished && blog.publishedAt ? new Date(blog.publishedAt).toLocaleDateString() : "—"}
-                    </td>
-
-                    {/* Actions */}
-                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
-                      <div style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-                        {/* Publish / Unpublish */}
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePublish(blog)}
-                          title={isPublished ? "Unpublish (Move to Draft)" : "Publish Live to Customers"}
-                          style={{
-                            padding: "6px 10px",
-                            borderRadius: 6,
-                            border: `1px solid ${isPublished ? "#FFE0B2" : "#C8E6C9"}`,
-                            background: isPublished ? "#FFF8E1" : "#E8F5E9",
-                            color: isPublished ? "#B78103" : "#2E7D32",
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {isPublished ? "Unpublish" : "Publish"}
-                        </button>
-
-                        {/* Edit */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingBlog(blog);
-                            setShowModal(true);
-                          }}
-                          title="Edit Article"
-                          style={{
-                            padding: "6px 10px",
-                            borderRadius: 6,
-                            border: "1px solid #ddd",
-                            background: "#fff",
-                            cursor: "pointer",
-                            fontSize: 12,
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
-
-                        {/* View Live */}
-                        {isPublished && (
-                          <a
-                            href={`/blogs/${blog.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="View on Customer Site"
-                            style={{
-                              padding: "6px 10px",
-                              borderRadius: 6,
-                              border: "1px solid #ddd",
-                              background: "#fff",
-                              color: "#444",
-                              textDecoration: "none",
-                              fontSize: 12,
-                              display: "inline-block",
-                            }}
-                          >
-                            👁️ View
-                          </a>
+                  return (
+                    <tr key={blog._id} className="hover:bg-brand-50/30 transition-colors">
+                      <td className="px-5 py-4">
+                        {img ? (
+                          <img
+                            src={img}
+                            alt={blog.title}
+                            className="w-14 h-10 object-cover rounded-lg border border-brand-100"
+                          />
+                        ) : (
+                          <div className="w-14 h-10 rounded-lg bg-surface border border-brand-100 flex items-center justify-center text-base text-muted">
+                            📷
+                          </div>
                         )}
+                      </td>
 
-                        {/* Delete */}
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(blog)}
-                          title="Delete Article"
-                          style={{
-                            padding: "6px 10px",
-                            borderRadius: 6,
-                            border: "1px solid #FFCDD2",
-                            background: "#FFEBEE",
-                            color: "#C62828",
-                            cursor: "pointer",
-                            fontSize: 12,
-                          }}
+                      <td className="px-5 py-4 max-w-xs">
+                        <div className="font-semibold text-ink line-clamp-1">{blog.title}</div>
+                        <div className="text-xs text-muted truncate mt-0.5">/blogs/{blog.slug}</div>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
+                          {blog.category || "Wedding"}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border capitalize ${
+                            isPublished
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                              : "bg-amber-100 text-amber-800 border-amber-200"
+                          }`}
                         >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          {isPublished ? "● Published" : "○ Draft"}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4 text-xs text-muted whitespace-nowrap">
+                        {blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : "-"}
+                      </td>
+
+                      <td className="px-5 py-4 text-xs text-muted whitespace-nowrap">
+                        {isPublished && blog.publishedAt ? new Date(blog.publishedAt).toLocaleDateString() : "—"}
+                      </td>
+
+                      <td className="px-5 py-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePublish(blog)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+                              isPublished
+                                ? "border-amber-200 text-amber-700 hover:bg-amber-50"
+                                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                            }`}
+                          >
+                            {isPublished ? "Unpublish" : "Publish"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingBlog(blog);
+                              setShowModal(true);
+                            }}
+                            className="px-2.5 py-1 rounded-lg border border-brand-200 text-ink hover:bg-brand-50 text-xs font-semibold transition"
+                          >
+                            ✏️ Edit
+                          </button>
+
+                          {isPublished && (
+                            <a
+                              href={`/blogs/${blog.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1 rounded-lg border border-brand-200 text-ink hover:bg-brand-50 text-xs font-semibold transition"
+                            >
+                              👁️ View
+                            </a>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(blog)}
+                            className="px-2 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold transition"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Editor Modal */}
       {showModal && (
         <div
-          className="modal-overlay"
+          className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
           onClick={() => setShowModal(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.55)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            padding: 16,
-            overflowY: "auto",
-          }}
         >
           <div
-            className="modal-container"
+            className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl p-6 sm:p-8 border border-brand-100 my-8"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "100%",
-              maxWidth: 960,
-              maxHeight: "92vh",
-              overflowY: "auto",
-              borderRadius: 16,
-              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-            }}
           >
             <BlogForm
               initialData={editingBlog}

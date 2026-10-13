@@ -28,8 +28,9 @@ export async function getCurrentUser(req) {
   const decoded = verifyToken(token);
   if (!decoded?.uid) return null;
 
-  await dbConnect();
-  const user = await User.findById(decoded.uid).lean();
+  const user = await User.findById(decoded.uid)
+    .select("-passwordHash -vendorProfile.profilePhoto -vendorProfile.coverPhoto -vendorProfile.about")
+    .lean();
   if (!user) return null;
 
   const isVendor = String(user.role || "").toLowerCase() === "vendor";

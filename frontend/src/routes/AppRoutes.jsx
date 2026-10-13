@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 
 import Navbar from "@/components/Navbar";
@@ -102,11 +102,15 @@ export default function AppRoutes() {
 
             {/* Vendor routes */}
             <Route path="/vendor" element={<VendorLayout />}>
+              <Route index element={<Navigate to="/vendor/dashboard" replace />} />
+              <Route path="portal" element={<VendorDashboard />} />
               <Route path="dashboard" element={<VendorDashboard />} />
               <Route path="onboarding" element={<VendorOnboardingPage />} />
               <Route path="items" element={<VendorItems />} />
               <Route path="bookings" element={<VendorBookings />} />
             </Route>
+            <Route path="/portal" element={<Navigate to="/vendor/dashboard" replace />} />
+            <Route path="/vendor-portal" element={<Navigate to="/vendor/dashboard" replace />} />
           </Routes>
         </main>
 

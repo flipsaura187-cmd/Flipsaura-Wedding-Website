@@ -46,8 +46,19 @@ const UserSchema = new mongoose.Schema(
           startingPrice: { type: Number, default: 0 },
           priceRange: { type: String, default: "" },
           location: { type: String, default: "" },
+          serviceLocation: { type: String, default: "" },
           experience: { type: String, default: "" },
           additionalServices: [{ type: String }],
+        },
+      ],
+      facilities: [
+        {
+          category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+          categoryName: { type: String, default: "" },
+          group: { type: String, default: "Popular Amenities" },
+          name: { type: String, required: true },
+          icon: { type: String, default: "" },
+          highlight: { type: Boolean, default: false },
         },
       ],
 

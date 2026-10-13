@@ -53,37 +53,24 @@ export default function BlogsPage() {
   };
 
   return (
-    <section className="section" style={{ minHeight: "75vh", padding: "48px 0" }}>
-      <div className="container">
+    <section className="py-12 md:py-16 bg-white min-h-[75vh]">
+      <div className="max-w-container mx-auto px-4 sm:px-6">
         {/* Header */}
-        <div style={{ textAlign: "center", maxWidth: 700, margin: "0 auto 40px" }}>
-          <span
-            className="eyebrow"
-            style={{
-              display: "inline-block",
-              background: "#FFF0F5",
-              color: "var(--pink-700, #b32a68)",
-              padding: "6px 16px",
-              borderRadius: 30,
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: "0.5px",
-              marginBottom: 12,
-            }}
-          >
-            FLIPSAURA JOURNAL
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <span className="inline-block bg-brand-50 text-brand-700 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase mb-3">
+            FlipsAura Journal
           </span>
-          <h1 style={{ fontSize: "2.4rem", margin: "0 0 14px", color: "var(--wine, #8B1E3F)" }}>
+          <h1 className="font-serif text-3xl md:text-5xl font-bold text-wine mb-3">
             Wedding Stories & Inspiration
           </h1>
-          <p style={{ color: "#666", fontSize: 16, lineHeight: 1.6, margin: 0 }}>
+          <p className="text-muted text-sm md:text-base leading-relaxed">
             Expert planning tips, breathtaking decor trends, real wedding features, and vendor spotlights to make your big day unforgettable.
           </p>
         </div>
 
         {/* Search & Category Filter Bar */}
-        <div style={{ marginBottom: 36 }}>
-          <div style={{ maxWidth: 460, margin: "0 auto 20px" }}>
+        <div className="mb-10 space-y-4">
+          <div className="max-w-md mx-auto">
             <input
               type="text"
               placeholder="Search wedding stories, trends, decor…"
@@ -92,44 +79,22 @@ export default function BlogsPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              style={{
-                width: "100%",
-                padding: "12px 18px",
-                borderRadius: 50,
-                border: "1px solid #E0D4CD",
-                background: "#FAF8F5",
-                fontSize: 14,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                outline: "none",
-              }}
+              className="w-full px-5 py-3 rounded-full border border-brand-200 bg-brand-50/40 text-ink text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
             />
           </div>
 
           {/* Category Chips */}
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="flex gap-2 justify-center flex-wrap">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => handleCategoryClick(cat)}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 24,
-                  fontSize: 13,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  border: category === cat ? "1px solid var(--wine, #8B1E3F)" : "1px solid #EAE0D7",
-                  background: category === cat ? "var(--wine, #8B1E3F)" : "#fff",
-                  color: category === cat ? "#fff" : "#444",
-                  transition: "all 0.15s ease",
-                }}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  category === cat
+                    ? "bg-wine text-white shadow-md shadow-wine/20"
+                    : "bg-white text-muted border border-brand-200 hover:bg-brand-50"
+                }`}
               >
                 {cat}
               </button>
@@ -139,23 +104,14 @@ export default function BlogsPage() {
 
         {/* Blog Cards Grid */}
         {loading ? (
-          <div style={{ padding: "60px", textAlign: "center", color: "#888", fontSize: 16 }}>
+          <div className="py-20 text-center text-brand-600 font-semibold animate-pulse text-base">
             Loading inspiring stories…
           </div>
         ) : blogs.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "60px 20px",
-              background: "#FAF8F5",
-              borderRadius: 16,
-              maxWidth: 540,
-              margin: "0 auto",
-            }}
-          >
-            <span style={{ fontSize: 44 }}>✨</span>
-            <h3 style={{ margin: "14px 0 8px", color: "var(--wine, #8B1E3F)" }}>No articles found</h3>
-            <p style={{ color: "#666", fontSize: 14, margin: "0 0 16px" }}>
+          <div className="text-center py-16 px-6 bg-brand-50/50 rounded-2xl border border-brand-100 max-w-lg mx-auto">
+            <span className="text-4xl">✨</span>
+            <h3 className="font-serif text-xl font-bold text-wine mt-3 mb-2">No articles found</h3>
+            <p className="text-muted text-sm mb-4">
               {search || category !== "All"
                 ? "Try adjusting your search query or selecting a different category."
                 : "New wedding inspiration articles will appear here once published."}
@@ -163,27 +119,19 @@ export default function BlogsPage() {
             {(search || category !== "All") && (
               <button
                 type="button"
-                className="btn btn-ghost"
                 onClick={() => {
                   setSearch("");
                   setCategory("All");
                   setPage(1);
                 }}
-                style={{ padding: "8px 18px", border: "1px solid #ccc", borderRadius: 8 }}
+                className="px-4 py-2 rounded-xl border border-brand-200 bg-white text-xs font-bold text-brand-700 hover:bg-brand-50 transition-colors"
               >
                 Clear Filters
               </button>
             )}
           </div>
         ) : (
-          <div
-            className="grid grid-3"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-              gap: 28,
-            }}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogs.map((blog) => {
               const img = blog.coverImage || blog.featuredImage;
 
@@ -191,64 +139,29 @@ export default function BlogsPage() {
                 <Link
                   href={`/blogs/${blog.slug}`}
                   key={blog._id}
-                  className="card"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    background: "#fff",
-                    borderRadius: 16,
-                    overflow: "hidden",
-                    border: "1px solid #F0E6DE",
-                    boxShadow: "0 4px 18px rgba(0,0,0,0.04)",
-                    textDecoration: "none",
-                    color: "inherit",
-                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.boxShadow = "0 8px 24px rgba(139,30,63,0.12)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 4px 18px rgba(0,0,0,0.04)";
-                  }}
+                  className="group bg-white rounded-2xl overflow-hidden border border-brand-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
                 >
-                  <div style={{ position: "relative", width: "100%", height: 210, background: "#FAF8F5", overflow: "hidden" }}>
+                  <div className="relative aspect-[16/10] bg-brand-50 overflow-hidden">
                     {img ? (
                       <img
                         src={img}
                         alt={blog.title}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #FFF0F5, #FFE4E1)", color: "var(--wine, #8B1E3F)", fontSize: 32 }}>
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 text-3xl text-wine">
                         💍
                       </div>
                     )}
                     {blog.category && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: 12,
-                          left: 12,
-                          background: "rgba(255,255,255,0.92)",
-                          color: "var(--wine, #8B1E3F)",
-                          fontSize: 11,
-                          fontWeight: 700,
-                          padding: "4px 10px",
-                          borderRadius: 20,
-                          backdropFilter: "blur(4px)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.5px",
-                        }}
-                      >
+                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-wine text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
                         {blog.category}
                       </span>
                     )}
                   </div>
 
-                  <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", flex: 1 }}>
-                    <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="text-xs text-muted mb-2">
                       {blog.publishedAt
                         ? new Date(blog.publishedAt).toLocaleDateString("en-US", {
                             month: "short",
@@ -259,34 +172,17 @@ export default function BlogsPage() {
                       • {blog.author || "FlipsAura"}
                     </div>
 
-                    <h3
-                      style={{
-                        margin: "0 0 10px",
-                        fontSize: 18,
-                        lineHeight: 1.4,
-                        color: "#222",
-                        fontWeight: 700,
-                        fontFamily: "'Playfair Display', Georgia, serif",
-                      }}
-                    >
+                    <h3 className="font-serif font-bold text-ink text-lg line-clamp-2 group-hover:text-wine transition-colors mb-2">
                       {blog.title}
                     </h3>
 
-                    <p
-                      style={{
-                        margin: "0 0 16px",
-                        fontSize: 14,
-                        lineHeight: 1.6,
-                        color: "#666",
-                        flex: 1,
-                      }}
-                    >
+                    <p className="text-muted text-sm line-clamp-3 leading-relaxed flex-1 mb-4">
                       {blog.excerpt || (blog.content ? blog.content.replace(/<[^>]+>/g, " ").slice(0, 110) + "..." : "")}
                     </p>
 
-                    <div style={{ display: "flex", alignItems: "center", color: "var(--wine, #8B1E3F)", fontSize: 13, fontWeight: 600 }}>
+                    <div className="flex items-center text-xs font-bold text-wine group-hover:translate-x-1 transition-transform">
                       <span>Read Story</span>
-                      <span style={{ marginLeft: 6 }}>→</span>
+                      <span className="ml-1">→</span>
                     </div>
                   </div>
                 </Link>
@@ -297,34 +193,18 @@ export default function BlogsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div
-            className="pagination"
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 16,
-              marginTop: 48,
-            }}
-          >
+          <div className="flex justify-center items-center gap-3 mt-12">
             <button
               disabled={page === 1}
               onClick={() => {
                 setPage((p) => p - 1);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              style={{
-                padding: "8px 16px",
-                borderRadius: 8,
-                border: "1px solid #ddd",
-                background: page === 1 ? "#fafafa" : "#fff",
-                cursor: page === 1 ? "not-allowed" : "pointer",
-                color: page === 1 ? "#bbb" : "#333",
-              }}
+              className="px-4 py-2 rounded-xl border border-brand-200 bg-white text-ink text-sm font-semibold hover:bg-brand-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               ← Previous
             </button>
-            <span style={{ fontSize: 14, color: "#666" }}>
+            <span className="text-xs font-semibold text-muted px-2">
               Page {page} of {totalPages}
             </span>
             <button
@@ -333,14 +213,7 @@ export default function BlogsPage() {
                 setPage((p) => p + 1);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              style={{
-                padding: "8px 16px",
-                borderRadius: 8,
-                border: "1px solid #ddd",
-                background: page === totalPages ? "#fafafa" : "#fff",
-                cursor: page === totalPages ? "not-allowed" : "pointer",
-                color: page === totalPages ? "#bbb" : "#333",
-              }}
+              className="px-4 py-2 rounded-xl border border-brand-200 bg-white text-ink text-sm font-semibold hover:bg-brand-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Next →
             </button>
@@ -350,3 +223,4 @@ export default function BlogsPage() {
     </section>
   );
 }
+

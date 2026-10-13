@@ -2,13 +2,13 @@ import Link from "@/compat/Link";
 
 export default function TermsOfService() {
     return (
-        <section className="section">
-            <div className="container">
-                <div className="legal-header">
-                    <h1>Terms of Service</h1>
+        <section className="py-12 md:py-16 bg-white min-h-[75vh]">
+            <div className="max-w-[860px] mx-auto px-4 sm:px-6">
+                <div className="mb-8 pb-4 border-b border-brand-100">
+                    <h1 className="font-serif text-3xl md:text-4xl font-bold text-ink">Terms of Service</h1>
                 </div>
 
-                <div className="legal-content">
+                <div className="text-muted text-base leading-relaxed space-y-4">
                     <p>Welcome to Flipsaura. These Terms of Service ("Terms") govern your access to and use of our website, platform, and services. By accessing or using Flipsaura, you agree to comply with and be legally bound by these Terms. If you do not agree with any part of these Terms, you should not use our platform.</p>
 
                     <h2>1. Introduction</h2>

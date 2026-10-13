@@ -1,12 +1,12 @@
 export default function PrivacyPolicy() {
     return (
-        <section className="section">
-            <div className="container">
-                <div className="legal-header">
-                    <h1>Privacy Policy</h1>
+        <section className="py-12 md:py-16 bg-white min-h-[75vh]">
+            <div className="max-w-[860px] mx-auto px-4 sm:px-6">
+                <div className="mb-8 pb-4 border-b border-brand-100">
+                    <h1 className="font-serif text-3xl md:text-4xl font-bold text-ink">Privacy Policy</h1>
                 </div>
 
-                <div className="legal-content">
+                <div className="text-muted text-base leading-relaxed space-y-4">
                     <p>
                         At Flipsaura, we value your privacy and are committed to protecting your personal information with the highest standards of security and transparency. This Privacy Policy explains how we collect, use, store and safeguard your data when you access or use our platform.
                     </p>
@@ -39,8 +39,8 @@ export default function PrivacyPolicy() {
                         If you have any questions, concerns, or requests regarding this Privacy Policy, please feel free to contact us.
                     </p>
 
-                    <address>
-                        Email: <a href="mailto:info.flipsaura@gmail.com">info.flipsaura@gmail.com</a><br />
+                    <address className="not-italic bg-brand-50 p-4 rounded-xl border border-brand-100 text-ink font-medium my-4">
+                        Email: <a href="mailto:info.flipsaura@gmail.com" className="text-brand-700 underline font-semibold">info.flipsaura@gmail.com</a><br />
                         Phone: 8210342541
                     </address>
 

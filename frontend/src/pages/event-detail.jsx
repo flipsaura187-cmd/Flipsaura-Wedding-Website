@@ -38,20 +38,10 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", color: "var(--muted)" }}>
-          <div
-            style={{
-              width: "48px",
-              height: "48px",
-              border: "4px solid rgba(230, 63, 135, 0.2)",
-              borderTopColor: "var(--pink-600, #e63f87)",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite",
-              margin: "0 auto 16px",
-            }}
-          />
-          <p style={{ fontSize: "1.1rem" }}>Loading event details...</p>
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="text-center text-muted">
+          <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-base sm:text-lg font-medium">Loading event details...</p>
         </div>
       </div>
     );
@@ -59,12 +49,19 @@ export default function EventDetailPage() {
 
   if (error || !event) {
     return (
-      <div className="container" style={{ padding: "80px 16px", textAlign: "center" }}>
-        <h2>Event Not Found</h2>
-        <p style={{ color: "var(--muted)", margin: "12px 0 24px" }}>
+      <div className="max-w-3xl mx-auto px-4 py-20 text-center">
+        <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-2xl mx-auto mb-4">
+          ⚠️
+        </div>
+        <h2 className="text-2xl sm:text-3xl font-serif font-bold text-ink mb-3">Event Not Found</h2>
+        <p className="text-muted max-w-md mx-auto mb-6">
           {error || "The event you are looking for does not exist or has been removed."}
         </p>
-        <Link href="/events" to="/events" className="btn btn-primary" style={{ padding: "10px 24px" }}>
+        <Link
+          href="/events"
+          to="/events"
+          className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-brand-600 hover:bg-brand-700 text-white font-medium transition-all shadow-md shadow-brand-600/20"
+        >
           Browse All Events
         </Link>
       </div>
@@ -82,125 +79,73 @@ export default function EventDetailPage() {
     : null;
 
   return (
-    <div style={{ minHeight: "90vh", background: "#fdfbfd", paddingBottom: "80px" }}>
+    <div className="min-h-[90vh] bg-surface pb-20">
       {/* Hero Banner Section */}
-      <section
-        style={{
-          position: "relative",
-          background: "linear-gradient(135deg, #1f0f1c 0%, #3d142c 60%, #5a1936 100%)",
-          color: "#ffffff",
-          padding: "70px 16px 80px",
-          overflow: "hidden",
-        }}
-      >
+      <section className="relative bg-gradient-to-br from-[#1f0f1c] via-[#3d142c] to-[#5a1936] text-white py-16 md:py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Subtle background glow */}
-        <div
-          style={{
-            position: "absolute",
-            top: "-20%",
-            right: "10%",
-            width: "500px",
-            height: "400px",
-            background: "radial-gradient(circle, rgba(230, 63, 135, 0.25) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
+        <div className="absolute -top-1/4 right-10 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="container" style={{ position: "relative" }}>
-          <div style={{ maxWidth: "860px" }}>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginBottom: "16px" }}>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="max-w-4xl">
+            {/* Breadcrumb & Badges */}
+            <div className="flex flex-wrap items-center gap-2.5 mb-4">
               <Link
                 href="/events"
                 to="/events"
-                style={{
-                  color: "#ff8ab8",
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  textDecoration: "none",
-                }}
+                className="text-brand-300 hover:text-white text-sm font-semibold inline-flex items-center gap-1 transition-colors"
               >
                 ← All Events
               </Link>
-              <span style={{ color: "rgba(255,255,255,0.4)" }}>|</span>
-              <span
-                style={{
-                  background: "rgba(212, 175, 122, 0.2)",
-                  color: "#d4af7a",
-                  padding: "4px 12px",
-                  borderRadius: "14px",
-                  fontSize: "0.8rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.5px",
-                  textTransform: "uppercase",
-                }}
-              >
+              <span className="text-white/40">|</span>
+              <span className="bg-gold/20 text-gold px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
                 {event.type || "Competition"}
               </span>
               {event.featured && (
-                <span
-                  style={{
-                    background: "linear-gradient(135deg, #e63f87, #b32a68)",
-                    color: "#ffffff",
-                    padding: "4px 12px",
-                    borderRadius: "14px",
-                    fontSize: "0.8rem",
-                    fontWeight: 700,
-                  }}
-                >
+                <span className="bg-gradient-to-r from-brand-600 to-brand-700 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide">
                   ⭐ Featured Event
                 </span>
               )}
             </div>
 
-            <h1
-              style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: "clamp(2.4rem, 5vw, 4rem)",
-                lineHeight: 1.15,
-                margin: "0 0 16px",
-                color: "#ffffff",
-                letterSpacing: "-0.5px",
-              }}
-            >
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white font-bold tracking-tight leading-tight mb-4">
               {event.title}
             </h1>
 
-            <p style={{ fontSize: "1.2rem", color: "#ffe6f0", fontWeight: 500, margin: "0 0 16px" }}>
-              Organized by: <strong style={{ color: "#ffffff" }}>{event.organizer || "FlipsAura × Marritcredence"}</strong>
+            <p className="text-base sm:text-lg text-brand-100 font-medium mb-3">
+              Organized by: <strong className="text-white">{event.organizer || "FlipsAura × Marritcredence"}</strong>
             </p>
 
-            <p style={{ fontSize: "1.05rem", color: "rgba(255, 255, 255, 0.85)", lineHeight: 1.6, margin: "0 0 28px", maxWidth: "720px" }}>
+            <p className="text-sm sm:text-base text-white/85 leading-relaxed mb-8 max-w-2xl font-sans">
               {event.shortDescription || event.description}
             </p>
 
             {/* Quick Badges Strip */}
-            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.1)", padding: "8px 16px", borderRadius: "10px" }}>
-                <span style={{ fontSize: "1.2rem" }}>📍</span>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10">
+                <span className="text-xl">📍</span>
                 <div>
-                  <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.6)", textTransform: "uppercase" }}>Venue</div>
-                  <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>{event.city ? `${event.city} • ${event.venue}` : event.venue}</div>
+                  <div className="text-[11px] text-white/60 uppercase font-semibold tracking-wider">Venue</div>
+                  <div className="text-sm font-semibold text-white">
+                    {event.city ? `${event.city} • ${event.venue}` : event.venue}
+                  </div>
                 </div>
               </div>
 
               {formattedDate && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.1)", padding: "8px 16px", borderRadius: "10px" }}>
-                  <span style={{ fontSize: "1.2rem" }}>📅</span>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10">
+                  <span className="text-xl">📅</span>
                   <div>
-                    <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.6)", textTransform: "uppercase" }}>Date</div>
-                    <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>{formattedDate}</div>
+                    <div className="text-[11px] text-white/60 uppercase font-semibold tracking-wider">Date</div>
+                    <div className="text-sm font-semibold text-white">{formattedDate}</div>
                   </div>
                 </div>
               )}
 
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.1)", padding: "8px 16px", borderRadius: "10px" }}>
-                <span style={{ fontSize: "1.2rem" }}>💰</span>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10">
+                <span className="text-xl">💰</span>
                 <div>
-                  <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.6)", textTransform: "uppercase" }}>Registration Fee</div>
-                  <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#d4af7a" }}>
+                  <div className="text-[11px] text-white/60 uppercase font-semibold tracking-wider">Registration Fee</div>
+                  <div className="text-sm font-bold text-gold">
                     {event.registrationFee > 0 ? `₹${Number(event.registrationFee).toLocaleString("en-IN")}` : "Free"}
                   </div>
                 </div>
@@ -211,144 +156,70 @@ export default function EventDetailPage() {
       </section>
 
       {/* Main Content Layout */}
-      <div className="container" style={{ marginTop: "-30px", position: "relative", zIndex: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "36px", alignItems: "start" }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column: Detailed Sections */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "36px" }}>
+          <div className="lg:col-span-8 flex flex-col gap-8">
             
             {/* Banner Image Preview */}
             {event.bannerImage && (
-              <div
-                style={{
-                  borderRadius: "18px",
-                  overflow: "hidden",
-                  boxShadow: "0 12px 36px rgba(42, 23, 38, 0.1)",
-                  border: "1px solid rgba(243, 217, 228, 0.8)",
-                  maxHeight: "440px",
-                  background: "#000",
-                }}
-              >
+              <div className="rounded-2xl overflow-hidden shadow-xl border border-brand-100 bg-ink max-h-[440px]">
                 <img
                   src={event.bannerImage}
                   alt={event.title}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  className="w-full h-full object-cover block"
                 />
               </div>
             )}
 
             {/* About Event */}
-            <div
-              style={{
-                background: "#ffffff",
-                borderRadius: "18px",
-                padding: "32px",
-                boxShadow: "0 4px 20px rgba(42, 23, 38, 0.05)",
-                border: "1px solid #f3d9e4",
-              }}
-            >
-              <h2
-                style={{
-                  fontFamily: "'Playfair Display', Georgia, serif",
-                  fontSize: "1.8rem",
-                  color: "var(--ink, #2a1726)",
-                  marginTop: 0,
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
+            <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-brand-100">
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink mb-4 flex items-center gap-2.5">
                 <span>📖</span> About The Event
               </h2>
-              <div
-                style={{
-                  fontSize: "1.02rem",
-                  color: "#4a3b45",
-                  lineHeight: 1.7,
-                  whiteSpace: "pre-line",
-                }}
-              >
+              <div className="text-base text-ink/80 leading-relaxed whitespace-pre-line font-sans">
                 {event.description}
               </div>
             </div>
 
             {/* Prizes Section */}
             {Array.isArray(event.prizes) && event.prizes.length > 0 && (
-              <div
-                style={{
-                  background: "linear-gradient(135deg, #ffffff 0%, #fff9fc 100%)",
-                  borderRadius: "18px",
-                  padding: "32px",
-                  boxShadow: "0 4px 20px rgba(42, 23, 38, 0.05)",
-                  border: "1px solid #f3d9e4",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "10px", marginBottom: "20px" }}>
-                  <h2
-                    style={{
-                      fontFamily: "'Playfair Display', Georgia, serif",
-                      fontSize: "1.8rem",
-                      color: "var(--ink, #2a1726)",
-                      margin: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
+              <div className="bg-gradient-to-br from-white to-brand-50/40 rounded-2xl p-6 sm:p-8 shadow-sm border border-brand-100">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 mb-6">
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink flex items-center gap-2.5">
                     <span>🏆</span> Cash Prizes & Rewards
                   </h2>
-                  <span style={{ fontSize: "0.95rem", color: "var(--pink-600)", fontWeight: 700 }}>
+                  <span className="text-sm font-bold text-brand-600">
                     Total Prize Pool: ₹{event.prizes.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString("en-IN")}
                   </span>
                 </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    gap: "16px",
-                  }}
-                >
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {event.prizes.map((p, idx) => {
                     const isFirst = idx === 0 || p.rank?.includes("1");
                     const isSecond = idx === 1 || p.rank?.includes("2");
                     const medalBg = isFirst
-                      ? "linear-gradient(135deg, #fff8e7 0%, #ffedbf 100%)"
+                      ? "bg-amber-50/80 border-amber-300"
                       : isSecond
-                      ? "linear-gradient(135deg, #f5f6f8 0%, #e6e8ec 100%)"
-                      : "linear-gradient(135deg, #fff0e6 0%, #fed8be 100%)";
-                    const medalBorder = isFirst ? "#e3b859" : isSecond ? "#b8c0cc" : "#dca07b";
+                      ? "bg-slate-50 border-slate-300"
+                      : "bg-orange-50/80 border-orange-300";
                     const medalIcon = isFirst ? "🥇" : isSecond ? "🥈" : "🥉";
 
                     return (
                       <div
                         key={idx}
-                        style={{
-                          background: medalBg,
-                          border: `1.5px solid ${medalBorder}`,
-                          borderRadius: "14px",
-                          padding: "20px",
-                          textAlign: "center",
-                          boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
-                        }}
+                        className={`rounded-xl border p-5 text-center shadow-sm ${medalBg}`}
                       >
-                        <div style={{ fontSize: "2rem", marginBottom: "6px" }}>{medalIcon}</div>
-                        <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#2a1726", marginBottom: "4px" }}>
+                        <div className="text-3xl mb-1.5">{medalIcon}</div>
+                        <div className="text-sm font-bold text-ink mb-1">
                           {p.rank}
                         </div>
-                        <div
-                          style={{
-                            fontSize: "1.65rem",
-                            fontWeight: 800,
-                            color: "var(--pink-700, #b32a68)",
-                            fontFamily: "'Segoe UI', system-ui, sans-serif",
-                          }}
-                        >
+                        <div className="text-2xl font-extrabold text-brand-700 font-sans">
                           ₹{Number(p.amount).toLocaleString("en-IN")}
                         </div>
                         {p.description && (
-                          <div style={{ fontSize: "0.82rem", color: "#665560", marginTop: "6px" }}>
+                          <div className="text-xs text-muted mt-1.5">
                             {p.description}
                           </div>
                         )}
@@ -361,62 +232,20 @@ export default function EventDetailPage() {
 
             {/* Benefits / Why Participate */}
             {Array.isArray(event.benefits) && event.benefits.length > 0 && (
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: "18px",
-                  padding: "32px",
-                  boxShadow: "0 4px 20px rgba(42, 23, 38, 0.05)",
-                  border: "1px solid #f3d9e4",
-                }}
-              >
-                <h2
-                  style={{
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                    fontSize: "1.8rem",
-                    color: "var(--ink, #2a1726)",
-                    marginTop: 0,
-                    marginBottom: "18px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
+              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-brand-100">
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink mb-4 flex items-center gap-2.5">
                   <span>✨</span> Why Participate?
                 </h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {event.benefits.map((b, idx) => (
                     <div
                       key={idx}
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "12px",
-                        padding: "14px 16px",
-                        background: "#fff5f9",
-                        borderRadius: "12px",
-                        border: "1px solid rgba(243, 217, 228, 0.8)",
-                      }}
+                      className="flex items-start gap-3 p-3.5 bg-brand-50/50 rounded-xl border border-brand-100"
                     >
-                      <span
-                        style={{
-                          background: "var(--pink-600, #e63f87)",
-                          color: "#fff",
-                          width: "22px",
-                          height: "22px",
-                          borderRadius: "50%",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          flexShrink: 0,
-                          marginTop: "2px",
-                        }}
-                      >
+                      <span className="w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                         ✓
                       </span>
-                      <span style={{ fontSize: "0.98rem", color: "#3a2533", fontWeight: 500 }}>{b}</span>
+                      <span className="text-sm font-medium text-ink">{b}</span>
                     </div>
                   ))}
                 </div>
@@ -425,44 +254,20 @@ export default function EventDetailPage() {
 
             {/* Event Format / Rounds */}
             {Array.isArray(event.eventFormat) && event.eventFormat.length > 0 && (
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: "18px",
-                  padding: "32px",
-                  boxShadow: "0 4px 20px rgba(42, 23, 38, 0.05)",
-                  border: "1px solid #f3d9e4",
-                }}
-              >
-                <h2
-                  style={{
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                    fontSize: "1.8rem",
-                    color: "var(--ink, #2a1726)",
-                    marginTop: 0,
-                    marginBottom: "20px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
+              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-brand-100">
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink mb-4 flex items-center gap-2.5">
                   <span>🎯</span> Event Format & Rounds
                 </h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                <div className="space-y-3.5">
                   {event.eventFormat.map((r, idx) => (
                     <div
                       key={idx}
-                      style={{
-                        padding: "18px 20px",
-                        background: "#faf7f9",
-                        borderRadius: "12px",
-                        borderLeft: "4px solid var(--pink-600, #e63f87)",
-                      }}
+                      className="p-4 sm:p-5 bg-surface rounded-xl border-l-4 border-l-brand-600"
                     >
-                      <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--ink)", marginBottom: "4px" }}>
+                      <div className="text-base font-bold text-ink mb-1">
                         {r.round || `Round ${idx + 1}`}
                       </div>
-                      <div style={{ fontSize: "0.95rem", color: "#5a4552", lineHeight: 1.5 }}>
+                      <div className="text-sm text-ink/75 leading-relaxed">
                         {r.details || r}
                       </div>
                     </div>
@@ -473,32 +278,13 @@ export default function EventDetailPage() {
 
             {/* Rules & Regulations */}
             {Array.isArray(event.rules) && event.rules.length > 0 && (
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: "18px",
-                  padding: "32px",
-                  boxShadow: "0 4px 20px rgba(42, 23, 38, 0.05)",
-                  border: "1px solid #f3d9e4",
-                }}
-              >
-                <h2
-                  style={{
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                    fontSize: "1.8rem",
-                    color: "var(--ink, #2a1726)",
-                    marginTop: 0,
-                    marginBottom: "18px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
+              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-brand-100">
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink mb-4 flex items-center gap-2.5">
                   <span>📋</span> Rules & Guidelines
                 </h2>
-                <ol style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <ol className="list-decimal list-inside space-y-2.5 text-sm sm:text-base text-ink/80 leading-relaxed">
                   {event.rules.map((rule, idx) => (
-                    <li key={idx} style={{ fontSize: "0.98rem", color: "#422f3b", lineHeight: 1.5 }}>
+                    <li key={idx}>
                       {rule}
                     </li>
                   ))}
@@ -508,72 +294,32 @@ export default function EventDetailPage() {
 
             {/* FAQs */}
             {Array.isArray(event.faqs) && event.faqs.length > 0 && (
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: "18px",
-                  padding: "32px",
-                  boxShadow: "0 4px 20px rgba(42, 23, 38, 0.05)",
-                  border: "1px solid #f3d9e4",
-                }}
-              >
-                <h2
-                  style={{
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                    fontSize: "1.8rem",
-                    color: "var(--ink, #2a1726)",
-                    marginTop: 0,
-                    marginBottom: "18px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
+              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-brand-100">
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink mb-4 flex items-center gap-2.5">
                   <span>❓</span> Frequently Asked Questions
                 </h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div className="space-y-2.5">
                   {event.faqs.map((faq, idx) => {
                     const isOpen = activeFaq === idx;
                     return (
                       <div
                         key={idx}
-                        style={{
-                          border: "1px solid #f3d9e4",
-                          borderRadius: "10px",
-                          overflow: "hidden",
-                          background: isOpen ? "#fff5f9" : "#ffffff",
-                          transition: "background 0.2s ease",
-                        }}
+                        className={`border rounded-xl overflow-hidden transition-colors ${
+                          isOpen ? "border-brand-200 bg-brand-50/40" : "border-brand-100 bg-white"
+                        }`}
                       >
                         <button
+                          type="button"
                           onClick={() => setActiveFaq(isOpen ? null : idx)}
-                          style={{
-                            width: "100%",
-                            textAlign: "left",
-                            padding: "16px 20px",
-                            background: "transparent",
-                            border: "none",
-                            fontSize: "1rem",
-                            fontWeight: 600,
-                            color: "var(--ink)",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            cursor: "pointer",
-                          }}
+                          className="w-full text-left p-4 sm:p-5 flex justify-between items-center text-sm sm:text-base font-semibold text-ink"
                         >
                           <span>{faq.question}</span>
-                          <span style={{ fontSize: "1.2rem", color: "var(--pink-600)" }}>{isOpen ? "−" : "+"}</span>
+                          <span className="text-lg text-brand-600 font-bold ml-2">
+                            {isOpen ? "−" : "+"}
+                          </span>
                         </button>
                         {isOpen && (
-                          <div
-                            style={{
-                              padding: "0 20px 16px",
-                              fontSize: "0.95rem",
-                              color: "#5c4554",
-                              lineHeight: 1.6,
-                            }}
-                          >
+                          <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-sm text-ink/75 leading-relaxed">
                             {faq.answer}
                           </div>
                         )}
@@ -585,32 +331,24 @@ export default function EventDetailPage() {
             )}
 
             {/* Contact & Support */}
-            <div
-              style={{
-                background: "#ffffff",
-                borderRadius: "18px",
-                padding: "28px 32px",
-                boxShadow: "0 4px 20px rgba(42, 23, 38, 0.05)",
-                border: "1px solid #f3d9e4",
-              }}
-            >
-              <h3 style={{ margin: "0 0 12px", fontSize: "1.2rem" }}>Have Questions or Need Assistance?</h3>
-              <p style={{ margin: "0 0 16px", color: "var(--muted)", fontSize: "0.95rem" }}>
+            <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-brand-100">
+              <h3 className="font-serif text-lg sm:text-xl font-bold text-ink mb-2">Have Questions or Need Assistance?</h3>
+              <p className="text-sm text-muted mb-4">
                 Our event coordination committee is here to assist participants and colleges.
               </p>
-              <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", fontSize: "0.95rem" }}>
+              <div className="flex flex-wrap gap-6 text-sm">
                 {event.contactInformation?.email && (
                   <div>
-                    <span style={{ color: "var(--muted)" }}>Email: </span>
-                    <a href={`mailto:${event.contactInformation.email}`} style={{ color: "var(--pink-600)", fontWeight: 600 }}>
+                    <span className="text-muted">Email: </span>
+                    <a href={`mailto:${event.contactInformation.email}`} className="text-brand-600 font-semibold hover:underline">
                       {event.contactInformation.email}
                     </a>
                   </div>
                 )}
                 {event.contactInformation?.phone && (
                   <div>
-                    <span style={{ color: "var(--muted)" }}>Phone / WhatsApp: </span>
-                    <a href={`tel:${event.contactInformation.phone}`} style={{ color: "var(--pink-600)", fontWeight: 600 }}>
+                    <span className="text-muted">Phone / WhatsApp: </span>
+                    <a href={`tel:${event.contactInformation.phone}`} className="text-brand-600 font-semibold hover:underline">
                       {event.contactInformation.phone}
                     </a>
                   </div>
@@ -621,81 +359,64 @@ export default function EventDetailPage() {
           </div>
 
           {/* Right Column: Sticky Registration Box */}
-          <div style={{ position: "sticky", top: "90px" }}>
-            <div
-              style={{
-                background: "#ffffff",
-                borderRadius: "20px",
-                padding: "28px 24px",
-                boxShadow: "0 10px 30px rgba(42, 23, 38, 0.08)",
-                border: "1.5px solid rgba(230, 63, 135, 0.3)",
-              }}
-            >
-              <div style={{ textAlign: "center", marginBottom: "20px", paddingBottom: "18px", borderBottom: "1px solid #f3d9e4" }}>
-                <span style={{ fontSize: "0.85rem", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "1px" }}>
+          <div className="lg:col-span-4 sticky top-24">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-lg border border-brand-200">
+              <div className="text-center mb-5 pb-5 border-b border-brand-100">
+                <span className="text-xs font-semibold text-muted uppercase tracking-wider">
                   Registration Fee
                 </span>
-                <div
-                  style={{
-                    fontSize: "2.4rem",
-                    fontWeight: 800,
-                    color: "var(--pink-700, #b32a68)",
-                    fontFamily: "'Segoe UI', system-ui, sans-serif",
-                    margin: "4px 0",
-                  }}
-                >
+                <div className="text-4xl font-extrabold text-brand-700 my-1 font-sans">
                   {event.registrationFee > 0 ? `₹${Number(event.registrationFee).toLocaleString("en-IN")}` : "FREE"}
                 </div>
-                <div style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                <div className="text-xs text-muted">
                   Per Registration (Individual or Team)
                 </div>
               </div>
 
               {/* Event Attributes */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "24px", fontSize: "0.92rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--muted)" }}>Participation:</span>
-                  <span style={{ fontWeight: 600, color: "var(--ink)" }}>
+              <div className="space-y-3.5 mb-6 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted">Participation:</span>
+                  <span className="font-semibold text-ink text-right">
                     {Array.isArray(event.participationTypes) && event.participationTypes.length > 0
                       ? event.participationTypes.join(" / ")
                       : "Individual / Team of 3"}
                   </span>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--muted)" }}>Venue:</span>
-                  <span style={{ fontWeight: 600, color: "var(--ink)", textAlign: "right", maxWidth: "180px" }}>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted">Venue:</span>
+                  <span className="font-semibold text-ink text-right max-w-[180px] truncate">
                     {event.city ? `${event.city}` : event.venue}
                   </span>
                 </div>
 
                 {formattedDate && (
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--muted)" }}>Date:</span>
-                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted">Date:</span>
+                    <span className="font-semibold text-ink">
                       {new Date(event.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </div>
                 )}
 
                 {event.startTime && (
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--muted)" }}>Time:</span>
-                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted">Time:</span>
+                    <span className="font-semibold text-ink">
                       {event.startTime} {event.endTime ? `– ${event.endTime}` : ""}
                     </span>
                   </div>
                 )}
 
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--muted)" }}>Status:</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted">Status:</span>
                   <span
-                    style={{
-                      fontWeight: 700,
-                      color: isRegistrationOpen ? "#16a34a" : "#dc2626",
-                    }}
+                    className={`font-bold flex items-center gap-1.5 ${
+                      isRegistrationOpen ? "text-emerald-600" : "text-rose-600"
+                    }`}
                   >
-                    {isRegistrationOpen ? "● Open for Registration" : "● Registration Closed"}
+                    <span>●</span> {isRegistrationOpen ? "Open for Registration" : "Registration Closed"}
                   </span>
                 </div>
               </div>
@@ -705,46 +426,17 @@ export default function EventDetailPage() {
                 <Link
                   href={`/events/${event.slug}/register`}
                   to={`/events/${event.slug}/register`}
-                  className="btn btn-primary btn-block"
-                  style={{
-                    display: "block",
-                    textAlign: "center",
-                    padding: "14px 20px",
-                    fontSize: "1.05rem",
-                    fontWeight: 700,
-                    borderRadius: "10px",
-                    textDecoration: "none",
-                    boxShadow: "0 6px 20px rgba(230, 63, 135, 0.35)",
-                  }}
+                  className="w-full text-center block py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-bold text-base shadow-lg shadow-brand-600/30 hover:shadow-brand-600/50 transition-all transform hover:-translate-y-0.5"
                 >
                   REGISTER NOW →
                 </Link>
               ) : (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "14px 20px",
-                    fontSize: "1rem",
-                    fontWeight: 700,
-                    borderRadius: "10px",
-                    background: "#f1f1f1",
-                    color: "#777",
-                    border: "1px dashed #ccc",
-                  }}
-                >
+                <div className="w-full text-center py-3.5 px-6 rounded-xl bg-slate-100 text-slate-500 font-bold text-sm border border-dashed border-slate-300">
                   REGISTRATION CLOSED
                 </div>
               )}
 
-              <div
-                style={{
-                  marginTop: "16px",
-                  fontSize: "0.78rem",
-                  color: "var(--muted)",
-                  textAlign: "center",
-                  lineHeight: 1.4,
-                }}
-              >
+              <div className="mt-4 text-[11px] text-muted text-center leading-relaxed">
                 🔒 100% Secure Checkout powered by Razorpay.
                 Instant digital confirmation upon payment.
               </div>

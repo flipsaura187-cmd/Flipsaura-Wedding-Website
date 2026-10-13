@@ -2,13 +2,13 @@ import Link from "@/compat/Link";
 
 export default function ShippingPolicy() {
     return (
-        <section className="section">
-            <div className="container">
-                <div className="legal-header">
-                    <h1>Shipping and Delivery Policy</h1>
+        <section className="py-12 md:py-16 bg-white min-h-[75vh]">
+            <div className="max-w-[860px] mx-auto px-4 sm:px-6">
+                <div className="mb-8 pb-4 border-b border-brand-100">
+                    <h1 className="font-serif text-3xl md:text-4xl font-bold text-ink">Shipping and Delivery Policy</h1>
                 </div>
 
-                <div className="legal-content">
+                <div className="text-muted text-base leading-relaxed space-y-4">
                     <p>
                         At Flipsaura, our primary focus is to connect users with reliable event and wedding service providers. While most services offered on our platform are service-based and do not involve physical delivery, certain categories such as invitation cards, gifts, or customized event materials may require shipping.
                     </p>

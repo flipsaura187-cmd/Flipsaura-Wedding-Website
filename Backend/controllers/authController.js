@@ -195,26 +195,14 @@ export async function forgotPassword(req, res) {
     });
   }
 
-  // Rate limiting / Cooldown for resending email (60 seconds)
   const now = Date.now();
-  if (user.resetPasswordLastSent) {
-    const diffMs = now - new Date(user.resetPasswordLastSent).getTime();
-    if (diffMs < 60000) {
-      const waitSec = Math.ceil((60000 - diffMs) / 1000);
-      return res.status(429).json({
-        ok: false,
-        error: `Please wait ${waitSec} second${waitSec > 1 ? "s" : ""} before requesting another reset email.`,
-        retryAfter: waitSec,
-      });
-    }
-  }
 
   // Generate secure reset token and store hashed version in database
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 
   user.resetPasswordToken = hashedToken;
-  user.resetPasswordExpires = new Date(now + 3600000); // 1 hour
+  user.resetPasswordExpires = new Date(now + 24 * 3600000); // 24 hours
   user.resetPasswordLastSent = new Date(now);
   await user.save();
 

@@ -90,7 +90,7 @@ export function passwordResetHtml({ name, resetUrl }) {
 
                 <div style="background:#FFF9F6;border-left:4px solid #D4AF37;padding:14px 18px;border-radius:6px;margin:28px 0;">
                   <p style="margin:0;font-size:13px;line-height:1.5;color:#855F10;">
-                    <strong>Security Notice:</strong> This link will expire in <strong>1 hour</strong>. If you did not request a password reset, no action is needed and your account remains completely secure.
+                    <strong>Notice:</strong> If you did not request a password reset, no action is needed and your account remains completely secure.
                   </p>
                 </div>
 

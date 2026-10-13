@@ -74,48 +74,47 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="container" style={{ padding: "40px 16px 80px" }}>
-      <div className="form-card" style={{ maxWidth: form.role === "vendor" ? 640 : 440, margin: "0 auto" }}>
-        <h1>Create an account</h1>
-        <p className="sub">
-          {form.role === "vendor"
-            ? "Register your wedding business with FlipsAura."
-            : "Join FlipsAura to book premium wedding services."}
-        </p>
+    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-brand-50/40">
+      <div className={`w-full ${form.role === "vendor" ? "max-w-3xl lg:max-w-4xl" : "max-w-md"} bg-white rounded-2xl shadow-xl shadow-brand-500/5 border border-brand-100 p-6 sm:p-10 transition-all duration-300`}>
+        <div className="text-center mb-6">
+          <h1 className="font-serif text-3xl font-bold text-ink">Create an account</h1>
+          <p className="text-muted text-sm mt-1">
+            {form.role === "vendor"
+              ? "Register your wedding business with FlipsAura."
+              : "Join FlipsAura to book premium wedding services."}
+          </p>
+        </div>
 
         {error && (
-          <div
-            className="error"
-            style={{
-              padding: "12px 16px",
-              borderRadius: 8,
-              marginBottom: 20,
-              background: "#FFEBEE",
-              color: "#C62828",
-              border: "1px solid #FFCDD2",
-              fontSize: 14,
-            }}
-          >
+          <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl font-medium mb-6">
             {error}
           </div>
         )}
 
-        <form onSubmit={submit}>
-          <div className="field" style={{ marginBottom: 18 }}>
-            <label style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>I want to register as</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <form onSubmit={submit} className="space-y-5">
+          <div>
+            <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-2">
+              I want to register as
+            </label>
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className={`btn ${form.role === "user" ? "btn-primary" : "btn-ghost"}`}
-                style={{ padding: "10px", fontSize: 14, borderRadius: 8 }}
+                className={`py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+                  form.role === "user"
+                    ? "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-md shadow-brand-500/20"
+                    : "bg-brand-50 hover:bg-brand-100 text-ink border border-brand-200/60"
+                }`}
                 onClick={() => setForm({ ...form, role: "user" })}
               >
                 💍 Customer
               </button>
               <button
                 type="button"
-                className={`btn ${form.role === "vendor" ? "btn-primary" : "btn-ghost"}`}
-                style={{ padding: "10px", fontSize: 14, borderRadius: 8 }}
+                className={`py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+                  form.role === "vendor"
+                    ? "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-md shadow-brand-500/20"
+                    : "bg-brand-50 hover:bg-brand-100 text-ink border border-brand-200/60"
+                }`}
                 onClick={() => setForm({ ...form, role: "vendor" })}
               >
                 🏪 Vendor / Business
@@ -124,153 +123,179 @@ export default function RegisterPage() {
           </div>
 
           {form.role === "vendor" ? (
-            <>
-              <div style={{ background: "var(--pink-50)", padding: "16px", borderRadius: 10, marginBottom: 20 }}>
-                <h4 style={{ margin: "0 0 6px", fontSize: 15, color: "var(--pink-700)" }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 pt-1">
+              <div className="md:col-span-2 bg-brand-50 p-4 rounded-xl border border-brand-100">
+                <h4 className="font-bold text-sm text-brand-700 mb-1">
                   Vendor Registration Details
                 </h4>
-                <p style={{ margin: 0, fontSize: 13, color: "var(--muted)" }}>
-                  Complete your basic registration to access the dashboard shell. Features unlock upon verification.
+                <p className="text-xs text-muted m-0">
+                  Complete your basic registration to access the dashboard. Features unlock upon admin approval.
                 </p>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <div className="field">
-                  <label>Business / Vendor Name *</label>
-                  <input
-                    required
-                    placeholder="e.g. Royal Shutter Photography"
-                    value={form.businessName}
-                    onChange={(e) => setForm({ ...form, businessName: e.target.value })}
-                  />
-                </div>
-
-                <div className="field">
-                  <label>Contact Person / Owner Name *</label>
-                  <input
-                    required
-                    placeholder="e.g. Rahul Sharma"
-                    value={form.ownerName}
-                    onChange={(e) => setForm({ ...form, ownerName: e.target.value, name: e.target.value })}
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Business / Vendor Name *
+                </label>
+                <input
+                  required
+                  placeholder="e.g. Royal Shutter Photography"
+                  value={form.businessName}
+                  onChange={(e) => setForm({ ...form, businessName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <div className="field">
-                  <label>Mobile Number *</label>
-                  <input
-                    required
-                    placeholder="e.g. 9876543210"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  />
-                </div>
-
-                <div className="field">
-                  <label>Email ID *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="name@business.com"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Contact Person / Owner Name *
+                </label>
+                <input
+                  required
+                  placeholder="e.g. Rahul Sharma"
+                  value={form.ownerName}
+                  onChange={(e) => setForm({ ...form, ownerName: e.target.value, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                />
               </div>
 
-              <div className="field">
-                <label>Vendor Type *</label>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Mobile Number *
+                </label>
+                <input
+                  required
+                  placeholder="e.g. 9876543210"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Email ID *
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="name@business.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Vendor Type *
+                </label>
                 <select
                   value={form.vendorType}
                   onChange={(e) => setForm({ ...form, vendorType: e.target.value })}
-                  style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #ddd" }}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                 >
                   <option value="Individual">Individual (Freelancer / Sole Proprietor)</option>
                   <option value="Business">Business (Registered Company / Agency)</option>
                 </select>
               </div>
 
-              <div className="field">
-                <label>Business Address *</label>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  PIN Code *
+                </label>
+                <input
+                  required
+                  placeholder="e.g. 302001"
+                  value={form.pincode}
+                  onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Business Address *
+                </label>
                 <input
                   required
                   placeholder="Street / Area / Landmark"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                <div className="field">
-                  <label>City *</label>
-                  <input
-                    required
-                    placeholder="e.g. Jaipur"
-                    value={form.city}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  />
-                </div>
-
-                <div className="field">
-                  <label>State *</label>
-                  <input
-                    required
-                    placeholder="e.g. Rajasthan"
-                    value={form.state}
-                    onChange={(e) => setForm({ ...form, state: e.target.value })}
-                  />
-                </div>
-
-                <div className="field">
-                  <label>PIN Code *</label>
-                  <input
-                    required
-                    placeholder="e.g. 302001"
-                    value={form.pincode}
-                    onChange={(e) => setForm({ ...form, pincode: e.target.value })}
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  City *
+                </label>
+                <input
+                  required
+                  placeholder="e.g. Jaipur"
+                  value={form.city}
+                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, margin: "8px 0 16px" }}>
-                <div className="field">
-                  <label>Profile Photo / Business Logo</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "profile")}
-                    disabled={uploadingPhoto}
-                  />
-                  {uploadingPhoto && <span style={{ fontSize: 12, color: "var(--pink-600)" }}>Uploading logo...</span>}
-                  {form.profilePhoto && (
-                    <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
-                      <img src={form.profilePhoto} alt="Logo" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} />
-                      <span style={{ fontSize: 12, color: "green" }}>✓ Logo uploaded</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="field">
-                  <label>Cover Photo</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "cover")}
-                    disabled={uploadingCover}
-                  />
-                  {uploadingCover && <span style={{ fontSize: 12, color: "var(--pink-600)" }}>Uploading cover...</span>}
-                  {form.coverPhoto && (
-                    <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
-                      <img src={form.coverPhoto} alt="Cover" style={{ width: 60, height: 35, borderRadius: 4, objectFit: "cover" }} />
-                      <span style={{ fontSize: 12, color: "green" }}>✓ Cover uploaded</span>
-                    </div>
-                  )}
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  State *
+                </label>
+                <input
+                  required
+                  placeholder="e.g. Rajasthan"
+                  value={form.state}
+                  onChange={(e) => setForm({ ...form, state: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                />
               </div>
 
-              <div className="field">
-                <label>Password * (Minimum 6 characters)</label>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Profile Photo / Logo
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "profile")}
+                  disabled={uploadingPhoto}
+                  className="block w-full text-xs text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+                />
+                {uploadingPhoto && <span className="text-xs text-brand-600 font-medium block mt-1">Uploading logo...</span>}
+                {form.profilePhoto && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <img src={form.profilePhoto} alt="Logo" className="w-9 h-9 rounded-full object-cover border border-brand-200" />
+                    <span className="text-xs text-emerald-600 font-semibold">✓ Logo uploaded</span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Cover Photo
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "cover")}
+                  disabled={uploadingCover}
+                  className="block w-full text-xs text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+                />
+                {uploadingCover && <span className="text-xs text-brand-600 font-medium block mt-1">Uploading cover...</span>}
+                {form.coverPhoto && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <img src={form.coverPhoto} alt="Cover" className="w-14 h-9 rounded-lg object-cover border border-brand-200" />
+                    <span className="text-xs text-emerald-600 font-semibold">✓ Cover uploaded</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Password * (Minimum 6 characters)
+                </label>
                 <input
                   type="password"
                   required
@@ -278,43 +303,65 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                 />
               </div>
-            </>
+
+              <div className="md:col-span-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={busy || uploadingPhoto || uploadingCover}
+                  className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-md shadow-brand-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {busy ? "Registering account..." : "Register as Vendor →"}
+                </button>
+              </div>
+            </div>
           ) : (
-            <>
-              <div className="field">
-                <label>Full Name *</label>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Full Name *
+                </label>
                 <input
                   required
                   placeholder="Your Name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                 />
               </div>
 
-              <div className="field">
-                <label>Email *</label>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Email *
+                </label>
                 <input
                   type="email"
                   required
                   placeholder="name@example.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                 />
               </div>
 
-              <div className="field">
-                <label>Phone (Optional)</label>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Phone (Optional)
+                </label>
                 <input
                   placeholder="Your Mobile Number"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                 />
               </div>
 
-              <div className="field">
-                <label>Password *</label>
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Password *
+                </label>
                 <input
                   type="password"
                   required
@@ -322,24 +369,24 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                 />
               </div>
-            </>
-          )}
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-block"
-            disabled={busy || uploadingPhoto || uploadingCover}
-            style={{ marginTop: 12, padding: "12px", fontSize: 15 }}
-          >
-            {busy ? "Registering account..." : form.role === "vendor" ? "Register as Vendor →" : "Create Account"}
-          </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full py-3 px-4 rounded-xl text-white font-bold text-sm bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-md shadow-brand-500/20 disabled:opacity-50 transition-all cursor-pointer mt-2"
+              >
+                {busy ? "Registering account..." : "Create Account"}
+              </button>
+            </div>
+          )}
         </form>
 
-        <p style={{ marginTop: 22, textAlign: "center", color: "var(--muted)", fontSize: 14 }}>
+        <p className="mt-6 text-center text-muted text-sm">
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "var(--pink-700)", fontWeight: 600 }}>
+          <Link href="/login" className="text-brand-700 font-bold hover:underline">
             Sign in
           </Link>
         </p>
@@ -347,3 +394,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

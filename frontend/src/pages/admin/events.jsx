@@ -59,41 +59,23 @@ export default function AdminEventsPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case "PUBLISHED":
-        return { bg: "#dcfce7", color: "#15803d", label: "● Published" };
+        return { badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200", label: "● Published" };
       case "CLOSED":
-        return { bg: "#fee2e2", color: "#b91c1c", label: "● Closed" };
+        return { badgeClass: "bg-rose-100 text-rose-800 border-rose-200", label: "● Closed" };
       case "COMPLETED":
-        return { bg: "#e0e7ff", color: "#3730a3", label: "● Completed" };
+        return { badgeClass: "bg-indigo-100 text-indigo-800 border-indigo-200", label: "● Completed" };
       default:
-        return { bg: "#f3f4f6", color: "#4b5563", label: "○ Draft" };
+        return { badgeClass: "bg-slate-100 text-slate-700 border-slate-200", label: "○ Draft" };
     }
   };
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "16px",
-          marginBottom: "28px",
-        }}
-      >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: "1.8rem",
-              margin: "0 0 6px",
-              color: "var(--wine, #8B1E3F)",
-            }}
-          >
-            Events & Competitions
-          </h1>
-          <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.95rem" }}>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">Events & Competitions</h1>
+          <p className="text-sm text-muted mt-0.5">
             Create and manage competitions, exhibitions, workshops, and view live registrations.
           </p>
         </div>
@@ -101,272 +83,172 @@ export default function AdminEventsPage() {
         <Link
           href="/admin/events/new"
           to="/admin/events/new"
-          className="btn btn-primary"
-          style={{
-            padding: "10px 22px",
-            fontSize: "0.95rem",
-            fontWeight: 700,
-            borderRadius: "8px",
-            textDecoration: "none",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition"
         >
           <span>+</span> Create Event
         </Link>
       </div>
 
       {actionError && (
-        <div
-          style={{
-            background: "#fee2e2",
-            border: "1px solid #ef4444",
-            color: "#991b1b",
-            padding: "12px 16px",
-            borderRadius: "8px",
-            marginBottom: "20px",
-            fontSize: "0.9rem",
-          }}
-        >
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl text-sm font-medium">
           {actionError}
         </div>
       )}
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
-          <p>Loading events...</p>
+        <div className="bg-white rounded-2xl border border-brand-100 p-12 text-center text-muted">
+          <div className="w-8 h-8 border-3 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm">Loading events...</p>
         </div>
       ) : events.length === 0 ? (
-        <div
-          style={{
-            background: "#ffffff",
-            borderRadius: "14px",
-            border: "1px solid var(--line, #f3d9e4)",
-            padding: "60px 20px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>🏆</div>
-          <h3 style={{ margin: "0 0 8px" }}>No Events Created Yet</h3>
-          <p style={{ color: "var(--muted)", margin: "0 0 20px", fontSize: "0.95rem" }}>
+        <div className="py-16 px-6 text-center bg-white rounded-3xl border-2 border-dashed border-brand-200">
+          <div className="text-5xl mb-3">🏆</div>
+          <h3 className="font-serif text-xl font-bold text-ink mb-1.5">No Events Created Yet</h3>
+          <p className="text-muted max-w-md mx-auto mb-6 text-sm">
             Start by creating your first event such as a quiz cup, wedding summit, or workshop.
           </p>
-          <Link href="/admin/events/new" to="/admin/events/new" className="btn btn-primary">
+          <Link
+            href="/admin/events/new"
+            to="/admin/events/new"
+            className="inline-flex items-center px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition"
+          >
             + Create First Event
           </Link>
         </div>
       ) : (
-        <div
-          style={{
-            background: "#ffffff",
-            borderRadius: "14px",
-            border: "1px solid var(--line, #f3d9e4)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.03)",
-            overflowX: "auto",
-          }}
-        >
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.92rem" }}>
-            <thead>
-              <tr style={{ background: "#faf7f9", borderBottom: "1px solid #f3d9e4" }}>
-                <th style={{ padding: "14px 18px", color: "var(--ink)", fontWeight: 700 }}>Event</th>
-                <th style={{ padding: "14px 18px", color: "var(--ink)", fontWeight: 700 }}>Type & City</th>
-                <th style={{ padding: "14px 18px", color: "var(--ink)", fontWeight: 700 }}>Date</th>
-                <th style={{ padding: "14px 18px", color: "var(--ink)", fontWeight: 700 }}>Fee</th>
-                <th style={{ padding: "14px 18px", color: "var(--ink)", fontWeight: 700 }}>Status</th>
-                <th style={{ padding: "14px 18px", color: "var(--ink)", fontWeight: 700, textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((ev) => {
-                const badge = getStatusBadge(ev.status);
-                const eventDate = ev.date
-                  ? new Date(ev.date).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })
-                  : "TBA";
+        <div className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-ink/80">
+              <thead className="bg-surface text-xs font-semibold text-muted uppercase tracking-wider border-b border-brand-100">
+                <tr>
+                  <th className="px-5 py-4">Event</th>
+                  <th className="px-5 py-4">Type & City</th>
+                  <th className="px-5 py-4">Date</th>
+                  <th className="px-5 py-4">Fee</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-100/70">
+                {events.map((ev) => {
+                  const badge = getStatusBadge(ev.status);
+                  const eventDate = ev.date
+                    ? new Date(ev.date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "TBA";
 
-                return (
-                  <tr
-                    key={ev._id}
-                    style={{
-                      borderBottom: "1px solid #f7eff3",
-                      transition: "background 0.15s ease",
-                    }}
-                  >
-                    {/* Event Title & Thumbnail */}
-                    <td style={{ padding: "14px 18px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        {ev.bannerImage ? (
-                          <img
-                            src={ev.bannerImage}
-                            alt=""
-                            style={{
-                              width: "48px",
-                              height: "48px",
-                              borderRadius: "8px",
-                              objectFit: "cover",
-                              flexShrink: 0,
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: "48px",
-                              height: "48px",
-                              borderRadius: "8px",
-                              background: "#f3d9e4",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "1.2rem",
-                              flexShrink: 0,
-                            }}
-                          >
-                            🏆
-                          </div>
-                        )}
-                        <div>
-                          <div style={{ fontWeight: 700, color: "var(--ink)" }}>{ev.title}</div>
-                          <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
-                            slug: <code>{ev.slug}</code> {ev.featured && <span style={{ color: "var(--pink-600)" }}>• Featured</span>}
+                  return (
+                    <tr key={ev._id} className="hover:bg-brand-50/30 transition-colors">
+                      {/* Event Title & Thumbnail */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          {ev.bannerImage ? (
+                            <img
+                              src={ev.bannerImage}
+                              alt=""
+                              className="w-12 h-12 rounded-xl object-cover border border-brand-100 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-xl flex-shrink-0">
+                              🏆
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-semibold text-ink">{ev.title}</div>
+                            <div className="text-xs text-muted">
+                              slug: <code className="font-mono">{ev.slug}</code>{" "}
+                              {ev.featured && <span className="text-brand-600 font-bold">• Featured</span>}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Type & City */}
-                    <td style={{ padding: "14px 18px" }}>
-                      <div style={{ fontWeight: 600 }}>{ev.type || "Competition"}</div>
-                      <div style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
-                        {ev.city ? `${ev.city}` : "Online / TBA"}
-                      </div>
-                    </td>
+                      {/* Type & City */}
+                      <td className="px-5 py-4">
+                        <div className="font-medium text-ink">{ev.type || "Competition"}</div>
+                        <div className="text-xs text-muted">
+                          {ev.city ? `${ev.city}` : "Online / TBA"}
+                        </div>
+                      </td>
 
-                    {/* Date */}
-                    <td style={{ padding: "14px 18px", color: "var(--ink)" }}>{eventDate}</td>
+                      {/* Date */}
+                      <td className="px-5 py-4 text-xs text-ink/80 whitespace-nowrap">
+                        {eventDate}
+                      </td>
 
-                    {/* Registration Fee */}
-                    <td style={{ padding: "14px 18px", fontWeight: 700, color: "var(--ink)" }}>
-                      {ev.registrationFee > 0 ? `₹${Number(ev.registrationFee).toLocaleString("en-IN")}` : "Free"}
-                    </td>
+                      {/* Registration Fee */}
+                      <td className="px-5 py-4 font-bold text-ink font-sans whitespace-nowrap">
+                        {ev.registrationFee > 0 ? `₹${Number(ev.registrationFee).toLocaleString("en-IN")}` : "Free"}
+                      </td>
 
-                    {/* Status */}
-                    <td style={{ padding: "14px 18px" }}>
-                      <span
-                        style={{
-                          background: badge.bg,
-                          color: badge.color,
-                          fontSize: "0.78rem",
-                          fontWeight: 700,
-                          padding: "4px 10px",
-                          borderRadius: "12px",
-                          display: "inline-block",
-                        }}
-                      >
-                        {badge.label}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td style={{ padding: "14px 18px", textAlign: "right" }}>
-                      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
-                        <Link
-                          href={`/admin/events/${ev._id}/registrations`}
-                          to={`/admin/events/${ev._id}/registrations`}
-                          style={{
-                            padding: "6px 12px",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
-                            borderRadius: "6px",
-                            background: "var(--pink-50, #fff5f9)",
-                            color: "var(--pink-700, #b32a68)",
-                            border: "1px solid var(--pink-200, #ffd0e2)",
-                            textDecoration: "none",
-                          }}
+                      {/* Status */}
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge.badgeClass}`}
                         >
-                          👥 Registrations
-                        </Link>
+                          {badge.label}
+                        </span>
+                      </td>
 
-                        <Link
-                          href={`/admin/events/${ev._id}/edit`}
-                          to={`/admin/events/${ev._id}/edit`}
-                          style={{
-                            padding: "6px 12px",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
-                            borderRadius: "6px",
-                            background: "#f3f4f6",
-                            color: "#374151",
-                            border: "1px solid #e5e7eb",
-                            textDecoration: "none",
-                          }}
-                        >
-                          ✏️ Edit
-                        </Link>
-
-                        {/* Quick Status Toggles */}
-                        {ev.status !== "PUBLISHED" ? (
-                          <button
-                            onClick={() => handleToggleStatus(ev, "PUBLISHED")}
-                            style={{
-                              padding: "6px 10px",
-                              fontSize: "0.8rem",
-                              fontWeight: 600,
-                              borderRadius: "6px",
-                              background: "#dcfce7",
-                              color: "#15803d",
-                              border: "1px solid #bbf7d0",
-                              cursor: "pointer",
-                            }}
-                            title="Publish event to public"
+                      {/* Actions */}
+                      <td className="px-5 py-4 text-right">
+                        <div className="inline-flex items-center gap-1.5 flex-wrap justify-end">
+                          <Link
+                            href={`/admin/events/${ev._id}/registrations`}
+                            to={`/admin/events/${ev._id}/registrations`}
+                            className="px-2.5 py-1 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200 text-xs font-semibold transition"
                           >
-                            Publish
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleToggleStatus(ev, "CLOSED")}
-                            style={{
-                              padding: "6px 10px",
-                              fontSize: "0.8rem",
-                              fontWeight: 600,
-                              borderRadius: "6px",
-                              background: "#fee2e2",
-                              color: "#b91c1c",
-                              border: "1px solid #fecaca",
-                              cursor: "pointer",
-                            }}
-                            title="Close registration"
-                          >
-                            Close Reg
-                          </button>
-                        )}
+                            👥 Registrations
+                          </Link>
 
-                        <button
-                          onClick={() => handleDelete(ev._id, ev.title)}
-                          style={{
-                            padding: "6px 10px",
-                            fontSize: "0.8rem",
-                            fontWeight: 600,
-                            borderRadius: "6px",
-                            background: "transparent",
-                            color: "#991b1b",
-                            border: "1px solid #fecaca",
-                            cursor: "pointer",
-                          }}
-                          title="Delete event"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          <Link
+                            href={`/admin/events/${ev._id}/edit`}
+                            to={`/admin/events/${ev._id}/edit`}
+                            className="px-2.5 py-1 rounded-lg bg-surface hover:bg-brand-50 text-ink border border-brand-200 text-xs font-semibold transition"
+                          >
+                            ✏️ Edit
+                          </Link>
+
+                          {/* Quick Status Toggles */}
+                          {ev.status !== "PUBLISHED" ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(ev, "PUBLISHED")}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold transition"
+                              title="Publish event to public"
+                            >
+                              Publish
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(ev, "CLOSED")}
+                              className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-semibold transition"
+                              title="Close registration"
+                            >
+                              Close Reg
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(ev._id, ev.title)}
+                            className="px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-semibold transition"
+                            title="Delete event"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

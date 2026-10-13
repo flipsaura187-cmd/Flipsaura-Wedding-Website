@@ -2,13 +2,13 @@ import Link from "@/compat/Link";
 
 export default function RefundCancellationPolicy() {
     return (
-        <section className="section">
-            <div className="container">
-                <div className="legal-header">
-                    <h1>Refund and Cancellation Policy</h1>
+        <section className="py-12 md:py-16 bg-white min-h-[75vh]">
+            <div className="max-w-[860px] mx-auto px-4 sm:px-6">
+                <div className="mb-8 pb-4 border-b border-brand-100">
+                    <h1 className="font-serif text-3xl md:text-4xl font-bold text-ink">Refund and Cancellation Policy</h1>
                 </div>
 
-                <div className="legal-content">
+                <div className="text-muted text-base leading-relaxed space-y-4">
                     <p>
                         We strive to provide a smooth and reliable experience for all users by connecting them with trusted event and wedding service providers. Since our platform acts as a facilitator between customers and independent vendors, our refund and cancellation terms are designed to ensure fairness and transparency for all parties involved.
                     </p>

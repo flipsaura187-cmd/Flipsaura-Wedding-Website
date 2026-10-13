@@ -6,6 +6,7 @@ import Category from "../models/Category.js";
 import Blog from "../models/Blog.js";
 import Review from "../models/Review.js";
 import { calculateVendorCompletion } from "../lib/vendorVerification.js";
+import { syncVendorServicesToItems } from "../lib/vendorSync.js";
 
 export async function getAdminStats(req, res) {
   await dbConnect();
@@ -65,17 +66,14 @@ export async function updateUser(req, res) {
       user.vendorProfile.rejectionReason = "";
       if (Array.isArray(user.vendorProfile.documents)) {
         user.vendorProfile.documents.forEach((d) => {
-          if (d.status === "under_review" || d.status === "pending") {
+          if (d.status !== "rejected") {
             d.status = "verified";
             d.verifiedAt = new Date();
           }
         });
       }
       if (user.vendorProfile.bankDetails) {
-        if (
-          user.vendorProfile.bankDetails.status === "under_review" ||
-          user.vendorProfile.bankDetails.status === "pending"
-        ) {
+        if (user.vendorProfile.bankDetails.status !== "rejected") {
           user.vendorProfile.bankDetails.status = "verified";
           user.vendorProfile.bankDetails.verifiedAt = new Date();
         }
@@ -156,7 +154,6 @@ export async function getAdminVendors(req, res) {
   if (status && status !== "all") {
     if (status === "approved") {
       query["vendorProfile.approved"] = true;
-      query["vendorProfile.verificationStatus"] = "approved";
     } else if (status === "under_review") {
       query["vendorProfile.verificationStatus"] = { $in: ["under_review", "pending_verification"] };
     } else {
@@ -176,8 +173,9 @@ export async function getAdminVendors(req, res) {
     ];
   }
 
-  const vendors = await User.find(query, { passwordHash: 0 })
-    .populate("vendorProfile.categories")
+  const vendors = await User.find(query)
+    .select("-passwordHash -vendorProfile.profilePhoto -vendorProfile.coverPhoto -vendorProfile.about")
+    .populate("vendorProfile.categories", "name")
     .sort({ createdAt: -1 })
     .lean();
 
@@ -447,17 +445,17 @@ export async function updateAdminVendorStatus(req, res) {
     vendor.vendorProfile.rejectionReason = "";
     vendor.vendorProfile.reviewedAt = new Date();
 
-    // Also mark any under_review documents and bank details as verified if not yet rejected
+    // Automatically mark all uploaded documents and bank details as verified (unless rejected)
     if (Array.isArray(vendor.vendorProfile.documents)) {
       vendor.vendorProfile.documents.forEach((d) => {
-        if (d.status === "under_review" || d.status === "pending") {
+        if (d.status !== "rejected") {
           d.status = "verified";
           d.verifiedAt = new Date();
         }
       });
     }
     if (vendor.vendorProfile.bankDetails) {
-      if (vendor.vendorProfile.bankDetails.status === "under_review" || vendor.vendorProfile.bankDetails.status === "pending") {
+      if (vendor.vendorProfile.bankDetails.status !== "rejected") {
         vendor.vendorProfile.bankDetails.status = "verified";
         vendor.vendorProfile.bankDetails.verifiedAt = new Date();
       }
@@ -480,7 +478,17 @@ export async function updateAdminVendorStatus(req, res) {
     vendor.vendorProfile.verificationStatus = "under_review";
   }
 
+  vendor.markModified("vendorProfile");
   await vendor.save();
+
+  // If approved, automatically sync their services to active Item listings
+  if (status === "approved") {
+    try {
+      await syncVendorServicesToItems(vendor._id);
+    } catch (e) {
+      console.error("Auto-sync vendor services error:", e);
+    }
+  }
 
   const completion = calculateVendorCompletion(vendor);
 

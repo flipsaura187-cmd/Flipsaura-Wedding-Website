@@ -5,7 +5,7 @@ import BlogForm from "@/components/admin/BlogForm";
 export default function AdminBlogCreate() {
   const router = useRouter();
 
-  const handleSuccess = (blog) => {
+  const handleSuccess = () => {
     router.push("/admin/blogs");
   };
 
@@ -14,12 +14,12 @@ export default function AdminBlogCreate() {
   };
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto" }}>
-      <div style={{ marginBottom: 16 }}>
+    <div className="max-w-5xl mx-auto space-y-4">
+      <div>
         <button
+          type="button"
           onClick={handleCancel}
-          className="btn btn-ghost"
-          style={{ fontSize: 13, color: "#666", padding: 0, background: "none", border: "none", cursor: "pointer" }}
+          className="text-sm font-semibold text-muted hover:text-ink inline-flex items-center gap-1 transition"
         >
           ← Back to Articles
         </button>

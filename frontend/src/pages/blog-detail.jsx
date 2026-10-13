@@ -30,36 +30,26 @@ export default function BlogDetail() {
 
   if (loading) {
     return (
-      <section className="section" style={{ minHeight: "60vh", padding: "80px 0", textAlign: "center" }}>
-        <div className="container">
-          <p style={{ color: "#888", fontSize: 16 }}>Loading wedding story…</p>
-        </div>
+      <section className="py-20 text-center min-h-[60vh] flex items-center justify-center">
+        <p className="text-brand-600 font-semibold animate-pulse text-base">Loading wedding story…</p>
       </section>
     );
   }
 
   if (error || !blog) {
     return (
-      <section className="section" style={{ minHeight: "60vh", padding: "80px 0" }}>
-        <div className="container" style={{ maxWidth: 600, textAlign: "center" }}>
-          <span style={{ fontSize: 44 }}>📖</span>
-          <h1 style={{ fontSize: 28, margin: "16px 0 8px", color: "var(--wine, #8B1E3F)" }}>
+      <section className="py-20 min-h-[60vh] flex items-center justify-center px-4">
+        <div className="max-w-md text-center bg-brand-50/50 p-8 rounded-2xl border border-brand-100">
+          <span className="text-4xl">📖</span>
+          <h1 className="font-serif text-2xl font-bold text-wine mt-3 mb-2">
             Story Not Found
           </h1>
-          <p style={{ color: "#666", marginBottom: 24, fontSize: 15 }}>
+          <p className="text-muted text-sm mb-6">
             This article might have been moved, unpublished, or the link may be outdated.
           </p>
           <Link
             href="/blogs"
-            className="btn btn-primary"
-            style={{
-              display: "inline-block",
-              background: "var(--wine, #8B1E3F)",
-              color: "#fff",
-              padding: "10px 22px",
-              borderRadius: 8,
-              textDecoration: "none",
-            }}
+            className="inline-block bg-wine hover:bg-brand-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-md shadow-wine/20 transition-all"
           >
             ← Explore Other Wedding Stories
           </Link>
@@ -71,25 +61,13 @@ export default function BlogDetail() {
   const coverImg = blog.coverImage || blog.featuredImage;
 
   return (
-    <article className="section" style={{ padding: "40px 0 80px" }}>
-      <div className="container" style={{ maxWidth: 840 }}>
+    <article className="py-12 md:py-16 bg-white min-h-[75vh]">
+      <div className="max-w-[840px] mx-auto px-4 sm:px-6">
         {/* Navigation Breadcrumb */}
-        <div style={{ marginBottom: 24 }}>
+        <div className="mb-6">
           <Link
             href="/blogs"
-            className="btn btn-ghost"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 14,
-              color: "var(--wine, #8B1E3F)",
-              textDecoration: "none",
-              fontWeight: 500,
-              padding: "6px 12px",
-              borderRadius: 6,
-              background: "#FAF8F5",
-            }}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-wine hover:text-brand-600 bg-brand-50 px-3.5 py-1.5 rounded-xl border border-brand-100 transition-colors"
           >
             ← Back to all stories
           </Link>
@@ -97,70 +75,23 @@ export default function BlogDetail() {
 
         {/* Category Pill */}
         {blog.category && (
-          <span
-            style={{
-              display: "inline-block",
-              background: "#FFF0F5",
-              color: "var(--pink-700, #b32a68)",
-              padding: "5px 14px",
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 600,
-              letterSpacing: "0.5px",
-              marginBottom: 16,
-              textTransform: "uppercase",
-            }}
-          >
+          <span className="inline-block bg-brand-50 text-brand-700 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase mb-4 border border-brand-100">
             {blog.category}
           </span>
         )}
 
         {/* Title */}
-        <h1
-          style={{
-            fontSize: "clamp(2rem, 4vw, 2.75rem)",
-            lineHeight: 1.25,
-            color: "#1A1A1A",
-            margin: "0 0 16px",
-            fontFamily: "'Playfair Display', Georgia, serif",
-            fontWeight: 700,
-          }}
-        >
+        <h1 className="font-serif text-3xl md:text-5xl font-bold text-ink leading-tight mb-4">
           {blog.title}
         </h1>
 
         {/* Meta Info */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            color: "#777",
-            fontSize: 14,
-            paddingBottom: 24,
-            borderBottom: "1px solid #EAE0D7",
-            marginBottom: 28,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: "var(--wine, #8B1E3F)",
-                color: "#fff",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 14,
-                fontWeight: "bold",
-              }}
-            >
+        <div className="flex items-center gap-3 text-muted text-xs md:text-sm pb-6 border-b border-brand-100 mb-8 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-8 rounded-full bg-wine text-white inline-flex items-center justify-center font-bold text-xs">
               {(blog.author || "F")[0]}
             </span>
-            <span style={{ fontWeight: 600, color: "#333" }}>{blog.author || "FlipsAura Team"}</span>
+            <span className="font-semibold text-ink">{blog.author || "FlipsAura Team"}</span>
           </div>
           <span>•</span>
           <span>
@@ -176,69 +107,36 @@ export default function BlogDetail() {
 
         {/* Cover Image */}
         {coverImg && (
-          <div style={{ marginBottom: 36 }}>
+          <div className="mb-8 rounded-2xl overflow-hidden shadow-md border border-brand-100">
             <img
               src={coverImg}
               alt={blog.title}
-              style={{
-                width: "100%",
-                maxHeight: 520,
-                objectFit: "cover",
-                borderRadius: 16,
-                boxShadow: "0 6px 24px rgba(0,0,0,0.06)",
-              }}
+              className="w-full max-h-[520px] object-cover"
             />
           </div>
         )}
 
         {/* Excerpt if present */}
         {blog.excerpt && (
-          <div
-            style={{
-              fontSize: 18,
-              lineHeight: 1.6,
-              color: "#555",
-              fontStyle: "italic",
-              borderLeft: "4px solid var(--wine, #8B1E3F)",
-              paddingLeft: 20,
-              margin: "0 0 32px",
-            }}
-          >
+          <div className="text-base md:text-lg italic text-muted border-l-4 border-wine pl-5 mb-8 leading-relaxed">
             {blog.excerpt}
           </div>
         )}
 
-        {/* Rich Blog Content (Headings, Paragraphs, Images, Videos, Links) */}
+        {/* Rich Blog Content */}
         <div
-          className="blog-content"
+          className="blog-content leading-relaxed text-ink space-y-4"
           dangerouslySetInnerHTML={{ __html: blog.content || "" }}
         />
 
         {/* Tags */}
         {blog.tags && blog.tags.length > 0 && (
-          <div
-            style={{
-              marginTop: 48,
-              paddingTop: 24,
-              borderTop: "1px solid #EAE0D7",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexWrap: "wrap",
-            }}
-          >
-            <span style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>TAGS:</span>
+          <div className="mt-12 pt-6 border-t border-brand-100 flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold uppercase text-muted tracking-wider">TAGS:</span>
             {blog.tags.map((t, idx) => (
               <span
                 key={idx}
-                style={{
-                  background: "#FAF8F5",
-                  color: "#555",
-                  padding: "5px 12px",
-                  borderRadius: 16,
-                  fontSize: 13,
-                  border: "1px solid #EAE0D7",
-                }}
+                className="bg-brand-50 text-muted px-3 py-1 rounded-full text-xs border border-brand-100"
               >
                 #{t.trim()}
               </span>
@@ -247,39 +145,24 @@ export default function BlogDetail() {
         )}
 
         {/* Footer CTA */}
-        <div
-          style={{
-            marginTop: 48,
-            padding: 32,
-            background: "linear-gradient(135deg, #FFF0F5 0%, #FAF8F5 100%)",
-            borderRadius: 16,
-            textAlign: "center",
-            border: "1px solid #F0E6DE",
-          }}
-        >
-          <h3 style={{ margin: "0 0 8px", color: "var(--wine, #8B1E3F)", fontSize: 20 }}>
+        <div className="mt-12 p-8 bg-gradient-to-br from-brand-50 to-brand-100/40 rounded-2xl text-center border border-brand-100 space-y-3">
+          <h3 className="font-serif text-xl font-bold text-wine">
             Planning your dream wedding?
           </h3>
-          <p style={{ margin: "0 0 20px", color: "#666", fontSize: 14 }}>
+          <p className="text-muted text-sm max-w-md mx-auto">
             Discover trusted venues, decorators, photographers, and makeup artists on FlipsAura.
           </p>
-          <Link
-            href="/"
-            className="btn btn-primary"
-            style={{
-              display: "inline-block",
-              background: "var(--wine, #8B1E3F)",
-              color: "#fff",
-              padding: "10px 24px",
-              borderRadius: 8,
-              textDecoration: "none",
-              fontWeight: 600,
-            }}
-          >
-            Explore FlipsAura Marketplace
-          </Link>
+          <div className="pt-2">
+            <Link
+              href="/"
+              className="inline-block bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-all"
+            >
+              Explore FlipsAura Marketplace
+            </Link>
+          </div>
         </div>
       </div>
     </article>
   );
 }
+

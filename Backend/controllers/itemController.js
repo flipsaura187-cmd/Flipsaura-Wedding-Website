@@ -92,9 +92,77 @@ export async function createItem(req, res) {
 
 export async function getItem(req, res) {
   await dbConnect();
-  const item = await Item.findById(req.params.id).populate("category").lean();
+  const item = await Item.findById(req.params.id)
+    .populate("category")
+    .populate({
+      path: "vendor",
+      select:
+        "name email phone vendorProfile.businessName vendorProfile.ownerName vendorProfile.city vendorProfile.state vendorProfile.profilePhoto vendorProfile.facilities vendorProfile.categories vendorProfile.servicesList",
+      populate: [
+        {
+          path: "vendorProfile.facilities.category",
+          select: "name slug",
+        },
+        {
+          path: "vendorProfile.servicesList.category",
+          select: "name slug",
+        },
+      ],
+    })
+    .lean();
+
   if (!item) return res.status(404).json({ ok: false, error: "Not found" });
-  return res.json({ ok: true, data: { item } });
+
+  const itemCatId = String(item.category?._id || item.category || "");
+  const itemCatSlug = (item.category?.slug || "").toLowerCase().trim();
+  const itemCatName = (item.category?.name || "").toLowerCase().trim();
+
+  // Resolve dynamic facilities:
+  // If item has explicit facilities configured, use them.
+  // Otherwise, match vendor's facilities for this item's category!
+  let resolvedFacilities = [];
+  if (Array.isArray(item.facilities) && item.facilities.length > 0) {
+    resolvedFacilities = item.facilities;
+  } else if (item.vendor?.vendorProfile?.facilities?.length) {
+    resolvedFacilities = item.vendor.vendorProfile.facilities.filter((f) => {
+      const fCatId = String(f.category?._id || f.category || "");
+      const fCatSlug = (f.category?.slug || "").toLowerCase().trim();
+      const fCatName = (f.categoryName || f.category?.name || "").toLowerCase().trim();
+
+      // If facility has no specific category or matches this category
+      if (!fCatId && !fCatName && !fCatSlug) return true;
+      if (itemCatId && fCatId === itemCatId) return true;
+      if (itemCatSlug && fCatSlug === itemCatSlug) return true;
+      if (itemCatName && fCatName && (itemCatName === fCatName || itemCatName.includes(fCatName) || fCatName.includes(itemCatName))) return true;
+      return false;
+    });
+  }
+
+  // Resolve category-specific service details (pricing model, experience, coverage, inclusions)
+  let resolvedCategoryService = null;
+  if (Array.isArray(item.vendor?.vendorProfile?.servicesList)) {
+    resolvedCategoryService = item.vendor.vendorProfile.servicesList.find((s) => {
+      const sCatId = String(s.category?._id || s.category || "");
+      const sCatName = (s.categoryName || s.category?.name || "").toLowerCase().trim();
+      const sCatSlug = (s.category?.slug || "").toLowerCase().trim();
+
+      if (itemCatId && sCatId === itemCatId) return true;
+      if (itemCatSlug && sCatSlug === itemCatSlug) return true;
+      if (itemCatName && sCatName && (itemCatName === sCatName || itemCatName.includes(sCatName) || sCatName.includes(itemCatName))) return true;
+      return false;
+    }) || null;
+  }
+
+  return res.json({
+    ok: true,
+    data: {
+      item: {
+        ...item,
+        resolvedFacilities,
+        resolvedCategoryService,
+      },
+    },
+  });
 }
 
 export async function updateItem(req, res) {

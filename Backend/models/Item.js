@@ -9,6 +9,14 @@ const ItemSchema = new mongoose.Schema(
     about: String,
     description: String,
     specifications: [{ key: String, value: String }],
+    facilities: [
+      {
+        group: { type: String, default: "Popular Amenities" },
+        name: { type: String, required: true },
+        icon: { type: String, default: "" },
+        highlight: { type: Boolean, default: false },
+      },
+    ],
     images: [String], // CloudFront URLs
     price: { type: Number, required: true, min: 0, index: true },
     city: { type: String, index: true },

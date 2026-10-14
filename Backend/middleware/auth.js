@@ -46,6 +46,7 @@ export async function getCurrentUser(req) {
     email: user.email,
     role: user.role,
     phone: user.phone,
+    isPhoneVerified: Boolean(user.isPhoneVerified),
     isApproved,
     verificationStatus: user.vendorProfile?.verificationStatus || (user.vendorProfile?.approved ? "approved" : "profile_incomplete"),
     vendorProfile: isVendor

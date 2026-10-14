@@ -40,6 +40,7 @@ export function AuthProvider({ children }) {
 
     if (j.data?.token && typeof window !== "undefined") {
       localStorage.setItem("fa_token", j.data.token);
+      api.defaults.headers.common["Authorization"] = `Bearer ${j.data.token}`;
     }
 
     setUser(j.data.user);
@@ -53,10 +54,31 @@ export function AuthProvider({ children }) {
     // Do NOT auto-login upon registration
     if (typeof window !== "undefined") {
       localStorage.removeItem("fa_token");
+      delete api.defaults.headers.common["Authorization"];
     }
     setUser(null);
 
-    return j.data?.user;
+    return j;
+  };
+
+  const verifyOtp = async (email, otp) => {
+    const { data: j } = await api.post("/api/auth/verify-otp", { email, otp });
+    if (!j.ok) throw new Error(j.error || "Verification failed");
+
+    // User must explicitly log in with their password
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("fa_token");
+      delete api.defaults.headers.common["Authorization"];
+    }
+    setUser(null);
+
+    return j;
+  };
+
+  const resendOtp = async (email) => {
+    const { data: j } = await api.post("/api/auth/resend-otp", { email });
+    if (!j.ok) throw new Error(j.error || "Failed to resend OTP");
+    return j;
   };
 
   const logout = async () => {
@@ -72,7 +94,19 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refresh, getAuthHeaders }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        verifyOtp,
+        resendOtp,
+        logout,
+        refresh,
+        getAuthHeaders,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

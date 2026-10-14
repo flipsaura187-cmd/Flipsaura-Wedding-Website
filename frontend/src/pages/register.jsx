@@ -62,10 +62,21 @@ export default function RegisterPage() {
         name: form.role === "vendor" ? (form.ownerName || form.name) : form.name,
       };
 
-      await register(payload);
+      const res = await register(payload);
 
-      // Redirect user to login page so they must explicitly log in
-      router.push("/login?registered=true");
+      if (res?.requiresVerification) {
+        const queryParams = new URLSearchParams({
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+        });
+        if (res.data?.maskedPhone) {
+          queryParams.set("maskedPhone", res.data.maskedPhone);
+        }
+        router.push(`/verify-otp?${queryParams.toString()}`);
+      } else {
+        // Redirect user to login page so they must explicitly log in
+        router.push("/login?registered=true");
+      }
     } catch (err) {
       setError(err.message || "Registration failed. Please check your inputs.");
     } finally {
@@ -87,7 +98,17 @@ export default function RegisterPage() {
 
         {error && (
           <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl font-medium mb-6">
-            {error}
+            <div>{error}</div>
+            {error.toLowerCase().includes("already registered") && (
+              <div className="mt-2 pt-2 border-t border-rose-200/60">
+                <Link
+                  href={`/login?email=${encodeURIComponent(form.email)}`}
+                  className="font-bold underline text-rose-800 hover:text-rose-950 inline-flex items-center gap-1"
+                >
+                  <span>Already verified? Click here to Sign In →</span>
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
@@ -347,15 +368,32 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
-                  Phone (Optional)
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Mobile Number (WhatsApp) *</span>
+                  <span className="text-[11px] text-brand-600 font-semibold normal-case">OTP sent on WhatsApp</span>
                 </label>
-                <input
-                  placeholder="Your Mobile Number"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                />
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    pattern="[0-9]{10}"
+                    title="Please enter a valid 10-digit mobile number"
+                    placeholder="9876543210"
+                    maxLength={10}
+                    value={form.phone.replace(/^\+?91/, "").replace(/\D/g, "")}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setForm({ ...form, phone: digits });
+                    }}
+                    className="w-full pl-12 pr-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all font-mono"
+                  />
+                </div>
+                <p className="text-[11px] text-muted mt-1">
+                  We will send a 6-digit verification code to this WhatsApp number.
+                </p>
               </div>
 
               <div>

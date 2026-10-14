@@ -132,8 +132,31 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Hamburger Button */}
+        {/* Mobile Header Controls */}
         <div className="flex md:hidden items-center gap-2">
+          {user ? (
+            <Link
+              href={
+                role === "admin"
+                  ? "/admin/dashboard"
+                  : role === "vendor"
+                  ? "/vendor/dashboard"
+                  : "/account"
+              }
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200 text-xs font-semibold"
+            >
+              <span>{role === "admin" ? "👑" : role === "vendor" ? "🏪" : "👤"}</span>
+              <span className="max-w-[90px] truncate">{userName.split(" ")[0]}</span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="px-3 py-1.5 rounded-xl text-xs font-medium text-brand-700 bg-brand-50 border border-brand-200"
+            >
+              Login
+            </Link>
+          )}
+
           <button
             type="button"
             aria-label="Toggle Navigation Menu"
@@ -153,9 +176,20 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden border-t border-line bg-white/98 backdrop-blur-md px-5 py-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
           {user && (
-            <div className="p-3 rounded-xl bg-brand-50/60 border border-brand-100 mb-2">
-              <div className="font-semibold text-brand-700 text-sm">{userName}</div>
-              <div className="text-xs text-muted font-mono">{user.email}</div>
+            <div className="p-3.5 rounded-xl bg-brand-50/70 border border-brand-100 mb-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-brand-700 text-sm">{userName}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 text-brand-800">
+                  {role}
+                </span>
+              </div>
+              <div className="text-xs text-muted font-mono mt-0.5">{user.email}</div>
+              {user.phone && (
+                <div className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1">
+                  <span>💬 +91 {user.phone}</span>
+                  <span className="text-[9px] bg-emerald-600 text-white px-1.5 py-0.2 rounded-full font-bold">Verified ✓</span>
+                </div>
+              )}
             </div>
           )}
 

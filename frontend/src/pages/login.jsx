@@ -1,17 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "@/compat/navigation";
 import Link from "@/compat/Link";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, user, logout } = useAuth();
   const router = useRouter();
   const [sp] = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => sp?.get("email") || "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const qEmail = sp?.get("email");
+    if (qEmail) setEmail(qEmail);
+  }, [sp]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -29,6 +34,18 @@ export default function LoginPage() {
           : "/");
       router.push(next);
     } catch (err) {
+      if (err.response?.data?.requiresVerification) {
+        const queryParams = new URLSearchParams({
+          email: (err.response.data.data?.email || email).trim(),
+          phone: (err.response.data.data?.phone || "").trim(),
+          fromLogin: "true",
+        });
+        if (err.response.data.data?.maskedPhone) {
+          queryParams.set("maskedPhone", err.response.data.data.maskedPhone);
+        }
+        router.push(`/verify-otp?${queryParams.toString()}`);
+        return;
+      }
       setError(err.message || "Invalid credentials. Please check your email and password.");
     } finally {
       setBusy(false);
@@ -43,7 +60,50 @@ export default function LoginPage() {
           Login to your FlipsAura account.
         </p>
 
-        {sp?.get("registered") === "true" && !error && (
+        {user && (
+          <div className="p-4 rounded-xl mb-6 bg-emerald-50 text-emerald-900 border border-emerald-200 text-sm">
+            <div className="font-semibold text-emerald-950 mb-1 flex items-center gap-1.5">
+              <span>✅</span>
+              <span>You are already signed in as {user.name}</span>
+            </div>
+            <p className="text-xs text-emerald-800 mb-3">{user.email}</p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/"
+                className="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-sm transition"
+              >
+                Go to Home Page →
+              </Link>
+              <Link
+                href="/account"
+                className="px-3 py-2 rounded-lg border border-emerald-300 hover:bg-emerald-100/60 text-xs text-emerald-900 font-medium transition"
+              >
+                My Account
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                className="px-3 py-2 rounded-lg border border-emerald-300 hover:bg-emerald-100/60 text-xs text-emerald-900 font-medium transition cursor-pointer"
+              >
+                Sign Out / Switch Account
+              </button>
+            </div>
+          </div>
+        )}
+
+        {sp?.get("verified") === "true" && !error && (
+          <div className="p-3.5 rounded-xl mb-4 bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-medium flex items-start gap-2">
+            <span>✅</span>
+            <div>
+              <strong>WhatsApp number verified successfully!</strong>
+              <div className="text-xs text-emerald-700 mt-0.5">
+                Please enter your password below to sign in to your account.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {sp?.get("registered") === "true" && !sp?.get("verified") && !error && (
           <div className="p-3 rounded-lg mb-4 bg-green-50 text-green-800 border border-green-200 text-sm font-medium">
             ✅ Account created successfully! Please sign in to continue.
           </div>

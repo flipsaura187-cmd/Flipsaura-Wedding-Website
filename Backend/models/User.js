@@ -155,6 +155,12 @@ const UserSchema = new mongoose.Schema(
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
     resetPasswordLastSent: { type: Date, default: null },
+
+    // Phone verification fields (WhatsApp OTP)
+    isPhoneVerified: { type: Boolean, default: false, index: true },
+    phoneOtp: { type: String, default: null },
+    phoneOtpExpires: { type: Date, default: null },
+    phoneOtpLastSent: { type: Date, default: null },
   },
   { timestamps: true }
 );

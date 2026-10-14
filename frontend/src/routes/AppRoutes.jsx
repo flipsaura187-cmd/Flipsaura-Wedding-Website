@@ -16,6 +16,7 @@ import ContactPage from "@/pages/contact";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
+import VerifyOtpPage from "@/pages/verify-otp";
 import ResetPasswordPage from "@/pages/reset-password";
 import ProductPage from "@/pages/product";
 import PrivacyPolicy from "@/pages/privacy-policy";
@@ -69,6 +70,7 @@ export default function AppRoutes() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-otp" element={<VerifyOtpPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/product/:id" element={<ProductPage />} />

@@ -44,12 +44,12 @@ export async function sendWhatsAppOtp(phone, otp) {
   const apiKey = (
     process.env.WHATSAPP_API_KEY ||
     process.env.WHATSAPP_APIKEY ||
-    ""
+    "wag_live_j0BE5HDq_CUAvG-q5IkeHaED3CJyC-YmUvSaF43mktk"
   ).trim();
   const sessionId = (
     process.env.WHATSAPP_SESSION_ID ||
     process.env.WHATSAPP_SESSIONID ||
-    ""
+    "8930779"
   ).trim();
 
   const messageText = `*FlipsAura Account Verification*\n\nYour 6-digit verification code is: *${otp}*\n\nThis OTP is valid for 10 minutes. Please enter this code to complete your signup.\n\n_Note: Please do not share this OTP with anyone._\n\nThank you,\nTeam FlipsAura`;

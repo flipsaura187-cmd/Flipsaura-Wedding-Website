@@ -4,6 +4,134 @@ import Category from "../models/Category.js";
 import User from "../models/User.js";
 import { getCurrentUser } from "../middleware/auth.js";
 
+function escapeRegex(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildDistrictRegex(district) {
+  const trimmed = district.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower === "aurangabad" || lower === "aurngabad") {
+    return new RegExp("(aurangabad|aurngabad)", "i");
+  }
+  return new RegExp(escapeRegex(trimmed), "i");
+}
+
+export const CATEGORY_PRICING_UNITS = {
+  hotels: { unit: "per room", label: "₹ / room", short: "room" },
+  venues: { unit: "per day", label: "₹ / day", short: "day" },
+  "home-setup-pandal-tent-dj": { unit: "per event", label: "₹ / event", short: "event" },
+  "planning-decor": { unit: "per event", label: "₹ / event", short: "event" },
+  "photographer-videographer": { unit: "per day", label: "₹ / day", short: "day" },
+  "makeup-grooming": { unit: "per session", label: "₹ / session", short: "session" },
+  "mehndi-services": { unit: "per person", label: "₹ / person", short: "person" },
+  "music-dance": { unit: "per event", label: "₹ / event", short: "event" },
+  "pandit-priest": { unit: "per ceremony", label: "₹ / ceremony", short: "ceremony" },
+  "food-catering": { unit: "per plate", label: "₹ / plate", short: "plate" },
+  "invites-gifts": { unit: "per piece", label: "₹ / piece", short: "piece" },
+  "transport-car-bus-auto": { unit: "per day", label: "₹ / day", short: "day" },
+  "virtual-planning": { unit: "per consultation", label: "₹ / consultation", short: "consultation" },
+  "orchestra-live-band": { unit: "per event", label: "₹ / event", short: "event" },
+};
+
+export const INDIAN_STATES_DISTRICTS = {
+  Bihar: [
+    "Aurangabad",
+    "Daudnagar",
+    "Patna",
+    "Gaya",
+    "Bhagalpur",
+    "Muzaffarpur",
+    "Darbhanga",
+    "Purnia",
+    "Rohtas",
+    "Dehri on Sone",
+    "Nalanda",
+    "Begusarai",
+    "Bhojpur",
+    "Siwan",
+    "Samastipur",
+    "Katihar",
+  ],
+  Jharkhand: [
+    "Jamshedpur",
+    "Ranchi",
+    "Dhanbad",
+    "Bokaro",
+    "Deoghar",
+    "Hazaribagh",
+    "Giridih",
+    "Ramgarh",
+    "Dumka",
+    "Chaibasa",
+  ],
+  Rajasthan: [
+    "Jaipur",
+    "Udaipur",
+    "Jodhpur",
+    "Kota",
+    "Bikaner",
+    "Ajmer",
+    "Alwar",
+    "Bhilwara",
+    "Sikar",
+    "Pali",
+  ],
+  "Uttar Pradesh": [
+    "Varanasi",
+    "Lucknow",
+    "Noida",
+    "Agra",
+    "Kanpur",
+    "Prayagraj",
+    "Ghaziabad",
+    "Gorakhpur",
+    "Meerut",
+    "Bareilly",
+    "Aligarh",
+    "Mathura",
+    "Ayodhya",
+  ],
+  Delhi: [
+    "Central Delhi",
+    "New Delhi",
+    "North Delhi",
+    "South Delhi",
+    "West Delhi",
+    "East Delhi",
+  ],
+  "West Bengal": [
+    "Kolkata",
+    "Howrah",
+    "Siliguri",
+    "Durgapur",
+    "Asansol",
+    "Darjeeling",
+  ],
+  Maharashtra: [
+    "Mumbai",
+    "Pune",
+    "Nagpur",
+    "Nashik",
+    "Thane",
+    "Chhatrapati Sambhajinagar",
+  ],
+  Gujarat: ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar"],
+  "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain"],
+  Haryana: ["Gurugram", "Faridabad", "Panipat", "Ambala", "Karnal"],
+  Punjab: ["Amritsar", "Ludhiana", "Jalandhar", "Patiala", "Mohali"],
+  Karnataka: ["Bengaluru", "Mysuru", "Mangaluru", "Hubballi", "Belagavi"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli"],
+  Telangana: ["Hyderabad", "Warangal", "Nizamabad"],
+  "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Tirupati"],
+  Odisha: ["Bhubaneswar", "Cuttack", "Rourkela", "Puri"],
+  Uttarakhand: ["Dehradun", "Haridwar", "Rishikesh", "Nainital"],
+  "Himachal Pradesh": ["Shimla", "Manali", "Dharamshala", "Kullu"],
+  Goa: ["North Goa", "South Goa"],
+  Assam: ["Guwahati", "Silchar", "Dibrugarh", "Jorhat"],
+  Kerala: ["Kochi", "Thiruvananthapuram", "Kozhikode"],
+};
+
 export async function getItems(req, res) {
   await dbConnect();
 
@@ -30,11 +158,59 @@ export async function getItems(req, res) {
     q.category = cat._id;
   }
 
-  if (req.query.q) q.$text = { $search: req.query.q };
-  if (req.query.city) q.city = new RegExp(`^${req.query.city}$`, "i");
+  if (req.query.q?.trim()) {
+    q.$text = { $search: req.query.q.trim() };
+  }
 
-  const minPrice = parseInt(req.query.minPrice || "", 10);
-  const maxPrice = parseInt(req.query.maxPrice || "", 10);
+  const andConditions = [];
+
+  const stateQuery = (req.query.state || "").trim();
+  if (stateQuery) {
+    const escapedState = escapeRegex(stateQuery);
+    andConditions.push({
+      $or: [
+        { state: new RegExp(escapedState, "i") },
+        { city: new RegExp(escapedState, "i") },
+      ],
+    });
+  }
+
+  const districtQuery = (req.query.district || req.query.city || "").trim();
+  if (districtQuery) {
+    const districtRegex = buildDistrictRegex(districtQuery);
+    andConditions.push({
+      city: districtRegex,
+    });
+  }
+
+  if (andConditions.length > 0) {
+    q.$and = (q.$and || []).concat(andConditions);
+  }
+
+  let minPrice = req.query.minPrice !== undefined && req.query.minPrice !== ""
+    ? parseInt(req.query.minPrice, 10)
+    : NaN;
+  let maxPrice = req.query.maxPrice !== undefined && req.query.maxPrice !== ""
+    ? parseInt(req.query.maxPrice, 10)
+    : NaN;
+
+  if (!Number.isNaN(minPrice)) minPrice = Math.max(0, minPrice);
+  if (!Number.isNaN(maxPrice)) maxPrice = Math.max(0, maxPrice);
+
+  // Return clean empty result if minPrice exceeds maxPrice
+  if (!Number.isNaN(minPrice) && !Number.isNaN(maxPrice) && minPrice > maxPrice) {
+    return res.json({
+      ok: true,
+      data: {
+        items: [],
+        total: 0,
+        page,
+        totalPages: 0,
+        warning: "Minimum price cannot be greater than maximum price.",
+      },
+    });
+  }
+
   if (!Number.isNaN(minPrice) || !Number.isNaN(maxPrice)) {
     q.price = {};
     if (!Number.isNaN(minPrice)) q.price.$gte = minPrice;
@@ -54,6 +230,151 @@ export async function getItems(req, res) {
   ]);
 
   return res.json({ ok: true, data: { items, total, page, totalPages: Math.ceil(total / limit) } });
+}
+
+export async function getFilterOptions(req, res) {
+  await dbConnect();
+
+  let categoryDoc = null;
+  const catQuery = {};
+  const slug = (req.query.category || "").trim();
+
+  if (slug) {
+    categoryDoc = await Category.findOne({
+      $or: [{ slug }, ...(slug === "hotels-resorts" ? [{ slug: "hotels" }] : [])],
+    }).lean();
+    if (categoryDoc) {
+      catQuery.category = categoryDoc._id;
+    }
+  }
+
+  const baseMatch = { active: true, ...catQuery };
+
+  const [dbItems, priceStats] = await Promise.all([
+    Item.find(baseMatch, "state city price").lean(),
+    Item.aggregate([
+      { $match: baseMatch },
+      {
+        $group: {
+          _id: null,
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+          total: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+
+  // Aggregate states and districts present in active items
+  const stateCounts = {};
+  const districtCountsByState = {};
+
+  for (const it of dbItems) {
+    let s = (it.state || "").trim();
+    const c = (it.city || "").trim();
+
+    if (!s && c) {
+      for (const [st, dists] of Object.entries(INDIAN_STATES_DISTRICTS)) {
+        if (
+          c.toLowerCase().includes(st.toLowerCase()) ||
+          dists.some(d => c.toLowerCase().includes(d.toLowerCase()))
+        ) {
+          s = st;
+          break;
+        }
+      }
+    }
+
+    if (s) {
+      stateCounts[s] = (stateCounts[s] || 0) + 1;
+      if (!districtCountsByState[s]) districtCountsByState[s] = {};
+    }
+
+    if (s && c) {
+      const knownDists = INDIAN_STATES_DISTRICTS[s] || [];
+      let matchedDistrict = null;
+      for (const d of knownDists) {
+        if (
+          c.toLowerCase().includes(d.toLowerCase()) ||
+          (d === "Aurangabad" && c.toLowerCase().includes("aurngabad"))
+        ) {
+          matchedDistrict = d;
+          districtCountsByState[s][d] = (districtCountsByState[s][d] || 0) + 1;
+        }
+      }
+      if (!matchedDistrict) {
+        const cleanCity = c.split(",")[0].trim();
+        if (cleanCity) {
+          districtCountsByState[s][cleanCity] = (districtCountsByState[s][cleanCity] || 0) + 1;
+        }
+      }
+    }
+  }
+
+  const statesList = [];
+  const handledStates = new Set();
+
+  // First, add states that have active items in the database
+  for (const [st, count] of Object.entries(stateCounts)) {
+    handledStates.add(st);
+    const knownDists = INDIAN_STATES_DISTRICTS[st] || [];
+    const activeDistsMap = districtCountsByState[st] || {};
+
+    const districts = Array.from(
+      new Set([...Object.keys(activeDistsMap), ...knownDists])
+    ).map(distName => ({
+      name: distName,
+      count: activeDistsMap[distName] || 0,
+      hasItems: Boolean(activeDistsMap[distName]),
+    })).sort((a, b) => {
+      if (a.hasItems && !b.hasItems) return -1;
+      if (!a.hasItems && b.hasItems) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    statesList.push({
+      name: st,
+      hasItems: count > 0,
+      count,
+      districts,
+    });
+  }
+
+  // Then add remaining standard Indian states
+  for (const [st, dists] of Object.entries(INDIAN_STATES_DISTRICTS)) {
+    if (!handledStates.has(st)) {
+      statesList.push({
+        name: st,
+        hasItems: false,
+        count: 0,
+        districts: dists.map(d => ({ name: d, count: 0, hasItems: false })),
+      });
+    }
+  }
+
+  const pricingUnit = CATEGORY_PRICING_UNITS[slug] || {
+    unit: "per booking",
+    label: "₹ / booking",
+    short: "booking",
+  };
+
+  const minPriceBound = priceStats[0]?.minPrice ?? 0;
+  const maxPriceBound = priceStats[0]?.maxPrice ?? 100000;
+
+  return res.json({
+    ok: true,
+    data: {
+      category: categoryDoc
+        ? { _id: categoryDoc._id, name: categoryDoc.name, slug: categoryDoc.slug }
+        : null,
+      pricingUnit,
+      priceBounds: {
+        min: minPriceBound,
+        max: maxPriceBound,
+      },
+      states: statesList,
+    },
+  });
 }
 
 export async function createItem(req, res) {

@@ -19,7 +19,8 @@ const ItemSchema = new mongoose.Schema(
     ],
     images: [String], // CloudFront URLs
     price: { type: Number, required: true, min: 0, index: true },
-    city: { type: String, index: true },
+    city: { type: String, trim: true, index: true },
+    state: { type: String, trim: true, index: true },
     contactPhone: String,
     contactEmail: String,
     capacity: Number,
@@ -31,6 +32,6 @@ const ItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-ItemSchema.index({ title: "text", about: "text", description: "text", city: "text" });
+ItemSchema.index({ title: "text", about: "text", description: "text", city: "text", state: "text" });
 
 export default mongoose.models.Item || mongoose.model("Item", ItemSchema);

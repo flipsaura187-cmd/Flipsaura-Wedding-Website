@@ -63,6 +63,7 @@ export async function syncVendorServicesToItems(vendorId) {
           category: cat,
           startingPrice: Number(s.startingPrice) || Number(vp.startingPrice) || 15000,
           location: (s.serviceLocation || s.location || vp.serviceLocation || vp.city || "Jamshedpur").trim(),
+          state: (vp.state || "").trim(),
           description: (s.description || vp.serviceDescription || vp.about || "").trim(),
           serviceName: (s.serviceName || "").trim(),
         });
@@ -81,6 +82,7 @@ export async function syncVendorServicesToItems(vendorId) {
           category: cat,
           startingPrice: Number(vp.startingPrice) || 15000,
           location: (vp.serviceLocation || vp.city || "Jamshedpur").trim(),
+          state: (vp.state || "").trim(),
           description: (vp.serviceDescription || vp.about || "").trim(),
           serviceName: "",
         });
@@ -127,6 +129,7 @@ export async function syncVendorServicesToItems(vendorId) {
       item.title = itemTitle;
       item.price = s.startingPrice > 0 ? s.startingPrice : item.price;
       item.city = s.location || item.city || vp.city;
+      if (s.state || vp.state) item.state = s.state || vp.state;
       item.about = s.description || item.about || `${catName} services by ${vp.businessName || vendor.name}`;
       if (catFacilities.length > 0) item.facilities = catFacilities;
       if (!item.images || item.images.length === 0) item.images = [defaultImage];
@@ -140,6 +143,7 @@ export async function syncVendorServicesToItems(vendorId) {
         vendor: vendor._id,
         price: s.startingPrice > 0 ? s.startingPrice : 15000,
         city: s.location || vp.city || "Jamshedpur",
+        state: s.state || vp.state || "",
         about: s.description || `${catName} services by ${vp.businessName || vendor.name}`,
         description: s.description || "",
         facilities: catFacilities,

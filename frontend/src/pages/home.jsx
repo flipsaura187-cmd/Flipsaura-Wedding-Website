@@ -222,11 +222,11 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Event Notification Banner */}
-      <EventNotificationBanner />
-
-      {/* Hero Section */}
-      <HeroSlideshow />
+      {/* Hero Section with Event Notification Banner */}
+      <div className="relative">
+        <EventNotificationBanner />
+        <HeroSlideshow />
+      </div>
 
       {/* Categories Section */}
       <section className="py-16 md:py-20 bg-white w-full">

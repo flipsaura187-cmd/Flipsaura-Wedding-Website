@@ -47,7 +47,7 @@ export default function EventNotificationBanner() {
       : "Free Registration";
 
   return (
-    <div className="relative overflow-hidden z-40 bg-gradient-to-r from-[#2a1726] via-[#4a1936] to-[#2a1726] text-white border-b-2 border-gold/40 shadow-lg">
+    <div className="absolute top-0 left-0 right-0 overflow-hidden z-40 bg-gradient-to-r from-[#2a1726]/95 via-[#4a1936]/95 to-[#2a1726]/95 backdrop-blur-md text-white border-b border-gold/40 shadow-lg">
       {/* Decorative accent glow */}
       <div className="absolute -top-1/2 left-[20%] w-72 h-24 bg-brand-500/30 rounded-full blur-2xl pointer-events-none" />
 

@@ -152,7 +152,7 @@ const HeroSlideshow = () => {
                                     {slide.eyebrow}
                                 </span>
                                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white leading-tight">
-                                    {slide.title} <span className="text-gold italic">{slide.highlight}</span>
+                                    {slide.title} <span className="text-gold italic inline-block">{slide.highlight}</span>
                                 </h1>
                                 <p className="text-sm sm:text-base md:text-lg text-white/85 leading-relaxed font-sans max-w-xl">
                                     {slide.description}

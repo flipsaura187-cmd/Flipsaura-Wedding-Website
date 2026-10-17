@@ -36,22 +36,46 @@ export const CATEGORY_PRICING_UNITS = {
 
 export const INDIAN_STATES_DISTRICTS = {
   Bihar: [
+    "Araria",
+    "Arwal",
     "Aurangabad",
-    "Daudnagar",
-    "Patna",
-    "Gaya",
+    "Banka",
+    "Begusarai",
     "Bhagalpur",
-    "Muzaffarpur",
+    "Bhojpur",
+    "Buxar",
     "Darbhanga",
+    "Daudnagar",
+    "Dehri on Sone",
+    "East Champaran",
+    "Gaya",
+    "Gopalganj",
+    "Jamui",
+    "Jehanabad",
+    "Kaimur",
+    "Katihar",
+    "Khagaria",
+    "Kishanganj",
+    "Lakhisarai",
+    "Madhepura",
+    "Madhubani",
+    "Munger",
+    "Muzaffarpur",
+    "Nalanda",
+    "Nawada",
+    "Patna",
     "Purnia",
     "Rohtas",
-    "Dehri on Sone",
-    "Nalanda",
-    "Begusarai",
-    "Bhojpur",
-    "Siwan",
+    "Saharsa",
     "Samastipur",
-    "Katihar",
+    "Saran",
+    "Sheikhpura",
+    "Sheohar",
+    "Sitamarhi",
+    "Siwan",
+    "Supaul",
+    "Vaishali",
+    "West Champaran",
   ],
   Jharkhand: [
     "Jamshedpur",
@@ -179,7 +203,10 @@ export async function getItems(req, res) {
   if (districtQuery) {
     const districtRegex = buildDistrictRegex(districtQuery);
     andConditions.push({
-      city: districtRegex,
+      $or: [
+        { city: districtRegex },
+        { state: districtRegex },
+      ],
     });
   }
 

@@ -5,6 +5,49 @@ import ItemCard from "@/components/ItemCard";
 import Pagination from "@/components/Pagination";
 import api from "@/api/axios";
 
+const ALL_BIHAR_DISTRICTS = [
+  "Araria",
+  "Arwal",
+  "Aurangabad",
+  "Banka",
+  "Begusarai",
+  "Bhagalpur",
+  "Bhojpur",
+  "Buxar",
+  "Darbhanga",
+  "Daudnagar",
+  "Dehri on Sone",
+  "East Champaran",
+  "Gaya",
+  "Gopalganj",
+  "Jamui",
+  "Jehanabad",
+  "Kaimur",
+  "Katihar",
+  "Khagaria",
+  "Kishanganj",
+  "Lakhisarai",
+  "Madhepura",
+  "Madhubani",
+  "Munger",
+  "Muzaffarpur",
+  "Nalanda",
+  "Nawada",
+  "Patna",
+  "Purnia",
+  "Rohtas",
+  "Saharsa",
+  "Samastipur",
+  "Saran",
+  "Sheikhpura",
+  "Sheohar",
+  "Sitamarhi",
+  "Siwan",
+  "Supaul",
+  "Vaishali",
+  "West Champaran",
+];
+
 export default function CategoryPage() {
   const { slug } = useParams();
   const router = useRouter();
@@ -24,8 +67,6 @@ export default function CategoryPage() {
   });
 
   const [filters, setFilters] = useState({
-    q: sp.get("q") || "",
-    state: sp.get("state") || "",
     district: sp.get("district") || sp.get("city") || "",
     minPrice: sp.get("minPrice") || "",
     maxPrice: sp.get("maxPrice") || "",
@@ -51,39 +92,30 @@ export default function CategoryPage() {
     };
   }, [slug]);
 
-  // Derive districts for currently selected state
-  const currentDistricts = useMemo(() => {
-    if (!filters.state) return [];
-    const foundState = filterMeta.states.find(
-      (s) => s.name.toLowerCase() === filters.state.toLowerCase()
+  // Derive districts for Bihar with dynamic counts
+  const biharDistricts = useMemo(() => {
+    const biharState = filterMeta.states?.find(
+      (s) => s.name?.toLowerCase() === "bihar"
     );
-    return foundState?.districts || [];
-  }, [filters.state, filterMeta.states]);
+    const apiDistricts = biharState?.districts || [];
+    const countMap = new Map();
+    for (const d of apiDistricts) {
+      if (d.name) countMap.set(d.name.toLowerCase(), d.count || 0);
+    }
 
-  // Handle State Change: reset district if it doesn't belong to the newly selected state
-  const handleStateChange = (newState) => {
-    setFilters((prev) => {
-      let nextDistrict = prev.district;
-      if (newState) {
-        const targetState = filterMeta.states.find(
-          (s) => s.name.toLowerCase() === newState.toLowerCase()
-        );
-        const hasCurrentDistrict = targetState?.districts?.some(
-          (d) => d.name.toLowerCase() === (prev.district || "").toLowerCase()
-        );
-        if (!hasCurrentDistrict) {
-          nextDistrict = "";
-        }
-      } else {
-        nextDistrict = "";
-      }
+    return ALL_BIHAR_DISTRICTS.map((name) => {
+      const count = countMap.get(name.toLowerCase()) || 0;
       return {
-        ...prev,
-        state: newState,
-        district: nextDistrict,
+        name,
+        count,
+        hasItems: count > 0,
       };
+    }).sort((a, b) => {
+      if (a.hasItems && !b.hasItems) return -1;
+      if (!a.hasItems && b.hasItems) return 1;
+      return a.name.localeCompare(b.name);
     });
-  };
+  }, [filterMeta.states]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -94,8 +126,6 @@ export default function CategoryPage() {
       limit: "12",
     });
 
-    if (filters.q?.trim()) params.set("q", filters.q.trim());
-    if (filters.state?.trim()) params.set("state", filters.state.trim());
     if (filters.district?.trim()) params.set("district", filters.district.trim());
     if (filters.minPrice !== "") params.set("minPrice", filters.minPrice);
     if (filters.maxPrice !== "") params.set("maxPrice", filters.maxPrice);
@@ -120,28 +150,24 @@ export default function CategoryPage() {
     load();
   }, [load]);
 
-  const apply = (e) => {
-    if (e) e.preventDefault();
+  const updateFilter = (patch) => {
+    setFilters((prev) => {
+      const next = { ...prev, ...patch };
+      const nextParams = new URLSearchParams();
+      if (next.district?.trim()) nextParams.set("district", next.district.trim());
+      if (next.minPrice !== "") nextParams.set("minPrice", next.minPrice);
+      if (next.maxPrice !== "") nextParams.set("maxPrice", next.maxPrice);
+      if (next.sort && next.sort !== "newest") nextParams.set("sort", next.sort);
+
+      const queryStr = nextParams.toString();
+      router.replace(`/categories/${slug}${queryStr ? `?${queryStr}` : ""}`);
+      return next;
+    });
     setPage(1);
-
-    // Sync to URL
-    const nextParams = new URLSearchParams();
-    if (filters.q?.trim()) nextParams.set("q", filters.q.trim());
-    if (filters.state?.trim()) nextParams.set("state", filters.state.trim());
-    if (filters.district?.trim()) nextParams.set("district", filters.district.trim());
-    if (filters.minPrice !== "") nextParams.set("minPrice", filters.minPrice);
-    if (filters.maxPrice !== "") nextParams.set("maxPrice", filters.maxPrice);
-    if (filters.sort && filters.sort !== "newest") nextParams.set("sort", filters.sort);
-
-    const queryStr = nextParams.toString();
-    router.replace(`/categories/${slug}${queryStr ? `?${queryStr}` : ""}`);
-    load();
   };
 
   const resetFilters = () => {
     setFilters({
-      q: "",
-      state: "",
       district: "",
       minPrice: "",
       maxPrice: "",
@@ -152,17 +178,10 @@ export default function CategoryPage() {
   };
 
   const removeFilter = (key) => {
-    setFilters((prev) => {
-      const next = { ...prev, [key]: key === "sort" ? "newest" : "" };
-      if (key === "state") next.district = "";
-      return next;
-    });
-    setPage(1);
+    updateFilter({ [key]: key === "sort" ? "newest" : "" });
   };
 
   const hasActiveFilters = Boolean(
-    filters.q ||
-    filters.state ||
     filters.district ||
     filters.minPrice ||
     filters.maxPrice ||
@@ -201,61 +220,34 @@ export default function CategoryPage() {
           </div>
         </div>
 
-        {/* Filter Card */}
+        {/* Horizontal Scrollable Filter Bar (Airbnb / MakeMyTrip style) */}
         <form
-          className="bg-brand-50/70 p-4 sm:p-5 rounded-2xl border border-brand-100 mb-6 shadow-xs"
-          onSubmit={apply}
+          className="bg-brand-50/70 p-3 sm:p-4 rounded-2xl border border-brand-100 mb-6 shadow-xs relative"
+          onSubmit={(e) => e.preventDefault()}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {/* Search Input */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-semibold text-ink/70 uppercase tracking-wider mb-1">
-                Keyword
-              </label>
-              <input
-                className="w-full px-3 py-2 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-muted/60"
-                placeholder="Search name, hotel, service…"
-                value={filters.q}
-                onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-              />
-            </div>
+          {/* Mobile swipe hint banner */}
+          <div className="flex md:hidden items-center justify-between text-[11px] text-brand-600/80 mb-2 px-1">
+            <span className="flex items-center gap-1 font-semibold">
+              <span>⚡</span> Filters
+            </span>
+            <span className="text-[10px] text-muted flex items-center gap-1 font-medium bg-white/80 px-2 py-0.5 rounded-full border border-brand-100">
+              Swipe horizontally ⇄
+            </span>
+          </div>
 
-            {/* State Filter */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-semibold text-ink/70 uppercase tracking-wider mb-1">
-                State
+          <div className="flex items-end gap-2.5 overflow-x-auto pb-2 pt-0.5 scrollbar-thin scroll-smooth touch-pan-x overscroll-x-contain">
+            {/* Bihar Districts Filter */}
+            <div className="shrink-0 w-48 sm:w-52 flex flex-col">
+              <label className="text-[10px] sm:text-[11px] font-bold text-ink/70 uppercase tracking-wider mb-1 px-0.5 flex items-center gap-1">
+                <span>📍</span> District (Bihar)
               </label>
               <select
-                className="w-full px-3 py-2 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
-                value={filters.state}
-                onChange={(e) => handleStateChange(e.target.value)}
-              >
-                <option value="">All States</option>
-                {filterMeta.states.map((st) => (
-                  <option key={st.name} value={st.name}>
-                    {st.name} {st.count > 0 ? `(${st.count})` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* District / City Filter */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-semibold text-ink/70 uppercase tracking-wider mb-1">
-                District / City
-              </label>
-              <select
-                disabled={!filters.state}
-                className={`w-full px-3 py-2 rounded-xl border border-brand-200 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer ${
-                  !filters.state ? "bg-brand-100/40 opacity-70 cursor-not-allowed" : "bg-white"
-                }`}
+                className="w-full px-3 py-2 rounded-xl border border-brand-200 bg-white text-ink text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer shadow-xs truncate"
                 value={filters.district}
-                onChange={(e) => setFilters({ ...filters, district: e.target.value })}
+                onChange={(e) => updateFilter({ district: e.target.value })}
               >
-                <option value="">
-                  {!filters.state ? "Select State first" : `All ${filters.state} Districts`}
-                </option>
-                {currentDistricts.map((d) => (
+                <option value="">All Bihar Districts</option>
+                {biharDistricts.map((d) => (
                   <option key={d.name} value={d.name}>
                     {d.name} {d.count > 0 ? `(${d.count})` : ""}
                   </option>
@@ -264,52 +256,48 @@ export default function CategoryPage() {
             </div>
 
             {/* Min Price */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-semibold text-ink/70 uppercase tracking-wider mb-1">
+            <div className="shrink-0 w-32 sm:w-36 flex flex-col">
+              <label className="text-[10px] sm:text-[11px] font-bold text-ink/70 uppercase tracking-wider mb-1 px-0.5">
                 Min Price
               </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  step="100"
-                  className="w-full px-3 py-2 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-muted/60"
-                  placeholder={`Min ₹ (${unitShort})`}
-                  value={filters.minPrice}
-                  onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
-                />
-              </div>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                className="w-full px-3 py-2 rounded-xl border border-brand-200 bg-white text-ink text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-muted/60 shadow-xs"
+                placeholder={`Min ₹ (${unitShort})`}
+                value={filters.minPrice}
+                onChange={(e) => updateFilter({ minPrice: e.target.value })}
+              />
             </div>
 
             {/* Max Price */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-semibold text-ink/70 uppercase tracking-wider mb-1">
+            <div className="shrink-0 w-32 sm:w-36 flex flex-col">
+              <label className="text-[10px] sm:text-[11px] font-bold text-ink/70 uppercase tracking-wider mb-1 px-0.5">
                 Max Price
               </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  step="100"
-                  className={`w-full px-3 py-2 rounded-xl border bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-muted/60 ${
-                    priceInvalid ? "border-amber-400 focus:ring-amber-400" : "border-brand-200"
-                  }`}
-                  placeholder={`Max ₹ (${unitShort})`}
-                  value={filters.maxPrice}
-                  onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
-                />
-              </div>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                className={`w-full px-3 py-2 rounded-xl border bg-white text-ink text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-muted/60 shadow-xs ${
+                  priceInvalid ? "border-amber-400 focus:ring-amber-400" : "border-brand-200"
+                }`}
+                placeholder={`Max ₹ (${unitShort})`}
+                value={filters.maxPrice}
+                onChange={(e) => updateFilter({ maxPrice: e.target.value })}
+              />
             </div>
 
-            {/* Sort & Actions */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-semibold text-ink/70 uppercase tracking-wider mb-1">
+            {/* Sort By */}
+            <div className="shrink-0 w-36 sm:w-40 flex flex-col">
+              <label className="text-[10px] sm:text-[11px] font-bold text-ink/70 uppercase tracking-wider mb-1 px-0.5">
                 Sort By
               </label>
               <select
-                className="w-full px-3 py-2 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+                className="w-full px-3 py-2 rounded-xl border border-brand-200 bg-white text-ink text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer shadow-xs"
                 value={filters.sort}
-                onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+                onChange={(e) => updateFilter({ sort: e.target.value })}
               >
                 <option value="newest">Newest First</option>
                 <option value="priceAsc">Price: Low to High</option>
@@ -317,11 +305,24 @@ export default function CategoryPage() {
                 <option value="rating">Top Rated</option>
               </select>
             </div>
+
+            {/* Reset Button (when active) */}
+            {hasActiveFilters && (
+              <div className="shrink-0 flex items-center pb-0.5">
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="px-3.5 py-2 rounded-xl border border-brand-200 hover:bg-brand-100/60 bg-white text-ink text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shadow-xs flex items-center gap-1"
+                >
+                  <span>↺</span> Reset Filters
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Form Action Buttons & Invalidation Warning */}
-          <div className="mt-4 pt-3 border-t border-brand-100 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          {/* Validation Warnings */}
+          {(priceInvalid || warningMessage) && (
+            <div className="mt-2.5 pt-2 border-t border-brand-100/70 flex items-center">
               {priceInvalid && (
                 <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200 inline-flex items-center gap-1">
                   ⚠️ Minimum price cannot be greater than maximum price
@@ -333,59 +334,13 @@ export default function CategoryPage() {
                 </span>
               )}
             </div>
-
-            <div className="flex items-center gap-2 ml-auto">
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="px-4 py-2 rounded-xl border border-brand-200 hover:bg-brand-100/50 text-ink text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Reset Filters
-                </button>
-              )}
-              <button
-                type="submit"
-                className="px-6 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition-all cursor-pointer"
-              >
-                Apply Filters
-              </button>
-            </div>
-          </div>
+          )}
         </form>
 
         {/* Active Filter Badges */}
         {hasActiveFilters && (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-muted mr-1">Active filters:</span>
-
-            {filters.q && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-800 border border-brand-200 text-xs font-medium">
-                Keyword: "{filters.q}"
-                <button
-                  type="button"
-                  onClick={() => removeFilter("q")}
-                  className="hover:text-red-600 ml-0.5 text-sm leading-none cursor-pointer"
-                  title="Remove filter"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-
-            {filters.state && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-800 border border-brand-200 text-xs font-medium">
-                State: {filters.state}
-                <button
-                  type="button"
-                  onClick={() => removeFilter("state")}
-                  className="hover:text-red-600 ml-0.5 text-sm leading-none cursor-pointer"
-                  title="Remove filter"
-                >
-                  ×
-                </button>
-              </span>
-            )}
 
             {filters.district && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-800 border border-brand-200 text-xs font-medium">

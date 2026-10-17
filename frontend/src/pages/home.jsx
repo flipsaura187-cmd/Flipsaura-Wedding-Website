@@ -53,72 +53,72 @@ const defaultCategories = [
   {
     name: "Hotels",
     slug: "hotels",
-    image: "/images/categories/hotels.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226367/flipsaura/categories/category_hotels.png",
   },
   {
     name: "Venues",
     slug: "venues",
-    image: "/images/categories/venues.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226355/flipsaura/categories/category_venues.png",
   },
   {
     name: "Home Setup – Pandal / Tent / DJ / Full Ghar Setup",
     slug: "home-setup-pandal-tent-dj",
-    image: "/images/categories/home-setup.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226356/flipsaura/categories/category_home-setup-pandal-tent-dj.png",
   },
   {
     name: "Transport – Car / Bus / Auto",
     slug: "transport-car-bus-auto",
-    image: "/images/categories/transport.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226365/flipsaura/categories/category_transport-car-bus-auto.png",
   },
   {
     name: "Pandit / Priest",
     slug: "pandit-priest",
-    image: "/images/categories/pandit-priest.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226362/flipsaura/categories/category_pandit-priest.png",
   },
   {
     name: "Food / Catering",
     slug: "food-catering",
-    image: "/images/categories/food-catering.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226363/flipsaura/categories/category_food-catering.png",
   },
   {
     name: "Photographer & Videographer",
     slug: "photographer-videographer",
-    image: "/images/categories/photography.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226358/flipsaura/categories/category_photographer-videographer.png",
   },
   {
     name: "Makeup & Grooming",
     slug: "makeup-grooming",
-    image: "/images/categories/makeup-grooming.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226359/flipsaura/categories/category_makeup-grooming.png",
   },
   {
     name: "Mehndi Services",
     slug: "mehndi-services",
-    image: "/images/categories/mehndi.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226360/flipsaura/categories/category_mehndi-services.png",
   },
   {
     name: "Music & Dance",
     slug: "music-dance",
-    image: "/images/categories/music-dance.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226361/flipsaura/categories/category_music-dance.png",
   },
   {
     name: "Orchestra & Live Band",
     slug: "orchestra-live-band",
-    image: "/images/categories/orchestra.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226368/flipsaura/categories/category_orchestra-live-band.png",
   },
   {
     name: "Virtual Planning",
     slug: "virtual-planning",
-    image: "/images/categories/virtual-planning.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226366/flipsaura/categories/category_virtual-planning.jpg",
   },
   {
     name: "Planning & Decor",
     slug: "planning-decor",
-    image: "/images/categories/planning-decor.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226357/flipsaura/categories/category_planning-decor.png",
   },
   {
     name: "Invites & Gifts",
     slug: "invites-gifts",
-    image: "/images/categories/invites-gifts.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226364/flipsaura/categories/category_invites-gifts.jpg",
   },
 ];
 

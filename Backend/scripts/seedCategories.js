@@ -9,7 +9,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Banquet halls, hotels, marriage lawns, resorts, and community halls for weddings and events.",
     order: 1,
-    image: "/images/categories/venues.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226355/flipsaura/categories/category_venues.png",
   },
 
   {
@@ -18,7 +18,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Pandal and tent setup, wedding lighting, DJ and sound systems, and complete ghar pe shaadi packages.",
     order: 2,
-    image: "/images/categories/home-setup.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226356/flipsaura/categories/category_home-setup-pandal-tent-dj.png",
   },
 
   {
@@ -27,7 +27,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Wedding planners and decorators for stage, entry, seating, floral decorations, themes, and complete event styling.",
     order: 3,
-    image: "/images/categories/planning-decor.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226357/flipsaura/categories/category_planning-decor.png",
   },
 
   {
@@ -36,7 +36,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Wedding photography, candid photography, cinematic wedding films, traditional coverage, and pre-wedding shoots.",
     order: 4,
-    image: "/images/categories/photography.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226358/flipsaura/categories/category_photographer-videographer.png",
   },
 
   {
@@ -45,7 +45,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Bridal makeup, groom makeup and styling, hair styling, beauty services, and professional grooming.",
     order: 5,
-    image: "/images/categories/makeup-grooming.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226359/flipsaura/categories/category_makeup-grooming.png",
   },
 
   {
@@ -54,7 +54,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Professional mehndi artists and teams offering bridal mehndi, guest mehndi, Arabic, Rajasthani, and traditional designs.",
     order: 6,
-    image: "/images/categories/mehndi.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226360/flipsaura/categories/category_mehndi-services.png",
   },
 
   {
@@ -63,7 +63,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Orchestra, nautanki, baraati dance groups, live bands, singers, DJs, and folk dance groups for wedding celebrations.",
     order: 7,
-    image: "/images/categories/music-dance.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226361/flipsaura/categories/category_music-dance.png",
   },
 
   {
@@ -72,7 +72,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Experienced pandits and priests for different wedding rituals, languages, traditions, and sampraday.",
     order: 8,
-    image: "/images/categories/pandit-priest.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226362/flipsaura/categories/category_pandit-priest.png",
   },
 
   {
@@ -81,7 +81,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Full catering, per-plate services, halwai, home cooks, traditional Bihari and UP cuisine, vegetarian and non-vegetarian food, and sweets.",
     order: 9,
-    image: "/images/categories/food-catering.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226363/flipsaura/categories/category_food-catering.png",
   },
 
   {
@@ -90,7 +90,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Printed wedding cards, digital e-invites, return gifts, wedding favours, personalized gifts, and gift hampers.",
     order: 10,
-    image: "/images/categories/invites-gifts.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226364/flipsaura/categories/category_invites-gifts.jpg",
   },
 
   {
@@ -99,7 +99,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Barat cars, tempo travellers, buses, autos, and small guest vehicles with date and time-based booking options.",
     order: 11,
-    image: "/images/categories/transport.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226365/flipsaura/categories/category_transport-car-bus-auto.png",
   },
 
   {
@@ -108,7 +108,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Online wedding consultation, virtual planning sessions, vendor guidance, and remote wedding planning packages.",
     order: 12,
-    image: "/images/categories/virtual-planning.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226366/flipsaura/categories/category_virtual-planning.jpg",
   },
 
   {
@@ -117,7 +117,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Luxury wedding hotels, AC guest rooms for barat and family stays, honeymoon suites, and guest room accommodations.",
     order: 13,
-    image: "/images/categories/hotels.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226367/flipsaura/categories/category_hotels.png",
   },
 
   {
@@ -126,7 +126,7 @@ export const WEDDING_CATEGORIES = [
     description:
       "Grand wedding orchestra, live musical troupes, stage singers, brass band, shehnai, and Bollywood musical performers.",
     order: 14,
-    image: "/images/categories/orchestra.jpg",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226368/flipsaura/categories/category_orchestra-live-band.png",
   },
 ];
 export async function seedCategories() {

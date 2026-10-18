@@ -10,7 +10,8 @@
     "seed:blogs": "node scripts/seedBlogs.js",
     "seed:categories": "node scripts/seedCategories.js",
     "seed:events": "node scripts/seedCivicCupEvent.js",
-    "test:vendor": "node scripts/testVendorOnboarding.js"
+    "test:vendor": "node scripts/testVendorOnboarding.js",
+    "upload:hotels": "node scripts/uploadHotelImagesToCloudinary.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -147,6 +147,8 @@ const UserSchema = new mongoose.Schema(
       rejectionReason: { type: String, default: "" },
       submittedAt: { type: Date, default: null },
       reviewedAt: { type: Date, default: null },
+      source: { type: String, default: "organic" },
+      sourceUrl: { type: String, default: "" },
 
       // Legacy compatibility
       aadhar: { type: String, default: "" },

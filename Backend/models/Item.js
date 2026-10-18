@@ -18,7 +18,7 @@ const ItemSchema = new mongoose.Schema(
       },
     ],
     images: [String], // CloudFront URLs
-    price: { type: Number, required: true, min: 0, index: true },
+    price: { type: Number, default: 0, min: 0, index: true },
     city: { type: String, trim: true, index: true },
     state: { type: String, trim: true, index: true },
     contactPhone: String,
@@ -28,6 +28,8 @@ const ItemSchema = new mongoose.Schema(
     reviewsCount: { type: Number, default: 0 },
     active: { type: Boolean, default: true, index: true },
     featured: { type: Boolean, default: false, index: true },
+    source: { type: String, default: "vendor" },
+    sourceUrl: String,
   },
   { timestamps: true }
 );

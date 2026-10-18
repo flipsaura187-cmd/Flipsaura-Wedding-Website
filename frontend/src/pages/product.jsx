@@ -207,7 +207,15 @@ export default function ProductPage() {
                       {item.specifications.map((s, i) => (
                         <div key={i} className="flex flex-col">
                           <dt className="text-xs font-bold text-muted uppercase tracking-wider">{s.key}</dt>
-                          <dd className="text-sm font-semibold text-ink">{s.value}</dd>
+                          <dd className="text-sm font-semibold text-ink">
+                            {typeof s.value === "string" && s.value.startsWith("http") ? (
+                              <a href={s.value} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline inline-flex items-center gap-1">
+                                View Source Listing ↗
+                              </a>
+                            ) : (
+                              s.value
+                            )}
+                          </dd>
                         </div>
                       ))}
                     </dl>
@@ -239,12 +247,21 @@ export default function ProductPage() {
                   </h1>
                 </div>
 
-                <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
-                  <span className="text-3xl font-bold text-brand-700">
-                    ₹{item.price?.toLocaleString("en-IN")}
-                  </span>
-                  <span className="text-xs text-muted font-medium">starting price</span>
-                </div>
+                {item.price && item.price > 0 ? (
+                  <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
+                    <span className="text-3xl font-bold text-brand-700">
+                      ₹{item.price.toLocaleString("en-IN")}
+                    </span>
+                    <span className="text-xs text-muted font-medium">starting price</span>
+                  </div>
+                ) : (
+                  <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
+                    <span className="text-2xl font-bold text-brand-700">
+                      Price on Request
+                    </span>
+                    <span className="text-xs text-muted font-medium">Contact vendor for packages</span>
+                  </div>
+                )}
 
                 {item.resolvedCategoryService?.priceRange && (
                   <p className="text-xs text-muted font-medium -mt-2">
@@ -280,11 +297,17 @@ export default function ProductPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-ink text-sm leading-tight">
-                      {item.vendor?.businessName || "Trusted Wedding Partner"}
+                      {item.vendor?.vendorProfile?.businessName || item.vendor?.businessName || item.vendor?.name || "Trusted Wedding Partner"}
                     </h4>
-                    <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                      ✓ Verified Vendor
-                    </span>
+                    {item.vendor?.vendorProfile?.verificationStatus === "approved" || item.vendor?.vendorProfile?.approved ? (
+                      <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                        ✓ Verified Vendor
+                      </span>
+                    ) : (
+                      <span className="text-xs text-brand-600 font-medium flex items-center gap-1">
+                        📍 Public Business Listing
+                      </span>
+                    )}
                   </div>
                 </div>
 

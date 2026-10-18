@@ -39,9 +39,15 @@ export default function ItemCard({ item }) {
           <span>📍</span> {item.city || "India"}
         </div>
         <div className="mt-2 pt-2 border-t border-brand-50 flex items-center justify-between">
-          <span className="text-base font-bold text-brand-700">
-            ₹{item.price?.toLocaleString("en-IN")}
-          </span>
+          {item.price && item.price > 0 ? (
+            <span className="text-base font-bold text-brand-700">
+              ₹{item.price.toLocaleString("en-IN")}
+            </span>
+          ) : (
+            <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">
+              Price on Request
+            </span>
+          )}
           <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1">
             ★ {item.rating?.toFixed?.(1) || "—"}
           </span>

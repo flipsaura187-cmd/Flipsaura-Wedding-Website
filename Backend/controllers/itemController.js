@@ -284,7 +284,7 @@ export async function getFilterOptions(req, res) {
       {
         $group: {
           _id: null,
-          minPrice: { $min: "$price" },
+          minPrice: { $min: { $cond: [{ $gt: ["$price", 0] }, "$price", "$$REMOVE"] } },
           maxPrice: { $max: "$price" },
           total: { $sum: 1 },
         },
@@ -445,7 +445,7 @@ export async function getItem(req, res) {
     .populate({
       path: "vendor",
       select:
-        "name email phone vendorProfile.businessName vendorProfile.ownerName vendorProfile.city vendorProfile.state vendorProfile.profilePhoto vendorProfile.facilities vendorProfile.categories vendorProfile.servicesList",
+        "name email phone vendorProfile.businessName vendorProfile.ownerName vendorProfile.city vendorProfile.state vendorProfile.profilePhoto vendorProfile.facilities vendorProfile.categories vendorProfile.servicesList vendorProfile.approved vendorProfile.verificationStatus vendorProfile.source",
       populate: [
         {
           path: "vendorProfile.facilities.category",

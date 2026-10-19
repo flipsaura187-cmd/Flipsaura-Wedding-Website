@@ -41,7 +41,7 @@ async function consolidateSkyView() {
 
   // 3. Update Master Item to be the unified "The Hotel Sky View"
   const cldPhoto = masterItem.images?.[0] ||
-    "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792316229/flipsaura/hotels/hotel_HOTEL_SKY_VIEW_1792316228998.jpg";
+    "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792434457/flipsaura/hotels/hotel_HOTEL_SKY_VIEW_1792434447619.png";
 
   masterItem.title = "The Hotel Sky View";
   masterItem.slug = "the-hotel-sky-view-aurangabad";
@@ -68,8 +68,9 @@ async function consolidateSkyView() {
     { key: "Room Categories", value: "Semi Deluxe, Deluxe, Super Deluxe, Superior Room" },
     { key: "Property Type", value: "Hotel / Accommodation" },
     { key: "Location", value: "Opposite Singh Kothi, G.T. Road, Aurangabad, Bihar" },
-    { key: "MMT Guest Rating", value: "3.7 ★ (63 reviews)" },
   ];
+  masterItem.rating = 0;
+  masterItem.reviewsCount = 0;
   masterItem.active = true;
   await masterItem.save();
   console.log(`\nUpdated Master Hotel Item: "${masterItem.title}" (ID: ${masterItem._id})`);
@@ -120,7 +121,10 @@ async function consolidateSkyView() {
       ],
       description:
         "Semi Deluxe Room at Hotel Sky View offers a comfortable stay with a Queen Bed, private bathroom, air conditioning, TV, work desk, in-room dining, housekeeping, and essential modern amenities.",
-      images: [cldPhoto],
+      images: [
+        "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792432439/flipsaura/rooms/room_skyview_semi_deluxe_1792432433593.jpg",
+        "/images/rooms/skyview_semi_deluxe.jpg",
+      ],
       active: true,
     },
     {
@@ -146,7 +150,10 @@ async function consolidateSkyView() {
       ],
       description:
         "Deluxe Room at Hotel Sky View offers a spacious and comfortable stay with a plush King Bed, private bathroom, air conditioning, TV, work desk, in-room dining, housekeeping, and premium amenities.",
-      images: [cldPhoto],
+      images: [
+        "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792432441/flipsaura/rooms/room_skyview_deluxe_1792432439390.jpg",
+        "/images/rooms/skyview_deluxe.jpg",
+      ],
       active: true,
     },
     {
@@ -173,7 +180,10 @@ async function consolidateSkyView() {
       ],
       description:
         "Super Deluxe Room at The Hotel Sky View offers premium comfort, welcoming ambience, city view, extra space, and top-tier amenities for a luxury stay.",
-      images: [cldPhoto],
+      images: [
+        "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792432444/flipsaura/rooms/room_skyview_super_deluxe_1792432441443.jpg",
+        "/images/rooms/skyview_super_deluxe.jpg",
+      ],
       active: true,
     },
     {
@@ -200,7 +210,10 @@ async function consolidateSkyView() {
       ],
       description:
         "Superior Room at The Hotel Sky View offers executive-level luxury, spacious seating area, ideal for business travellers and families seeking exceptional comfort.",
-      images: [cldPhoto],
+      images: [
+        "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792432446/flipsaura/rooms/room_skyview_superior_1792432444135.jpg",
+        "/images/rooms/skyview_superior.jpg",
+      ],
       active: true,
     },
   ];

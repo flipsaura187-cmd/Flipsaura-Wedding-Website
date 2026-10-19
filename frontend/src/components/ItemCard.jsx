@@ -68,9 +68,11 @@ export default function ItemCard({ item }) {
               Price on Request
             </span>
           )}
-          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-            ★ {item.rating?.toFixed?.(1) || "—"}
-          </span>
+          {!isHotel && (
+            <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+              ★ {item.rating?.toFixed?.(1) || "—"}
+            </span>
+          )}
         </div>
       </div>
     </Link>

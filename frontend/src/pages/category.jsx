@@ -67,6 +67,7 @@ export default function CategoryPage() {
   });
 
   const [filters, setFilters] = useState({
+    q: sp.get("q") || "",
     district: sp.get("district") || sp.get("city") || "",
     minPrice: sp.get("minPrice") || "",
     maxPrice: sp.get("maxPrice") || "",
@@ -126,6 +127,7 @@ export default function CategoryPage() {
       limit: "12",
     });
 
+    if (filters.q?.trim()) params.set("q", filters.q.trim());
     if (filters.district?.trim()) params.set("district", filters.district.trim());
     if (filters.minPrice !== "") params.set("minPrice", filters.minPrice);
     if (filters.maxPrice !== "") params.set("maxPrice", filters.maxPrice);
@@ -154,6 +156,7 @@ export default function CategoryPage() {
     setFilters((prev) => {
       const next = { ...prev, ...patch };
       const nextParams = new URLSearchParams();
+      if (next.q?.trim()) nextParams.set("q", next.q.trim());
       if (next.district?.trim()) nextParams.set("district", next.district.trim());
       if (next.minPrice !== "") nextParams.set("minPrice", next.minPrice);
       if (next.maxPrice !== "") nextParams.set("maxPrice", next.maxPrice);
@@ -168,6 +171,7 @@ export default function CategoryPage() {
 
   const resetFilters = () => {
     setFilters({
+      q: "",
       district: "",
       minPrice: "",
       maxPrice: "",
@@ -182,6 +186,7 @@ export default function CategoryPage() {
   };
 
   const hasActiveFilters = Boolean(
+    filters.q ||
     filters.district ||
     filters.minPrice ||
     filters.maxPrice ||
@@ -236,6 +241,32 @@ export default function CategoryPage() {
           </div>
 
           <div className="flex items-end gap-2.5 overflow-x-auto pb-2 pt-0.5 scrollbar-thin scroll-smooth touch-pan-x overscroll-x-contain">
+            {/* Search by Name */}
+            <div className="shrink-0 w-48 sm:w-60 flex flex-col">
+              <label className="text-[10px] sm:text-[11px] font-bold text-ink/70 uppercase tracking-wider mb-1 px-0.5 flex items-center gap-1">
+                <span>🔍</span> {slug === "hotels" ? "Search Hotel Name" : "Search Name"}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 pr-7 rounded-xl border border-brand-200 bg-white text-ink text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-muted/60 shadow-xs"
+                  placeholder={slug === "hotels" ? "e.g. Sky View, Imperial..." : "Search keyword..."}
+                  value={filters.q}
+                  onChange={(e) => updateFilter({ q: e.target.value })}
+                />
+                {filters.q && (
+                  <button
+                    type="button"
+                    onClick={() => updateFilter({ q: "" })}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink text-xs p-0.5"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Bihar Districts Filter */}
             <div className="shrink-0 w-48 sm:w-52 flex flex-col">
               <label className="text-[10px] sm:text-[11px] font-bold text-ink/70 uppercase tracking-wider mb-1 px-0.5 flex items-center gap-1">
@@ -341,6 +372,20 @@ export default function CategoryPage() {
         {hasActiveFilters && (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-muted mr-1">Active filters:</span>
+
+            {filters.q && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-800 border border-brand-200 text-xs font-medium">
+                Keyword: "{filters.q}"
+                <button
+                  type="button"
+                  onClick={() => removeFilter("q")}
+                  className="hover:text-red-600 ml-0.5 text-sm leading-none cursor-pointer"
+                  title="Remove search"
+                >
+                  ×
+                </button>
+              </span>
+            )}
 
             {filters.district && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-800 border border-brand-200 text-xs font-medium">

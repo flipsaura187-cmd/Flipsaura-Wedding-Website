@@ -233,11 +233,25 @@ export default function ProductPage() {
                   </p>
                 </div>
 
-                {item.specifications?.length > 0 && (
+                {item.specifications?.filter((s) => {
+                  const k = (s.key || "").toLowerCase();
+                  const v = (s.value || "").toLowerCase();
+                  if (isHotel && k.includes("rating")) return false;
+                  if (k.includes("makemytrip") || v.includes("makemytrip")) return false;
+                  return true;
+                }).length > 0 && (
                   <div className="pt-4 border-t border-brand-100">
                     <h3 className="font-serif text-xl font-bold text-ink mb-3">Specifications</h3>
                     <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-brand-50/60 rounded-2xl border border-brand-100">
-                      {item.specifications.map((s, i) => (
+                      {item.specifications
+                        .filter((s) => {
+                          const k = (s.key || "").toLowerCase();
+                          const v = (s.value || "").toLowerCase();
+                          if (isHotel && k.includes("rating")) return false;
+                          if (k.includes("makemytrip") || v.includes("makemytrip")) return false;
+                          return true;
+                        })
+                        .map((s, i) => (
                         <div key={i} className="flex flex-col">
                           <dt className="text-xs font-bold text-muted uppercase tracking-wider">{s.key}</dt>
                           <dd className="text-sm font-semibold text-ink">
@@ -271,9 +285,11 @@ export default function ProductPage() {
                     <span className="text-xs font-semibold text-muted bg-brand-50 px-2.5 py-1 rounded-lg">
                       📍 {item.city || "Pan India"}
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 font-bold text-xs rounded-lg border border-amber-200/60">
-                      ★ {item.rating?.toFixed(1) || "New"} ({item.reviewsCount || 0})
-                    </span>
+                    {!isHotel && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 font-bold text-xs rounded-lg border border-amber-200/60">
+                        ★ {item.rating?.toFixed(1) || "New"} ({item.reviewsCount || 0})
+                      </span>
+                    )}
                   </div>
                   <h1 className="font-serif text-2xl md:text-3xl font-bold text-ink leading-snug">
                     {item.title}

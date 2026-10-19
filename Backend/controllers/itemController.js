@@ -183,11 +183,21 @@ export async function getItems(req, res) {
     q.category = cat._id;
   }
 
-  if (req.query.q?.trim()) {
-    q.$text = { $search: req.query.q.trim() };
-  }
-
   const andConditions = [];
+
+  if (req.query.q?.trim()) {
+    const rawQ = req.query.q.trim();
+    const escapedQ = escapeRegex(rawQ);
+    andConditions.push({
+      $or: [
+        { title: new RegExp(escapedQ, "i") },
+        { city: new RegExp(escapedQ, "i") },
+        { state: new RegExp(escapedQ, "i") },
+        { about: new RegExp(escapedQ, "i") },
+        { description: new RegExp(escapedQ, "i") },
+      ],
+    });
+  }
 
   const stateQuery = (req.query.state || "").trim();
   if (stateQuery) {

@@ -429,8 +429,8 @@ export async function syncAllHotelPhotos() {
         {
           $set: {
             images: rec.photos,
-            rating: rec.rating || item.rating,
-            reviewsCount: rec.ratingCount || item.reviewsCount,
+            rating: 0,
+            reviewsCount: 0,
           },
         }
       );

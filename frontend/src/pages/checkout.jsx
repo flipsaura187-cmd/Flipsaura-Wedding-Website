@@ -25,6 +25,9 @@ export default function CheckoutPageCom() {
   const router = useRouter();
   const { user } = useAuth();
   const itemId = sp.get("itemId");
+  const roomId = sp.get("roomId");
+  const roomName = sp.get("roomName");
+  const queryPrice = sp.get("price") ? Number(sp.get("price")) : null;
   const [item, setItem] = useState(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", eventDate: "", address: "", notes: "" });
   const [error, setError] = useState("");
@@ -52,8 +55,18 @@ export default function CheckoutPageCom() {
         throw new Error("Razorpay payment gateway failed to load. Please check your internet connection.");
       }
 
+      const payableAmount = queryPrice !== null && !isNaN(queryPrice) && queryPrice >= 0 ? queryPrice : (item?.price || 0);
+      const bookingNotes = roomName
+        ? (form.notes ? `${form.notes} (Room: ${roomName})` : `Selected Room: ${roomName}`)
+        : form.notes;
+
       // 2. Create booking
-      const { data: j1 } = await api.post("/api/bookings", { itemId, ...form });
+      const { data: j1 } = await api.post("/api/bookings", {
+        itemId,
+        amount: payableAmount,
+        notes: bookingNotes,
+        ...form,
+      });
       if (!j1.ok) throw new Error(j1.error || "Could not create booking");
       const booking = j1.data.booking;
 
@@ -217,7 +230,9 @@ export default function CheckoutPageCom() {
                   disabled={busy}
                   className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-base bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-lg shadow-brand-500/25 disabled:opacity-50 transition-all cursor-pointer mt-4"
                 >
-                  {busy ? "Processing Payment…" : `Pay ₹${item.price.toLocaleString("en-IN")} with Razorpay`}
+                  {busy
+                    ? "Processing Payment…"
+                    : `Pay ₹${((queryPrice !== null && !isNaN(queryPrice) && queryPrice >= 0) ? queryPrice : (item?.price || 0)).toLocaleString("en-IN")} with Razorpay`}
                 </button>
               </form>
             </div>
@@ -237,13 +252,20 @@ export default function CheckoutPageCom() {
                 <div>
                   <h4 className="font-bold text-ink text-sm line-clamp-2">{item.title}</h4>
                   <div className="text-xs text-muted mt-1">📍 {item.city || "India"}</div>
+                  {roomName && (
+                    <div className="inline-flex items-center gap-1 text-xs text-brand-700 font-bold bg-white px-2 py-0.5 rounded-md border border-brand-200 mt-1.5">
+                      <span>🛏️</span> {roomName}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between text-muted">
-                  <span>Item price</span>
-                  <span className="font-semibold text-ink">₹{item.price.toLocaleString("en-IN")}</span>
+                  <span>{roomName ? `Room tariff (${roomName})` : "Item price"}</span>
+                  <span className="font-semibold text-ink">
+                    ₹{((queryPrice !== null && !isNaN(queryPrice) && queryPrice >= 0) ? queryPrice : (item?.price || 0)).toLocaleString("en-IN")}
+                  </span>
                 </div>
                 <div className="flex justify-between text-muted">
                   <span>Taxes & fees</span>
@@ -251,7 +273,9 @@ export default function CheckoutPageCom() {
                 </div>
                 <div className="flex justify-between text-base font-bold text-ink pt-3 border-t border-brand-200">
                   <span>Total Amount</span>
-                  <span className="text-brand-700">₹{item.price.toLocaleString("en-IN")}</span>
+                  <span className="text-brand-700">
+                    ₹{((queryPrice !== null && !isNaN(queryPrice) && queryPrice >= 0) ? queryPrice : (item?.price || 0)).toLocaleString("en-IN")}
+                  </span>
                 </div>
               </div>
 

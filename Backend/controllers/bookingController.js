@@ -29,6 +29,11 @@ export async function createBooking(req, res) {
   const item = await Item.findById(itemId);
   if (!item) return res.status(404).json({ ok: false, error: "Item not found" });
 
+  let bookingAmount = item.price;
+  if (req.body.amount !== undefined && Number(req.body.amount) >= 0) {
+    bookingAmount = Number(req.body.amount);
+  }
+
   const booking = await Booking.create({
     user: req.user.id,
     item: item._id,
@@ -39,7 +44,7 @@ export async function createBooking(req, res) {
     eventDate: req.body.eventDate,
     address: req.body.address,
     notes: req.body.notes,
-    amount: item.price,
+    amount: bookingAmount,
     status: "pending",
   });
 

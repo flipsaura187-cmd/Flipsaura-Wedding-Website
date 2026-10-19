@@ -1,6 +1,8 @@
 import { dbConnect } from "../lib/db.js";
 import User from "../models/User.js";
 import Category from "../models/Category.js";
+import Item from "../models/Item.js";
+import Room from "../models/Room.js";
 import { calculateVendorCompletion } from "../lib/vendorVerification.js";
 import { syncVendorServicesToItems } from "../lib/vendorSync.js";
 
@@ -21,11 +23,33 @@ export async function getVendorProfile(req, res) {
 
   const completion = calculateVendorCompletion(user);
 
+  const hotelCategories = await Category.find({
+    $or: [{ slug: "hotels" }, { name: /hotel/i }],
+  }).select("_id").lean();
+  const hotelCatIds = new Set(hotelCategories.map((c) => String(c._id)));
+
+  const hasHotelService = Boolean(
+    user.vendorProfile?.categories?.some((c) => hotelCatIds.has(String(c?._id || c))) ||
+    user.vendorProfile?.servicesList?.some(
+      (s) =>
+        hotelCatIds.has(String(s.category?._id || s.category)) ||
+        (s.categoryName || "").toLowerCase().includes("hotel")
+    ) ||
+    (await Item.exists({
+      vendor: user._id,
+      $or: [
+        { category: { $in: Array.from(hotelCatIds) } },
+        { title: /hotel|resort|lodge|inn\b/i },
+      ],
+    }))
+  );
+
   res.json({
     ok: true,
     data: {
       profile: user.vendorProfile || {},
       completion,
+      hasHotelService,
       user: {
         id: String(user._id),
         name: user.name,
@@ -155,10 +179,64 @@ export async function updateVendorProfile(req, res) {
 
   await user.save();
 
+  // Handle hotel rooms submitted from Services & Amenities
+  if (Array.isArray(req.body.rooms)) {
+    const hotelCategories = await Category.find({
+      $or: [{ slug: "hotels" }, { name: /hotel/i }],
+    }).select("_id").lean();
+    const hotelCatIds = hotelCategories.map((c) => c._id);
+
+    let hotelItem = await Item.findOne({
+      vendor: user._id,
+      category: { $in: hotelCatIds },
+    });
+
+    for (const r of req.body.rooms) {
+      if (!r || !r.name?.trim()) continue;
+      const roomPayload = {
+        hotel: hotelItem?._id || r.hotel || undefined,
+        vendor: user._id,
+        name: r.name.trim(),
+        roomType: r.roomType || "Deluxe Room",
+        pricePerNight: Math.max(0, Number(r.pricePerNight) || 0),
+        availableRooms: Math.max(0, Number(r.availableRooms) || 1),
+        maxGuests: Math.max(1, Number(r.maxGuests) || 2),
+        bedType: r.bedType || "Double Bed",
+        numberOfBeds: Math.max(1, Number(r.numberOfBeds) || 1),
+        facilities: Array.isArray(r.facilities) ? r.facilities : [],
+        description: r.description || "",
+        images: Array.isArray(r.images) ? r.images : [],
+        active: r.active !== undefined ? Boolean(r.active) : true,
+      };
+
+      if (r._id) {
+        await Room.findByIdAndUpdate(r._id, roomPayload);
+      } else {
+        await Room.create(roomPayload);
+      }
+    }
+  }
+
   // If vendor is approved, immediately sync services & facilities to public Items
   if (user.vendorProfile?.approved) {
     try {
       await syncVendorServicesToItems(user._id);
+
+      // Link newly synced hotel item to rooms that had no hotel link
+      const hotelCategories = await Category.find({
+        $or: [{ slug: "hotels" }, { name: /hotel/i }],
+      }).select("_id").lean();
+      const hotelCatIds = hotelCategories.map((c) => c._id);
+      const syncedHotel = await Item.findOne({
+        vendor: user._id,
+        category: { $in: hotelCatIds },
+      });
+      if (syncedHotel) {
+        await Room.updateMany(
+          { vendor: user._id, $or: [{ hotel: null }, { hotel: { $exists: false } }] },
+          { $set: { hotel: syncedHotel._id } }
+        );
+      }
     } catch (syncErr) {
       console.error("Auto-sync vendor items on update error:", syncErr);
     }
@@ -530,6 +608,28 @@ export async function getVendorStatus(req, res) {
 
   const completion = calculateVendorCompletion(user);
 
+  // Check if vendor has hotel category in profile or has any hotel item
+  const hotelCategories = await Category.find({
+    $or: [{ slug: "hotels" }, { name: /hotel/i }],
+  }).select("_id").lean();
+  const hotelCatIds = new Set(hotelCategories.map((c) => String(c._id)));
+
+  const hasHotelService = Boolean(
+    user.vendorProfile?.categories?.some((c) => hotelCatIds.has(String(c?._id || c))) ||
+    user.vendorProfile?.servicesList?.some(
+      (s) =>
+        hotelCatIds.has(String(s.category?._id || s.category)) ||
+        (s.categoryName || "").toLowerCase().includes("hotel")
+    ) ||
+    (await Item.exists({
+      vendor: user._id,
+      $or: [
+        { category: { $in: Array.from(hotelCatIds) } },
+        { title: /hotel|resort|lodge|inn\b/i },
+      ],
+    }))
+  );
+
   res.json({
     ok: true,
     data: {
@@ -539,6 +639,7 @@ export async function getVendorStatus(req, res) {
       rejectionReason: completion.rejectionReason,
       canSubmit: completion.canSubmitForVerification,
       missingFields: completion.missingFields,
+      hasHotelService,
     },
   });
 }

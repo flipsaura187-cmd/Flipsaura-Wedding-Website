@@ -11,7 +11,7 @@ const slidesData = [
         title: "Find your perfect",
         highlight: "wedding venue",
         description: "Explore hand-picked venues that match your style, budget, and guest count. From heritage palaces to modern banquet halls.",
-        primaryCta: { text: "Explore Venues", link: "/categories/venues" },
+        primaryCta: { text: "Explore Venue/Resorts", link: "/categories/venues" },
         secondaryCta: { text: "View Packages", link: "/categories" },
         image: "/images/hero/slide-1.jpg",
         eyebrow: "Weddings, made effortless"

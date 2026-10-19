@@ -4,6 +4,42 @@ import { useSearchParams, useRouter } from "@/compat/navigation";
 import api from "@/api/axios";
 import { uploadFile } from "@/lib/uploadHelper";
 import CategoryFacilitiesManager from "@/components/vendor/CategoryFacilitiesManager";
+import Image from "@/compat/Image";
+
+export const POPULAR_ROOM_FACILITIES = [
+  "Air Conditioning (AC)",
+  "High-Speed Wi-Fi",
+  "Attached Private Bathroom",
+  "Geyser / 24x7 Hot Water",
+  "Flat-screen / Smart TV",
+  "Free Breakfast",
+  "Room Service",
+  "Electric Kettle / Tea Maker",
+  "Balcony / City View",
+  "Daily Housekeeping",
+  "Mini Bar / Refrigerator",
+  "Wardrobe / Closet",
+];
+
+export const ROOM_TYPES = [
+  "Deluxe Room",
+  "Standard Room",
+  "Executive Suite",
+  "Presidential Suite",
+  "Family Suite",
+  "AC Room",
+  "Non-AC Room",
+  "Villa / Cottage",
+];
+
+export const BED_TYPES = [
+  "1 King Bed",
+  "1 Queen Bed",
+  "2 Single Beds",
+  "2 Double Beds",
+  "1 Double Bed",
+  "3 Single Beds",
+];
 
 export default function VendorOnboardingPage() {
   const [sp] = useSearchParams();
@@ -82,6 +118,12 @@ export default function VendorOnboardingPage() {
 
   // Doc Upload states
   const [uploadingDoc, setUploadingDoc] = useState({});
+
+  // Hotel Room states for Services & Amenities tab
+  const [hotelRooms, setHotelRooms] = useState([]);
+  const [uploadingRoomIdx, setUploadingRoomIdx] = useState(null);
+  const [customRoomAmenityInputs, setCustomRoomAmenityInputs] = useState({});
+  const [roomUrlInputs, setRoomUrlInputs] = useState({});
 
   useEffect(() => {
     loadData();
@@ -170,6 +212,16 @@ export default function VendorOnboardingPage() {
       } catch (profErr) {
         console.warn("Vendor profile not loaded:", profErr);
       }
+
+      // 3. Load vendor hotel rooms if any
+      try {
+        const roomsRes = await api.get("/api/rooms");
+        if (roomsRes.data?.ok && Array.isArray(roomsRes.data.data?.rooms)) {
+          setHotelRooms(roomsRes.data.data.rooms);
+        }
+      } catch (rErr) {
+        console.warn("Rooms not loaded:", rErr);
+      }
     } catch (err) {
       setError(err.message || "Failed to load vendor profile.");
     } finally {
@@ -180,6 +232,12 @@ export default function VendorOnboardingPage() {
   const selectedServiceCategories = useMemo(() => {
     return categories.filter((c) => (profileForm.categories || []).includes(c._id));
   }, [categories, profileForm.categories]);
+
+  const isHotelSelected = useMemo(() => {
+    return selectedServiceCategories.some(
+      (c) => c?.slug === "hotels" || (c?.name || "").toLowerCase().includes("hotel")
+    );
+  }, [selectedServiceCategories]);
 
   useEffect(() => {
     if (
@@ -197,6 +255,166 @@ export default function VendorOnboardingPage() {
       null
     );
   }, [selectedServiceCategories, activeServiceCatId]);
+
+  const isActiveCategoryHotel = Boolean(
+    activeCategoryObject?.slug === "hotels" ||
+    (activeCategoryObject?.name || "").toLowerCase().includes("hotel")
+  );
+
+  // Sync localStorage flipsaura_has_hotel for instant sidebar update
+  useEffect(() => {
+    try {
+      if (isHotelSelected) {
+        localStorage.setItem("flipsaura_has_hotel", "true");
+      } else {
+        localStorage.removeItem("flipsaura_has_hotel");
+      }
+      window.dispatchEvent(new Event("vendor_profile_updated"));
+    } catch {}
+  }, [isHotelSelected]);
+
+  // Auto-initialize 1 room when hotel is selected and hotelRooms is empty
+  useEffect(() => {
+    if (isHotelSelected && hotelRooms.length === 0) {
+      setHotelRooms([
+        {
+          name: "Deluxe AC Room",
+          roomType: "Deluxe Room",
+          pricePerNight: 2500,
+          availableRooms: 5,
+          maxGuests: 2,
+          bedType: "1 King Bed",
+          numberOfBeds: 1,
+          facilities: [
+            "Air Conditioning (AC)",
+            "High-Speed Wi-Fi",
+            "Attached Private Bathroom",
+            "Geyser / 24x7 Hot Water",
+            "Flat-screen / Smart TV",
+          ],
+          description: "",
+          images: [],
+          active: true,
+        },
+      ]);
+    }
+  }, [isHotelSelected, hotelRooms.length]);
+
+  const addHotelRoom = () => {
+    setHotelRooms((prev) => [
+      ...prev,
+      {
+        name: `Room Type ${prev.length + 1}`,
+        roomType: "Deluxe Room",
+        pricePerNight: 2500,
+        availableRooms: 5,
+        maxGuests: 2,
+        bedType: "1 King Bed",
+        numberOfBeds: 1,
+        facilities: [
+          "Air Conditioning (AC)",
+          "High-Speed Wi-Fi",
+          "Attached Private Bathroom",
+          "Geyser / 24x7 Hot Water",
+        ],
+        description: "",
+        images: [],
+        active: true,
+      },
+    ]);
+  };
+
+  const removeHotelRoom = (idx) => {
+    setHotelRooms((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const updateHotelRoom = (idx, field, value) => {
+    setHotelRooms((prev) => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], [field]: value };
+      return copy;
+    });
+  };
+
+  const toggleHotelRoomFacility = (idx, facName) => {
+    setHotelRooms((prev) => {
+      const copy = [...prev];
+      const curFacilities = copy[idx]?.facilities || [];
+      const exists = curFacilities.includes(facName);
+      copy[idx] = {
+        ...copy[idx],
+        facilities: exists
+          ? curFacilities.filter((f) => f !== facName)
+          : [...curFacilities, facName],
+      };
+      return copy;
+    });
+  };
+
+  const addCustomHotelRoomAmenity = (idx) => {
+    const text = (customRoomAmenityInputs[idx] || "").trim();
+    if (!text) return;
+    setHotelRooms((prev) => {
+      const copy = [...prev];
+      const curFacilities = copy[idx]?.facilities || [];
+      if (!curFacilities.includes(text)) {
+        copy[idx] = {
+          ...copy[idx],
+          facilities: [...curFacilities, text],
+        };
+      }
+      return copy;
+    });
+    setCustomRoomAmenityInputs((prev) => ({ ...prev, [idx]: "" }));
+  };
+
+  const handleHotelRoomPhotoUpload = async (idx, file) => {
+    if (!file) return;
+    setUploadingRoomIdx(idx);
+    try {
+      const url = await uploadFile(file, "flipsaura/rooms");
+      if (url) {
+        setHotelRooms((prev) => {
+          const copy = [...prev];
+          copy[idx] = {
+            ...copy[idx],
+            images: [...(copy[idx]?.images || []), url],
+          };
+          return copy;
+        });
+      }
+    } catch (err) {
+      console.error("Room photo upload failed:", err);
+      setError(err.message || "Failed to upload room photo");
+    } finally {
+      setUploadingRoomIdx(null);
+    }
+  };
+
+  const addHotelRoomPhotoUrl = (idx) => {
+    const url = (roomUrlInputs[idx] || "").trim();
+    if (!url) return;
+    setHotelRooms((prev) => {
+      const copy = [...prev];
+      copy[idx] = {
+        ...copy[idx],
+        images: [...(copy[idx]?.images || []), url],
+      };
+      return copy;
+    });
+    setRoomUrlInputs((prev) => ({ ...prev, [idx]: "" }));
+  };
+
+  const removeHotelRoomPhoto = (rIdx, pIdx) => {
+    setHotelRooms((prev) => {
+      const copy = [...prev];
+      copy[rIdx] = {
+        ...copy[rIdx],
+        images: (copy[rIdx]?.images || []).filter((_, i) => i !== pIdx),
+      };
+      return copy;
+    });
+  };
 
   const getCategoryService = (catId) => {
     const list = profileForm.servicesList || [];
@@ -305,6 +523,9 @@ export default function VendorOnboardingPage() {
           .filter(Boolean),
         servicesList: cleanServicesList,
         facilities: profileForm.facilities || [],
+        rooms: isHotelSelected
+          ? hotelRooms.filter((r) => r && r.name && r.name.trim())
+          : undefined,
       };
 
       const { data } = await api.put("/api/vendor/profile", payload);
@@ -312,7 +533,8 @@ export default function VendorOnboardingPage() {
 
       setProfile(data.data.profile);
       setCompletion(data.data.completion);
-      setSuccess("Category services, pricing models & facilities saved successfully!");
+      setSuccess("Category services, pricing models, facilities & hotel rooms saved successfully!");
+      window.dispatchEvent(new Event("vendor_profile_updated"));
     } catch (err) {
       setError(err.message || "Failed to save profile.");
     } finally {
@@ -779,6 +1001,7 @@ export default function VendorOnboardingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
               {categories.map((cat) => {
                 const checked = profileForm.categories.includes(cat._id);
+                const isHotelCat = cat.slug === "hotels" || (cat.name || "").toLowerCase().includes("hotel");
                 return (
                   <label
                     key={cat._id}
@@ -807,10 +1030,48 @@ export default function VendorOnboardingPage() {
                       className="rounded text-brand-600 focus:ring-brand-500 w-4 h-4 cursor-pointer"
                     />
                     <span className="truncate">{cat.name}</span>
+                    {isHotelCat && (
+                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-700 border border-purple-200 shrink-0">
+                        🛏️ Rooms
+                      </span>
+                    )}
                   </label>
                 );
               })}
             </div>
+
+            {/* Quick banner if Hotels is selected */}
+            {isHotelSelected && (
+              <div className="mt-3 p-3.5 rounded-xl bg-purple-50/90 border border-purple-200 text-purple-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">🏨</span>
+                  <div>
+                    <span className="font-bold text-wine">Hotels Category Selected:</span>
+                    <span className="text-muted ml-1">
+                      Configure your hotel room types (Deluxe, Suite, AC), nightly tariffs (₹), amenities, and photos below.
+                    </span>
+                  </div>
+                </div>
+                {!isActiveCategoryHotel ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const hotelCat = selectedServiceCategories.find(
+                        (c) => c?.slug === "hotels" || (c?.name || "").toLowerCase().includes("hotel")
+                      );
+                      if (hotelCat) setActiveServiceCatId(hotelCat._id);
+                    }}
+                    className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition"
+                  >
+                    Switch to Hotels & Rooms Form ↓
+                  </button>
+                ) : (
+                  <span className="text-purple-700 font-semibold px-2.5 py-1 rounded-md bg-purple-100 border border-purple-200 shrink-0">
+                    Active Below ↓
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* If no category is selected */}
@@ -871,6 +1132,13 @@ export default function VendorOnboardingPage() {
                         }`}>
                           {catFacCount} amenities
                         </span>
+                        {Boolean(cat.slug === "hotels" || (cat.name || "").toLowerCase().includes("hotel")) && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                            isSelected ? "bg-purple-900/40 text-purple-100 border border-purple-300/30" : "bg-purple-100 text-purple-800 border border-purple-200"
+                          }`}>
+                            🛏️ {hotelRooms.length} Rooms
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -1000,6 +1268,355 @@ export default function VendorOnboardingPage() {
                           setProfileForm((prev) => ({ ...prev, facilities: updatedFacilities }))
                         }
                       />
+
+                      {/* Sub-Card 3: Hotel Rooms & Tariffs (When Active Category is Hotels) */}
+                      {isActiveCategoryHotel && (
+                        <div className="p-5 md:p-7 rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50/40 via-white to-brand-50/30 space-y-5 shadow-xs">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 pb-3">
+                            <div>
+                              <h4 className="font-serif text-base md:text-lg font-bold text-wine flex items-center gap-2">
+                                <span>🛏️</span>
+                                <span>Hotel Room Types & Nightly Tariffs</span>
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold border border-purple-200">
+                                  {hotelRooms.length} {hotelRooms.length === 1 ? "Room Type" : "Room Types"}
+                                </span>
+                              </h4>
+                              <p className="text-xs text-muted mt-0.5">
+                                Add all room types available at your property (e.g. Deluxe AC, Standard, Executive Suite) with night tariffs, guest capacity, and amenities.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={addHotelRoom}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition cursor-pointer self-start sm:self-auto"
+                            >
+                              <span>+</span>
+                              <span>Add Another Room</span>
+                            </button>
+                          </div>
+
+                          {hotelRooms.length === 0 ? (
+                            <div className="p-6 text-center border-2 border-dashed border-purple-200 rounded-xl bg-white/70">
+                              <p className="text-sm text-muted mb-3">No room types added yet for this hotel.</p>
+                              <button
+                                type="button"
+                                onClick={addHotelRoom}
+                                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition"
+                              >
+                                + Add First Room Type
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {hotelRooms.map((room, rIdx) => (
+                                <div
+                                  key={rIdx}
+                                  className="p-4 sm:p-5 rounded-xl bg-white border border-purple-100 shadow-xs space-y-4"
+                                >
+                                  {/* Room Card Header */}
+                                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                      <span className="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">
+                                        {rIdx + 1}
+                                      </span>
+                                      <h5 className="text-sm font-bold text-ink">
+                                        {room.name || `Room Type ${rIdx + 1}`}
+                                      </h5>
+                                      <span className="text-xs px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-semibold border border-purple-200">
+                                        {room.roomType || "Deluxe Room"}
+                                      </span>
+                                      <span className="text-xs font-bold text-wine">
+                                        ₹{room.pricePerNight ? Number(room.pricePerNight).toLocaleString("en-IN") : 0} / night
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                      <label className="flex items-center gap-1.5 text-xs font-medium text-ink cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={room.active !== false}
+                                          onChange={(e) => updateHotelRoom(rIdx, "active", e.target.checked)}
+                                          className="w-3.5 h-3.5 accent-brand-600 rounded cursor-pointer"
+                                        />
+                                        Active
+                                      </label>
+                                      {hotelRooms.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => removeHotelRoom(rIdx)}
+                                          className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1 rounded-md hover:bg-rose-50 transition cursor-pointer"
+                                        >
+                                          ✕ Remove
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Room Fields Grid */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                                    <div>
+                                      <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
+                                        Room Name / Title *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        placeholder="e.g. Deluxe AC Room, Presidential Suite"
+                                        value={room.name || ""}
+                                        onChange={(e) => updateHotelRoom(rIdx, "name", e.target.value)}
+                                        className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
+                                        required
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
+                                        Room Type
+                                      </label>
+                                      <select
+                                        value={room.roomType || "Deluxe Room"}
+                                        onChange={(e) => updateHotelRoom(rIdx, "roomType", e.target.value)}
+                                        className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
+                                      >
+                                        {ROOM_TYPES.map((t) => (
+                                          <option key={t} value={t}>
+                                            {t}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
+                                        Price Per Night (₹) *
+                                      </label>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="e.g. 2500"
+                                        value={room.pricePerNight || ""}
+                                        onChange={(e) => updateHotelRoom(rIdx, "pricePerNight", e.target.value)}
+                                        className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
+                                        required
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
+                                        Available Rooms Count
+                                      </label>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        placeholder="e.g. 5"
+                                        value={room.availableRooms || 1}
+                                        onChange={(e) => updateHotelRoom(rIdx, "availableRooms", e.target.value)}
+                                        className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
+                                        Max Guests (Capacity)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        placeholder="e.g. 2"
+                                        value={room.maxGuests || 2}
+                                        onChange={(e) => updateHotelRoom(rIdx, "maxGuests", e.target.value)}
+                                        className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
+                                        Bed Configuration
+                                      </label>
+                                      <select
+                                        value={room.bedType || "1 King Bed"}
+                                        onChange={(e) => updateHotelRoom(rIdx, "bedType", e.target.value)}
+                                        className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
+                                      >
+                                        {BED_TYPES.map((b) => (
+                                          <option key={b} value={b}>
+                                            {b}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  {/* Room Description */}
+                                  <div>
+                                    <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
+                                      Room Description (Optional)
+                                    </label>
+                                    <textarea
+                                      rows={2}
+                                      placeholder="e.g. Premium room with city view, king size bed, attached bathroom, and 24x7 room service."
+                                      value={room.description || ""}
+                                      onChange={(e) => updateHotelRoom(rIdx, "description", e.target.value)}
+                                      className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white resize-y"
+                                    />
+                                  </div>
+
+                                  {/* Room Amenities */}
+                                  <div className="space-y-2">
+                                    <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
+                                      Room Facilities & Amenities
+                                    </label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {POPULAR_ROOM_FACILITIES.map((fac) => {
+                                        const isChecked = (room.facilities || []).includes(fac);
+                                        return (
+                                          <button
+                                            key={fac}
+                                            type="button"
+                                            onClick={() => toggleHotelRoomFacility(rIdx, fac)}
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                                              isChecked
+                                                ? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+                                                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-purple-50 hover:border-purple-200"
+                                            }`}
+                                          >
+                                            {isChecked ? "✓ " : "+ "}
+                                            {fac}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+
+                                    {/* Custom Amenities */}
+                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                      {(room.facilities || [])
+                                        .filter((f) => !POPULAR_ROOM_FACILITIES.includes(f))
+                                        .map((customFac, cIdx) => (
+                                          <span
+                                            key={cIdx}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-purple-50 text-purple-800 border border-purple-200"
+                                          >
+                                            <span>✓ {customFac}</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => toggleHotelRoomFacility(rIdx, customFac)}
+                                              className="text-rose-500 hover:text-rose-700 ml-1 cursor-pointer font-bold"
+                                            >
+                                              ✕
+                                            </button>
+                                          </span>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex gap-2 max-w-md pt-1">
+                                      <input
+                                        placeholder="Add other amenity (e.g. Jacuzzi, Soundproofing)"
+                                        value={customRoomAmenityInputs[rIdx] || ""}
+                                        onChange={(e) =>
+                                          setCustomRoomAmenityInputs((prev) => ({
+                                            ...prev,
+                                            [rIdx]: e.target.value,
+                                          }))
+                                        }
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            addCustomHotelRoomAmenity(rIdx);
+                                          }
+                                        }}
+                                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-ink focus:outline-none focus:border-purple-500"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => addCustomHotelRoomAmenity(rIdx)}
+                                        className="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold shrink-0 hover:bg-slate-900 transition cursor-pointer"
+                                      >
+                                        + Add
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Room Photos */}
+                                  <div className="space-y-2 pt-1 border-t border-slate-100">
+                                    <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
+                                      Room Photos
+                                    </label>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                      <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold hover:bg-purple-100 cursor-pointer transition">
+                                        <span>📷</span>
+                                        <span>{uploadingRoomIdx === rIdx ? "Uploading..." : "Upload Room Photo"}</span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          disabled={uploadingRoomIdx === rIdx}
+                                          onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) handleHotelRoomPhotoUpload(rIdx, file);
+                                            e.target.value = "";
+                                          }}
+                                          className="hidden"
+                                        />
+                                      </label>
+
+                                      <div className="flex gap-2 flex-1 max-w-sm">
+                                        <input
+                                          placeholder="Or paste direct Image URL"
+                                          value={roomUrlInputs[rIdx] || ""}
+                                          onChange={(e) =>
+                                            setRoomUrlInputs((prev) => ({
+                                              ...prev,
+                                              [rIdx]: e.target.value,
+                                            }))
+                                          }
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              e.preventDefault();
+                                              addHotelRoomPhotoUrl(rIdx);
+                                            }
+                                          }}
+                                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-ink focus:outline-none focus:border-purple-500"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => addHotelRoomPhotoUrl(rIdx)}
+                                          className="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold shrink-0 hover:bg-slate-900 transition cursor-pointer"
+                                        >
+                                          + Add URL
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Previews */}
+                                    {room.images && room.images.length > 0 && (
+                                      <div className="flex flex-wrap gap-2.5 pt-2">
+                                        {room.images.map((imgUrl, imgIdx) => (
+                                          <div
+                                            key={imgIdx}
+                                            className="relative w-20 h-20 rounded-xl overflow-hidden border border-purple-200 bg-slate-100 group shadow-2xs"
+                                          >
+                                            <Image
+                                              src={imgUrl}
+                                              alt={`Room Photo ${imgIdx + 1}`}
+                                              fill
+                                              className="object-cover"
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => removeHotelRoomPhoto(rIdx, imgIdx)}
+                                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center opacity-90 hover:opacity-100 shadow-sm cursor-pointer"
+                                            >
+                                              ✕
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })()

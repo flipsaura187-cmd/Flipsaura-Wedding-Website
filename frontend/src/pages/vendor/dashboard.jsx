@@ -40,6 +40,11 @@ export default function VendorDashboard() {
   const profile = profileData?.profile;
   const isApproved = Boolean(stats?.isApproved || (profile?.approved && profile?.verificationStatus === "approved"));
   const status = profile?.verificationStatus || stats?.verificationStatus || "profile_incomplete";
+  const hasHotelService = Boolean(
+    profileData?.hasHotelService ||
+    profile?.categories?.some((c) => c?.slug === "hotels" || (c?.name || "").toLowerCase().includes("hotel")) ||
+    profile?.servicesList?.some((s) => (s?.categoryName || "").toLowerCase().includes("hotel"))
+  );
 
   return (
     <div className="space-y-8">
@@ -286,7 +291,7 @@ export default function VendorDashboard() {
             </div>
 
             {/* Quick Action Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               <div className="bg-white p-6 rounded-2xl border border-line shadow-2xs flex flex-col justify-between">
                 <div>
                   <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl mb-3">
@@ -304,6 +309,26 @@ export default function VendorDashboard() {
                   Open My Items →
                 </Link>
               </div>
+
+              {hasHotelService && (
+                <div className="bg-white p-6 rounded-2xl border border-line shadow-2xs flex flex-col justify-between">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center text-xl mb-3">
+                      🛏️
+                    </div>
+                    <h4 className="font-semibold text-ink text-base mb-1.5">Manage Rooms</h4>
+                    <p className="text-xs md:text-sm text-muted mb-4">
+                      Add Deluxe, Suite, AC rooms with per-night tariffs, guest capacities and amenities.
+                    </p>
+                  </div>
+                  <Link
+                    href="/vendor/rooms"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs transition-colors shadow-2xs"
+                  >
+                    Manage Rooms →
+                  </Link>
+                </div>
+              )}
 
               <div className="bg-white p-6 rounded-2xl border border-line shadow-2xs flex flex-col justify-between">
                 <div>

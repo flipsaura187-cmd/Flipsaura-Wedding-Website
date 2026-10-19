@@ -1,6 +1,12 @@
 import Link from "@/compat/Link";
 
 export default function ItemCard({ item }) {
+  const isHotel =
+    item.category?.slug === "hotels" ||
+    (typeof item.category === "string" && item.category.toLowerCase().includes("hotel")) ||
+    (item.category?.name || "").toLowerCase().includes("hotel") ||
+    (item.title || "").toLowerCase().includes("hotel accommodation");
+
   return (
     <Link
       href={`/product/${item._id}`}
@@ -39,7 +45,21 @@ export default function ItemCard({ item }) {
           <span>📍</span> {item.city || "India"}
         </div>
         <div className="mt-2 pt-2 border-t border-brand-50 flex items-center justify-between">
-          {item.price && item.price > 0 ? (
+          {isHotel ? (
+            <div className="leading-tight">
+              {item.price && item.price > 0 ? (
+                <>
+                  <span className="text-[10px] text-muted font-medium block">Rooms from</span>
+                  <span className="text-sm font-bold text-brand-700">
+                    ₹{item.price.toLocaleString("en-IN")}
+                    <span className="text-[10px] text-muted font-normal"> / night</span>
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs font-bold text-brand-700">View Rooms & Rates</span>
+              )}
+            </div>
+          ) : item.price && item.price > 0 ? (
             <span className="text-base font-bold text-brand-700">
               ₹{item.price.toLocaleString("en-IN")}
             </span>
@@ -48,7 +68,7 @@ export default function ItemCard({ item }) {
               Price on Request
             </span>
           )}
-          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
             ★ {item.rating?.toFixed?.(1) || "—"}
           </span>
         </div>

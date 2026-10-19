@@ -5,7 +5,7 @@ import crypto from "crypto";
 import mongoose from "mongoose";
 
 const CATEGORY_FILE_MAP = {
-  hotels: "hotels.jpg",
+  hotels: "hotel.webp",
   venues: "venues.jpg",
   "home-setup-pandal-tent-dj": "home-setup.jpg",
   "transport-car-bus-auto": "transport.jpg",

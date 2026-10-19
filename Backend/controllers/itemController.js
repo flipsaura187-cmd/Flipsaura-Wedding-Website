@@ -2,6 +2,7 @@ import { dbConnect } from "../lib/db.js";
 import Item from "../models/Item.js";
 import Category from "../models/Category.js";
 import User from "../models/User.js";
+import Room from "../models/Room.js";
 import { getCurrentUser } from "../middleware/auth.js";
 
 function escapeRegex(str) {
@@ -430,10 +431,37 @@ export async function createItem(req, res) {
     return res.status(400).json({ ok: false, error: "title, category, price required" });
   }
 
+  const itemData = { ...req.body };
+  delete itemData.rooms;
+
   const item = await Item.create({
-    ...req.body,
+    ...itemData,
     vendor: req.user.role === "vendor" ? req.user.id : req.body.vendor,
   });
+
+  if (Array.isArray(req.body.rooms) && req.body.rooms.length > 0) {
+    const roomsToInsert = req.body.rooms
+      .filter((r) => r && r.name && r.name.trim())
+      .map((r) => ({
+        hotel: item._id,
+        vendor: item.vendor,
+        name: r.name.trim(),
+        roomType: r.roomType || "Deluxe Room",
+        pricePerNight: Math.max(0, Number(r.pricePerNight) || 0),
+        availableRooms: Math.max(0, Number(r.availableRooms) || 1),
+        maxGuests: Math.max(1, Number(r.maxGuests) || 2),
+        bedType: r.bedType || "Double Bed",
+        numberOfBeds: Math.max(1, Number(r.numberOfBeds) || 1),
+        facilities: Array.isArray(r.facilities) ? r.facilities : [],
+        description: r.description || "",
+        images: Array.isArray(r.images) ? r.images : [],
+        active: r.active !== undefined ? Boolean(r.active) : true,
+      }));
+
+    if (roomsToInsert.length > 0) {
+      await Room.insertMany(roomsToInsert);
+    }
+  }
 
   return res.json({ ok: true, data: { item } });
 }
@@ -501,11 +529,17 @@ export async function getItem(req, res) {
     }) || null;
   }
 
+  // Fetch active rooms for this hotel item
+  const rooms = await Room.find({ hotel: item._id, active: true })
+    .sort({ pricePerNight: 1, createdAt: -1 })
+    .lean();
+
   return res.json({
     ok: true,
     data: {
       item: {
         ...item,
+        rooms: rooms || [],
         resolvedFacilities,
         resolvedCategoryService,
       },
@@ -539,8 +573,39 @@ export async function updateItem(req, res) {
     return res.status(403).json({ ok: false, error: "Forbidden" });
   }
 
-  Object.assign(item, req.body);
+  const updateData = { ...req.body };
+  delete updateData.rooms;
+
+  Object.assign(item, updateData);
   await item.save();
+
+  if (Array.isArray(req.body.rooms)) {
+    for (const r of req.body.rooms) {
+      if (!r || !r.name?.trim()) continue;
+      const roomPayload = {
+        hotel: item._id,
+        vendor: item.vendor,
+        name: r.name.trim(),
+        roomType: r.roomType || "Deluxe Room",
+        pricePerNight: Math.max(0, Number(r.pricePerNight) || 0),
+        availableRooms: Math.max(0, Number(r.availableRooms) || 1),
+        maxGuests: Math.max(1, Number(r.maxGuests) || 2),
+        bedType: r.bedType || "Double Bed",
+        numberOfBeds: Math.max(1, Number(r.numberOfBeds) || 1),
+        facilities: Array.isArray(r.facilities) ? r.facilities : [],
+        description: r.description || "",
+        images: Array.isArray(r.images) ? r.images : [],
+        active: r.active !== undefined ? Boolean(r.active) : true,
+      };
+
+      if (r._id) {
+        await Room.findByIdAndUpdate(r._id, roomPayload);
+      } else {
+        await Room.create(roomPayload);
+      }
+    }
+  }
+
   return res.json({ ok: true, data: { item } });
 }
 
@@ -570,6 +635,7 @@ export async function deleteItem(req, res) {
     return res.status(403).json({ ok: false, error: "Forbidden" });
   }
 
+  await Room.deleteMany({ hotel: item._id });
   await item.deleteOne();
   return res.json({ ok: true, data: { deleted: true } });
 }

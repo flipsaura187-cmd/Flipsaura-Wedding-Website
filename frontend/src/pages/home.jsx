@@ -53,10 +53,10 @@ const defaultCategories = [
   {
     name: "Hotels",
     slug: "hotels",
-    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226367/flipsaura/categories/category_hotels.png",
+    image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792372004/flipsaura/categories/category_hotels_1792372002950.jpg",
   },
   {
-    name: "Venues",
+    name: "Venue/Resorts",
     slug: "venues",
     image: "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226355/flipsaura/categories/category_venues.png",
   },

@@ -16,6 +16,7 @@ import vendorRoutes from "./routes/vendorRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
+import roomRoutes from "./routes/roomRoutes.js";
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use("/api/vendor", vendorRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/rooms", roomRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ ok: false, error: "Route not found" });

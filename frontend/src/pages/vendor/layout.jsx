@@ -13,18 +13,31 @@ export default function VendorLayout() {
   const { user, loading, login, logout } = useAuth();
   const [vendorStatus, setVendorStatus] = useState(null);
   const [loggingInDemo, setLoggingInDemo] = useState(false);
+  const [localHasHotel, setLocalHasHotel] = useState(false);
 
-  useEffect(() => {
+  const fetchStatus = () => {
     if (!loading && user && (String(user.role || "").toLowerCase() === "vendor" || String(user.role || "").toLowerCase() === "admin")) {
-      // Fetch fresh vendor status
       api.get("/api/vendor/status")
         .then((res) => {
           if (res.data?.ok) {
             setVendorStatus(res.data.data);
           }
         })
-        .catch(() => { });
+        .catch(() => {});
     }
+    try {
+      setLocalHasHotel(localStorage.getItem("flipsaura_has_hotel") === "true");
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    window.addEventListener("vendor_profile_updated", fetchStatus);
+    window.addEventListener("storage", fetchStatus);
+    return () => {
+      window.removeEventListener("vendor_profile_updated", fetchStatus);
+      window.removeEventListener("storage", fetchStatus);
+    };
   }, [user, loading]);
 
   const handleDemoLogin = async () => {
@@ -161,6 +174,12 @@ export default function VendorLayout() {
 
   const isApproved = Boolean(vendorStatus ? vendorStatus.isApproved : user?.isApproved);
   const status = vendorStatus ? vendorStatus.verificationStatus : user?.verificationStatus || "profile_incomplete";
+  const hasHotelService = Boolean(
+    vendorStatus?.hasHotelService ||
+    localHasHotel ||
+    user?.vendorProfile?.categories?.some((c) => c?.slug === "hotels" || (c?.name || "").toLowerCase().includes("hotel")) ||
+    user?.vendorProfile?.servicesList?.some((s) => (s?.categoryName || "").toLowerCase().includes("hotel"))
+  );
 
   const navLinks = [
     { href: "/vendor/dashboard", label: "Dashboard", icon: "📊", locked: !user || !isApproved },
@@ -170,6 +189,9 @@ export default function VendorLayout() {
     { href: "/vendor/onboarding?tab=bank", label: "Bank Details", icon: "🏦", locked: false },
     { href: "/vendor/onboarding?tab=portfolio", label: "Portfolio", icon: "🎨", locked: false },
     { href: "/vendor/items", label: "My Services / Items", icon: "📦", locked: !user || !isApproved },
+    ...(hasHotelService
+      ? [{ href: "/vendor/rooms", label: "Manage Rooms", icon: "🛏️", locked: !user || !isApproved }]
+      : []),
     { href: "/vendor/bookings", label: "Bookings", icon: "📅", locked: !user || !isApproved },
   ];
 

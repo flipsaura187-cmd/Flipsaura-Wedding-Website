@@ -4,7 +4,7 @@ import Category from "../models/Category.js";
 
 export const WEDDING_CATEGORIES = [
   {
-    name: "Venues",
+    name: "Venue/Resorts",
     slug: "venues",
     description:
       "Banquet halls, hotels, marriage lawns, resorts, and community halls for weddings and events.",

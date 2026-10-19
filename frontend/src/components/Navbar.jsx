@@ -22,7 +22,7 @@ export default function Navbar() {
       ]
     : [
         { href: "/", label: "Home" },
-        { href: "/categories/venues", label: "Venues" },
+        { href: "/categories/venues", label: "Venue/Resorts" },
         { href: "/categories/home-setup-pandal-tent-dj", label: "Home Setup" },
         { href: "/categories/planning-decor", label: "Planning & Decor" },
         { href: "/events", label: "Events" },

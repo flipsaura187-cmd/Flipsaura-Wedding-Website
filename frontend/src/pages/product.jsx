@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "@/compat/navigation";
 import ServiceAmenities from "@/components/ServiceAmenities";
+import HotelRoomsSection from "@/components/HotelRoomsSection";
 import api from "@/api/axios";
 export default function ProductPage() {
   const { id } = useParams();
@@ -69,6 +70,36 @@ export default function ProductPage() {
       });
     }
     return [];
+  }, [item]);
+
+  const isHotel = useMemo(() => {
+    if (!item) return false;
+    const catSlug = (item.category?.slug || "").toLowerCase();
+    const catName = (item.category?.name || "").toLowerCase();
+    const servCat = (item.categoryService?.category || "").toLowerCase();
+    const title = (item.title || "").toLowerCase();
+
+    // Explicit hotel category or room presence
+    if (
+      catSlug === "hotels" ||
+      catName.includes("hotel") ||
+      servCat === "hotels" ||
+      title.includes("hotel accommodation") ||
+      (Array.isArray(item.rooms) && item.rooms.length > 0)
+    ) {
+      return true;
+    }
+
+    // If explicit non-hotel category (like venues, caterers, etc.), do not treat as hotel
+    if (catSlug && catSlug !== "hotels") {
+      return false;
+    }
+
+    return (
+      title.includes("hotel") ||
+      title.includes("resort") ||
+      title.includes("inn")
+    );
   }, [item]);
 
   const handleBookingClick = () => {
@@ -194,7 +225,9 @@ export default function ProductPage() {
               {/* Info Details below gallery on larger screens */}
               <div className="pt-6 space-y-6">
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-ink mb-2">About this service</h3>
+                  <h3 className="font-serif text-xl font-bold text-ink mb-2">
+                    {isHotel ? "About this hotel & property" : "About this service"}
+                  </h3>
                   <p className="text-muted text-sm md:text-base leading-relaxed whitespace-pre-line">
                     {item.description || item.about}
                   </p>
@@ -247,41 +280,56 @@ export default function ProductPage() {
                   </h1>
                 </div>
 
-                {item.price && item.price > 0 ? (
-                  <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
-                    <span className="text-3xl font-bold text-brand-700">
-                      ₹{item.price.toLocaleString("en-IN")}
-                    </span>
-                    <span className="text-xs text-muted font-medium">starting price</span>
+                {isHotel ? (
+                  /* Hotel direct room booking guidance banner - No generic starting price or pricing model */
+                  <div className="p-4 rounded-xl bg-brand-50/80 border border-brand-200/80 space-y-1.5">
+                    <div className="flex items-center gap-2 text-brand-700 font-bold text-xs uppercase tracking-wider">
+                      <span>🛏️</span>
+                      <span>Direct Room Booking</span>
+                    </div>
+                    <p className="text-xs text-muted leading-relaxed">
+                      Please select your preferred room type below. All room tariffs, guest capacities, and room amenities are listed with transparent nightly rates.
+                    </p>
                   </div>
                 ) : (
-                  <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
-                    <span className="text-2xl font-bold text-brand-700">
-                      Price on Request
-                    </span>
-                    <span className="text-xs text-muted font-medium">Contact vendor for packages</span>
-                  </div>
-                )}
-
-                {item.resolvedCategoryService?.priceRange && (
-                  <p className="text-xs text-muted font-medium -mt-2">
-                    Pricing Model: <b className="text-ink font-semibold">{item.resolvedCategoryService.priceRange}</b>
-                  </p>
-                )}
-
-                {item.resolvedCategoryService?.additionalServices?.length > 0 && (
-                  <div className="pt-2">
-                    <span className="text-xs font-bold text-ink uppercase tracking-wider block mb-1.5">
-                      Included with this service:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.resolvedCategoryService.additionalServices.map((inc, idx) => (
-                        <span key={idx} className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
-                          ✓ {inc}
+                  <>
+                    {item.price && item.price > 0 ? (
+                      <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
+                        <span className="text-3xl font-bold text-brand-700">
+                          ₹{item.price.toLocaleString("en-IN")}
                         </span>
-                      ))}
-                    </div>
-                  </div>
+                        <span className="text-xs text-muted font-medium">starting price</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
+                        <span className="text-2xl font-bold text-brand-700">
+                          Price on Request
+                        </span>
+                        <span className="text-xs text-muted font-medium">Contact vendor for packages</span>
+                      </div>
+                    )}
+
+                    {item.resolvedCategoryService?.priceRange && (
+                      <p className="text-xs text-muted font-medium -mt-2">
+                        Pricing Model: <b className="text-ink font-semibold">{item.resolvedCategoryService.priceRange}</b>
+                      </p>
+                    )}
+
+                    {item.resolvedCategoryService?.additionalServices?.length > 0 && (
+                      <div className="pt-2">
+                        <span className="text-xs font-bold text-ink uppercase tracking-wider block mb-1.5">
+                          Included with this service:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {item.resolvedCategoryService.additionalServices.map((inc, idx) => (
+                            <span key={idx} className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+                              ✓ {inc}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {item.about && (
@@ -313,30 +361,51 @@ export default function ProductPage() {
 
                 {/* Booking buttons */}
                 <div className="space-y-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleBookingClick}
-                    className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-base bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-lg shadow-brand-500/25 transition-all cursor-pointer"
-                  >
-                    {user ? "Confirm Booking →" : "Login to Book →"}
-                  </button>
+                  {isHotel ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById("hotel-rooms-section");
+                        if (el) el.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-base bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-lg shadow-brand-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <span>Select a Room Below</span>
+                      <span className="text-lg">↓</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleBookingClick}
+                      className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-base bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-lg shadow-brand-500/25 transition-all cursor-pointer"
+                    >
+                      {user ? "Confirm Booking →" : "Login to Book →"}
+                    </button>
+                  )}
 
                   {item.contactPhone && (
                     <a
                       href={`tel:${item.contactPhone}`}
                       className="w-full py-3 px-4 rounded-xl text-ink font-semibold text-sm bg-white hover:bg-brand-50 border border-brand-200 text-center block transition-all"
                     >
-                      📞 Call Vendor ({item.contactPhone})
+                      📞 {isHotel ? "Call Front Desk" : "Call Vendor"} ({item.contactPhone})
                     </a>
                   )}
                 </div>
 
                 <div className="text-center text-xs text-muted pt-2 border-t border-brand-50">
-                  ✅ Safe Payments &nbsp;|&nbsp; 🔒 100% Verified Service
+                  {isHotel ? "✅ Verified Rooms | 🔒 Direct Reservation" : "✅ Safe Payments | 🔒 100% Verified Service"}
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Available Hotel Rooms & Suites Section */}
+          {isHotel && (
+            <div className="mt-12 scroll-mt-24" id="hotel-rooms-section">
+              <HotelRoomsSection item={item} />
+            </div>
+          )}
 
           {/* Reviews Section */}
           <section className="mt-16 pt-12 border-t border-brand-100">

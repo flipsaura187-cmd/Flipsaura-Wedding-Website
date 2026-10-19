@@ -134,7 +134,8 @@ export async function createRoom(req, res) {
 
     // Strict ownership check: vendor can only add rooms to their own hotel
     const isAdmin = String(req.user.role || "").toLowerCase() === "admin";
-    if (!isAdmin && String(hotel.vendor) !== String(req.user.id)) {
+    const hotelVendorId = String(hotel.vendor?._id || hotel.vendor || "");
+    if (!isAdmin && hotelVendorId !== String(req.user.id)) {
       return res.status(403).json({
         ok: false,
         error: "Forbidden: You can only add rooms to your own hotel listing.",
@@ -202,7 +203,8 @@ export async function updateRoom(req, res) {
     }
 
     const isAdmin = String(req.user.role || "").toLowerCase() === "admin";
-    if (!isAdmin && String(room.vendor) !== String(req.user.id)) {
+    const roomVendorId = String(room.vendor?._id || room.vendor || "");
+    if (!isAdmin && roomVendorId !== String(req.user.id)) {
       return res.status(403).json({
         ok: false,
         error: "Forbidden: You do not have permission to edit this room.",
@@ -230,14 +232,15 @@ export async function updateRoom(req, res) {
       if (!newHotel) {
         return res.status(404).json({ ok: false, error: "New hotel listing not found" });
       }
-      if (!isAdmin && String(newHotel.vendor) !== String(req.user.id)) {
+      const newHotelVendorId = String(newHotel.vendor?._id || newHotel.vendor || "");
+      if (!isAdmin && newHotelVendorId !== String(req.user.id)) {
         return res.status(403).json({
           ok: false,
           error: "Forbidden: You can only assign rooms to your own hotel.",
         });
       }
       room.hotel = newHotel._id;
-      room.vendor = newHotel.vendor || req.user.id;
+      room.vendor = newHotel.vendor?._id || newHotel.vendor || req.user.id;
     }
 
     if (name !== undefined) room.name = name.trim();
@@ -300,7 +303,8 @@ export async function deleteRoom(req, res) {
     }
 
     const isAdmin = String(req.user.role || "").toLowerCase() === "admin";
-    if (!isAdmin && String(room.vendor) !== String(req.user.id)) {
+    const roomVendorId = String(room.vendor?._id || room.vendor || "");
+    if (!isAdmin && roomVendorId !== String(req.user.id)) {
       return res.status(403).json({
         ok: false,
         error: "Forbidden: You do not have permission to delete this room.",

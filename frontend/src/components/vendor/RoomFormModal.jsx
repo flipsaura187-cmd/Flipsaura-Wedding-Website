@@ -286,10 +286,22 @@ export default function RoomFormModal({
       };
 
       let response;
-      if (isEdit) {
-        response = await api.put(`/api/rooms/${initialData._id}`, payload);
-      } else {
-        response = await api.post("/api/rooms", payload);
+      try {
+        if (isEdit) {
+          response = await api.put(`/api/rooms/${initialData._id}`, payload);
+        } else {
+          response = await api.post("/api/rooms", payload);
+        }
+      } catch (reqErr) {
+        if (reqErr.response?.status === 404) {
+          if (isEdit) {
+            response = await api.put(`/api/vendor/rooms/${initialData._id}`, payload);
+          } else {
+            response = await api.post("/api/vendor/rooms", payload);
+          }
+        } else {
+          throw reqErr;
+        }
       }
 
       if (!response.data?.ok) {

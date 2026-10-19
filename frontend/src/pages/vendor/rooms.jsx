@@ -18,7 +18,14 @@ export default function VendorRooms() {
   const loadData = async () => {
     try {
       const [roomsRes, itemsRes, statusRes] = await Promise.all([
-        api.get("/api/rooms").catch(() => ({ data: { ok: false, data: { rooms: [] } } })),
+        api
+          .get("/api/rooms")
+          .catch((err) =>
+            err.response?.status === 404
+              ? api.get("/api/vendor/rooms")
+              : Promise.reject(err)
+          )
+          .catch(() => ({ data: { ok: false, data: { rooms: [] } } })),
         api.get("/api/items?limit=100&isVendor=true").catch(() => ({ data: { ok: false, data: { items: [] } } })),
         api.get("/api/vendor/status").catch(() => ({ data: { ok: false } })),
       ]);
@@ -118,8 +125,17 @@ export default function VendorRooms() {
     }
 
     try {
-      const { data } = await api.delete(`/api/rooms/${roomId}`);
-      if (!data?.ok) throw new Error(data?.error || "Failed to delete room");
+      let res;
+      try {
+        res = await api.delete(`/api/rooms/${roomId}`);
+      } catch (delErr) {
+        if (delErr.response?.status === 404) {
+          res = await api.delete(`/api/vendor/rooms/${roomId}`);
+        } else {
+          throw delErr;
+        }
+      }
+      if (!res.data?.ok) throw new Error(res.data?.error || "Failed to delete room");
       setActionMsg(`Room "${roomName}" was deleted.`);
       setTimeout(() => setActionMsg(""), 3500);
       loadData();

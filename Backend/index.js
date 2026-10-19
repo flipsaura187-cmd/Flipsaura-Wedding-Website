@@ -61,6 +61,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/rooms", roomRoutes);
+app.use("/api/vendor/rooms", roomRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ ok: false, error: "Route not found" });

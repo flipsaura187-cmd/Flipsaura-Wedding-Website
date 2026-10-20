@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import ItemCard from "@/components/ItemCard";
 import HeroSlideshow from "@/components/Hero";
 import EventNotificationBanner from "@/components/EventNotificationBanner";
-import HotelSearchBar from "@/components/HotelSearchBar";
 import api from "@/api/axios";
 
 const indianWeddingImages = [
@@ -228,9 +227,6 @@ export default function HomePage() {
         <EventNotificationBanner />
         <HeroSlideshow />
       </div>
-
-      {/* Hotel Search Widget */}
-      <HotelSearchBar />
 
       {/* Categories Section */}
       <section className="py-16 md:py-20 bg-white w-full">

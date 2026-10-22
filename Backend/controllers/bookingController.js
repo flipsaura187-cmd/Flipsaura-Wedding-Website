@@ -3,6 +3,7 @@ import Booking from "../models/Booking.js";
 import Item from "../models/Item.js";
 import User from "../models/User.js";
 import { sendMail, bookingConfirmationHtml } from "../lib/mailer.js";
+import { sendBookingWhatsAppNotifications } from "../lib/whatsapp.js";
 
 export async function getBookings(req, res) {
   await dbConnect();
@@ -34,6 +35,18 @@ export async function createBooking(req, res) {
     bookingAmount = Number(req.body.amount);
   }
 
+  // Prevent duplicate bookings from rapid double-clicks / repeated submissions (within 10s)
+  const recentBooking = await Booking.findOne({
+    user: req.user.id,
+    item: item._id,
+    eventDate: req.body.eventDate,
+    amount: bookingAmount,
+    createdAt: { $gte: new Date(Date.now() - 10000) },
+  });
+  if (recentBooking) {
+    return res.json({ ok: true, data: { booking: recentBooking } });
+  }
+
   const booking = await Booking.create({
     user: req.user.id,
     item: item._id,
@@ -61,6 +74,11 @@ export async function createBooking(req, res) {
       status: "pending",
     }),
   }).catch((error) => console.error("booking mail error:", error.message));
+
+  // Send WhatsApp notifications asynchronously in the background (Admin & Customer)
+  sendBookingWhatsAppNotifications(booking._id).catch((error) =>
+    console.error("[WhatsApp] Booking notification error:", error.message)
+  );
 
   res.json({ ok: true, data: { booking } });
 }

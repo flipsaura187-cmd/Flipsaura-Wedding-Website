@@ -26,6 +26,20 @@ const BookingSchema = new mongoose.Schema(
       signature: String,
       paidAt: Date,
     },
+    notifications: {
+      adminWhatsApp: {
+        sent: { type: Boolean, default: false },
+        sentAt: { type: Date, default: null },
+        messageId: { type: String, default: "" },
+        error: { type: String, default: "" },
+      },
+      customerWhatsApp: {
+        sent: { type: Boolean, default: false },
+        sentAt: { type: Date, default: null },
+        messageId: { type: String, default: "" },
+        error: { type: String, default: "" },
+      },
+    },
   },
   { timestamps: true }
 );

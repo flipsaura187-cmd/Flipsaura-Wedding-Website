@@ -87,6 +87,10 @@ async function main() {
     "heavenResort",
     "haweli-resort",
     "mehandi-resort",
+    "sangam-resort",
+    "diamond-hotel",
+    "hotel-jhari-palace",
+    "hotel-vaishnavi-heights",
   ];
 
   for (const folderName of foldersToUpload) {

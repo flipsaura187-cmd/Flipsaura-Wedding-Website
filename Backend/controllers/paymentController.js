@@ -3,7 +3,10 @@ import Booking from "../models/Booking.js";
 import Item from "../models/Item.js";
 import { getRazorpay, verifyRazorpaySignature } from "../lib/razorpay.js";
 import { sendMail, bookingConfirmationHtml } from "../lib/mailer.js";
-import { sendBookingWhatsAppNotifications } from "../lib/whatsapp.js";
+import {
+  sendBookingWhatsAppNotifications,
+  sendPaymentWhatsAppNotifications,
+} from "../lib/whatsapp.js";
 
 export async function createOrder(req, res) {
   const { bookingId } = req.body;
@@ -73,9 +76,14 @@ export async function verifyPayment(req, res) {
   };
   await booking.save();
 
-  // Send WhatsApp notifications asynchronously (retries or dispatches if not previously delivered)
+  // Send payment WhatsApp confirmation asynchronously to Customer & Admin
+  sendPaymentWhatsAppNotifications(booking._id).catch((error) =>
+    console.error("[WhatsApp] Payment WhatsApp notification error:", error.message)
+  );
+
+  // Send WhatsApp booking notifications (fallback in case booking creation dispatch failed)
   sendBookingWhatsAppNotifications(booking._id).catch((error) =>
-    console.error("[WhatsApp] Payment verification notification error:", error.message)
+    console.error("[WhatsApp] Payment verification booking notification error:", error.message)
   );
 
   // Send email asynchronously in the background so verification responds instantly

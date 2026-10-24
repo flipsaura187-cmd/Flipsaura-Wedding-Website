@@ -6,6 +6,8 @@
 import { dbConnect } from "./db.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";
+import Item from "../models/Item.js";
+import Category from "../models/Category.js";
 
 /**
  * Normalizes phone numbers into E.164-compatible digits format.
@@ -682,3 +684,214 @@ export async function sendBookingWhatsAppNotifications(bookingId) {
     };
   }
 }
+
+/**
+ * Formats WhatsApp confirmation text for Customer when their payment is received.
+ */
+export function formatCustomerPaymentWhatsAppMessage(booking, item, vendor) {
+  const customerName = booking?.name || "Customer";
+  const bookingId = String(booking?._id || "N/A");
+  const serviceName = item?.title || "Booked Service";
+  const bookingDate =
+    booking?.eventDate ||
+    (booking?.createdAt
+      ? new Date(booking.createdAt).toLocaleDateString("en-IN", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "N/A");
+  const vendorName =
+    vendor?.vendorProfile?.businessName ||
+    vendor?.vendorProfile?.ownerName ||
+    vendor?.name ||
+    "";
+  const amountStr =
+    booking?.amount !== undefined
+      ? `₹${Number(booking.amount).toLocaleString("en-IN")}`
+      : "";
+  const paymentId = booking?.payment?.paymentId || "Received";
+
+  let msg = `*Payment Confirmed — FlipsAura!* 🎉\n\n`;
+  msg += `Hi ${customerName}!\n\n`;
+  msg += `We have successfully received your payment of *${amountStr}*.\n`;
+  msg += `Your booking has been confirmed!\n\n`;
+  msg += `*Booking ID:* ${bookingId}\n`;
+  msg += `*Service:* ${serviceName}\n`;
+  if (vendorName) {
+    msg += `*Vendor:* ${vendorName}\n`;
+  }
+  msg += `*Event Date:* ${bookingDate}\n`;
+  msg += `*Payment ID:* ${paymentId}\n`;
+  msg += `*Status:* Confirmed / Paid\n\n`;
+  msg += `Thank you for choosing FlipsAura!`;
+  return msg;
+}
+
+/**
+ * Formats WhatsApp notification text for Admin when payment is received for a booking.
+ */
+export function formatAdminPaymentWhatsAppMessage(booking, item, vendor) {
+  const bookingId = String(booking?._id || "N/A");
+  const customerName = booking?.name || "Customer";
+  const customerPhone = booking?.phone || "N/A";
+  const serviceName = item?.title || "Booked Service";
+  const amountStr =
+    booking?.amount !== undefined
+      ? `₹${Number(booking.amount).toLocaleString("en-IN")}`
+      : "";
+  const paymentId = booking?.payment?.paymentId || "N/A";
+
+  let msg = `*Payment Received — FlipsAura!* 💰\n\n`;
+  msg += `*Booking ID:* ${bookingId}\n`;
+  msg += `*Customer:* ${customerName}\n`;
+  msg += `*Phone:* ${customerPhone}\n`;
+  msg += `*Service:* ${serviceName}\n`;
+  msg += `*Amount Paid:* ${amountStr}\n`;
+  msg += `*Payment ID:* ${paymentId}\n`;
+  msg += `*Status:* Paid\n\n`;
+  msg += `Please check the admin dashboard for full booking details.`;
+  return msg;
+}
+
+/**
+ * Orchestrates WhatsApp notifications when payment is verified:
+ * - Persists and respects delivery status flags to prevent duplicates.
+ * - Handles admin and customer notifications in complete isolation.
+ * - Never throws or disrupts payment lifecycle.
+ */
+export async function sendPaymentWhatsAppNotifications(bookingId) {
+  if (!bookingId) return { success: false, error: "bookingId is required" };
+
+  try {
+    await dbConnect();
+    const booking = await Booking.findById(bookingId)
+      .populate({
+        path: "item",
+        populate: { path: "category" },
+      })
+      .populate("vendor");
+
+    if (!booking) {
+      console.warn(`[WhatsApp Payment Notification] Booking ${bookingId} not found`);
+      return { success: false, error: "Booking not found" };
+    }
+
+    if (!booking.notifications) {
+      booking.notifications = {};
+    }
+    if (!booking.notifications.paymentAdminWhatsApp) {
+      booking.notifications.paymentAdminWhatsApp = { sent: false };
+    }
+    if (!booking.notifications.paymentCustomerWhatsApp) {
+      booking.notifications.paymentCustomerWhatsApp = { sent: false };
+    }
+
+    if (
+      booking.notifications.paymentAdminWhatsApp.sent &&
+      booking.notifications.paymentCustomerWhatsApp.sent
+    ) {
+      return {
+        success: true,
+        skipped: true,
+        admin: booking.notifications.paymentAdminWhatsApp,
+        customer: booking.notifications.paymentCustomerWhatsApp,
+      };
+    }
+
+    const item = booking.item;
+    const vendor = booking.vendor;
+
+    // 1. Dispatch Admin Payment Notification
+    if (!booking.notifications.paymentAdminWhatsApp.sent) {
+      try {
+        const adminPhone =
+          process.env.WHATSAPP_ADMIN_PHONE ||
+          process.env.ADMIN_PHONE ||
+          "";
+        let targetPhone = adminPhone;
+        if (!targetPhone) {
+          const adminUser = await User.findOne({
+            role: "admin",
+            phone: { $exists: true, $ne: "" },
+          })
+            .select("phone")
+            .lean();
+          if (adminUser?.phone) targetPhone = adminUser.phone;
+        }
+
+        if (targetPhone) {
+          const text = formatAdminPaymentWhatsAppMessage(booking, item, vendor);
+          const res = await sendWhatsAppMessage({ to: targetPhone, text });
+          booking.notifications.paymentAdminWhatsApp = {
+            sent: !!res.success,
+            sentAt: res.success ? new Date() : null,
+            messageId: String(res.messageId || (res.success ? "sent" : "")),
+            error: res.success ? "" : String(res.error || "Failed"),
+          };
+        } else {
+          booking.notifications.paymentAdminWhatsApp = {
+            sent: false,
+            sentAt: null,
+            messageId: "",
+            error: "Admin phone not configured",
+          };
+        }
+      } catch (err) {
+        booking.notifications.paymentAdminWhatsApp = {
+          sent: false,
+          sentAt: null,
+          messageId: "",
+          error: err.message,
+        };
+      }
+    }
+
+    // 2. Dispatch Customer Payment Notification
+    if (!booking.notifications.paymentCustomerWhatsApp.sent) {
+      try {
+        const customerPhone = booking?.phone;
+        if (customerPhone) {
+          const text = formatCustomerPaymentWhatsAppMessage(booking, item, vendor);
+          const res = await sendWhatsAppMessage({ to: customerPhone, text });
+          booking.notifications.paymentCustomerWhatsApp = {
+            sent: !!res.success,
+            sentAt: res.success ? new Date() : null,
+            messageId: String(res.messageId || (res.success ? "sent" : "")),
+            error: res.success ? "" : String(res.error || "Failed"),
+          };
+        } else {
+          booking.notifications.paymentCustomerWhatsApp = {
+            sent: false,
+            sentAt: null,
+            messageId: "",
+            error: "Customer phone not recorded",
+          };
+        }
+      } catch (err) {
+        booking.notifications.paymentCustomerWhatsApp = {
+          sent: false,
+          sentAt: null,
+          messageId: "",
+          error: err.message,
+        };
+      }
+    }
+
+    try {
+      await booking.save();
+    } catch (saveErr) {
+      console.error("[WhatsApp] Failed to update payment notification flags:", saveErr.message);
+    }
+
+    return {
+      success: true,
+      admin: booking.notifications.paymentAdminWhatsApp,
+      customer: booking.notifications.paymentCustomerWhatsApp,
+    };
+  } catch (outerErr) {
+    console.error("[WhatsApp Payment Notification Error]", outerErr.message);
+    return { success: false, error: outerErr.message };
+  }
+}
+

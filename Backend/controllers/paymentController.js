@@ -3,6 +3,7 @@ import Booking from "../models/Booking.js";
 import Item from "../models/Item.js";
 import { getRazorpay, verifyRazorpaySignature } from "../lib/razorpay.js";
 import { sendMail, bookingConfirmationHtml } from "../lib/mailer.js";
+import { sendBookingWhatsAppNotifications } from "../lib/whatsapp.js";
 
 export async function createOrder(req, res) {
   const { bookingId } = req.body;
@@ -71,6 +72,11 @@ export async function verifyPayment(req, res) {
     paidAt: new Date(),
   };
   await booking.save();
+
+  // Send WhatsApp notifications asynchronously (retries or dispatches if not previously delivered)
+  sendBookingWhatsAppNotifications(booking._id).catch((error) =>
+    console.error("[WhatsApp] Payment verification notification error:", error.message)
+  );
 
   // Send email asynchronously in the background so verification responds instantly
   Item.findById(booking.item).lean().then((item) => {

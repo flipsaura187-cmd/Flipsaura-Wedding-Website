@@ -47,7 +47,16 @@ export default function CheckoutPageCom() {
 
   const submit = async (e) => {
     e.preventDefault();
-    setError(""); setBusy(true);
+    setError("");
+
+    if (!user) {
+      setError("Please sign in to your FlipsAura account to confirm your booking.");
+      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/checkout";
+      router.push(`/login?next=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
+    setBusy(true);
     try {
       // 1. Ensure Razorpay SDK is loaded
       const isLoaded = await loadRazorpayScript();
@@ -141,9 +150,43 @@ export default function CheckoutPageCom() {
                 Fill in your details to confirm your wedding service booking.
               </p>
 
+              {!user && (
+                <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="text-sm">
+                    <span className="font-bold">⚠️ Login Required:</span> Please sign in to your FlipsAura account to confirm this booking.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/checkout";
+                      router.push(`/login?next=${encodeURIComponent(currentPath)}`);
+                    }}
+                    className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer transition text-center"
+                  >
+                    Login / Sign In →
+                  </button>
+                </div>
+              )}
+
               {error && (
-                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl font-medium mb-6">
-                  {error}
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl font-medium mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span>
+                    {error === "Unauthorized" || String(error).toLowerCase().includes("unauthorized")
+                      ? "You must be signed in to create a booking. Please login to your account."
+                      : error}
+                  </span>
+                  {(!user || error === "Unauthorized" || String(error).toLowerCase().includes("unauthorized")) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/checkout";
+                        router.push(`/login?next=${encodeURIComponent(currentPath)}`);
+                      }}
+                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg shrink-0 cursor-pointer transition text-center"
+                    >
+                      Login Now →
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -232,6 +275,8 @@ export default function CheckoutPageCom() {
                 >
                   {busy
                     ? "Processing Payment…"
+                    : !user
+                    ? "Sign In to Pay with Razorpay →"
                     : `Pay ₹${((queryPrice !== null && !isNaN(queryPrice) && queryPrice >= 0) ? queryPrice : (item?.price || 0)).toLocaleString("en-IN")} with Razorpay`}
                 </button>
               </form>

@@ -17,6 +17,7 @@ import contactRoutes from "./routes/contactRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import roomRoutes from "./routes/roomRoutes.js";
+import whatsappRoutes from "./routes/whatsappRoutes.js";
 
 const app = express();
 
@@ -62,6 +63,8 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/vendor/rooms", roomRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
+app.get("/whatsapp-connect", (req, res) => res.redirect("/api/whatsapp/connect"));
 
 app.use((req, res) => {
   res.status(404).json({ ok: false, error: "Route not found" });

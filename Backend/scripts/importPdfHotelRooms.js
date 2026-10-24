@@ -84,6 +84,9 @@ async function main() {
     "janakpuri-resort",
     "hotel-raj-residency",
     "heaven-resort",
+    "heavenResort",
+    "haweli-resort",
+    "mehandi-resort",
   ];
 
   for (const folderName of foldersToUpload) {
@@ -175,9 +178,7 @@ async function main() {
 
   if (!haweliItem) {
     const haweliImg =
-      folderImageMap["heaven-resort"]?.[0] ||
-      folderImageMap["janakpuri-resort"]?.[0] ||
-      "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792434463/flipsaura/hotels/hotel_JANAKPURI_PALACE_HOTEL_AND_RESORT_1792434461701.avif";
+      "https://res.cloudinary.com/dvvpsnea0/image/upload/v1792763760/flipsaura/hotels/hotel_the_haweli_resorts_1792763758640.jpg";
 
     haweliItem = await Item.create({
       title: "The Haweli Resorts – Hotel Accommodation",
@@ -664,7 +665,7 @@ async function main() {
       ],
       description: "140 sq ft (13 sq m) Deluxe air-conditioned resort room with sweeping countryside views, king bed, fast Wi-Fi, and flat-screen TV.",
       images: [
-        getImg("heaven-resort", 0, haweliItem.images?.[0]),
+        getImg("haweli-resort", 0, haweliItem.images?.[0]),
       ],
       active: true,
     },

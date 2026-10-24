@@ -60,7 +60,7 @@ export function getWhatsAppProvider() {
     return "fireclashpro";
   }
 
-  return "unconfigured";
+  return "fireclashpro";
 }
 
 /**
@@ -370,7 +370,7 @@ export async function sendWhatsAppMessage({
   const sessionId = (
     process.env.WHATSAPP_SESSION_ID ||
     process.env.WHATSAPP_SESSIONID ||
-    "8930779"
+    "2465351"
   ).trim();
 
   if (!apiKey || !sessionId) {

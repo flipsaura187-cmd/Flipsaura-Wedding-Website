@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "@/api/axios";
 
 export default function AdminVendors() {
@@ -188,11 +189,20 @@ export default function AdminVendors() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">Vendor Management</h1>
-        <p className="text-sm text-muted mt-0.5">
-          Review vendor registrations, verify KYC & bank documents, and approve vendor dashboard access.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">Vendor Management</h1>
+          <p className="text-sm text-muted mt-0.5">
+            Review vendor registrations, verify KYC & bank documents, and approve vendor dashboard access.
+          </p>
+        </div>
+        <Link
+          to="/admin/hotels"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-brand-500/20 transition self-start sm:self-auto shrink-0"
+        >
+          <span>🏨 Manage Hotels & Add Rooms</span>
+          <span>→</span>
+        </Link>
       </div>
 
       {/* High-level status cards */}

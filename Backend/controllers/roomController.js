@@ -15,13 +15,19 @@ export async function getRooms(req, res) {
 
     const hotelId = req.query.hotelId || req.query.hotel;
     const vendorId = req.query.vendorId || req.query.vendor;
+    const search = req.query.search || req.query.q;
 
     // Public customer request for a specific hotel's rooms
     if (hotelId) {
       const filter = { hotel: hotelId };
-      // Non-vendor / public only sees active rooms
-      if (!req.user || req.user.role === "user" || req.user.role === "customer") {
+      // Non-admin / non-vendor / public only sees active rooms
+      const isAdminOrVendor = req.user && ["admin", "vendor"].includes(String(req.user.role || "").toLowerCase());
+      if (!isAdminOrVendor || req.query.activeOnly === "true") {
         filter.active = true;
+      }
+      if (search && search.trim()) {
+        const sRegex = new RegExp(search.trim(), "i");
+        filter.$or = [{ name: sRegex }, { roomType: sRegex }, { bedType: sRegex }];
       }
 
       const rooms = await Room.find(filter)
@@ -32,12 +38,17 @@ export async function getRooms(req, res) {
       return res.json({ ok: true, data: { rooms } });
     }
 
-    // Authenticated vendor or admin listing their own rooms
+    // Authenticated vendor or admin listing rooms
     if (req.user) {
       const userRole = String(req.user.role || "").toLowerCase();
 
       if (userRole === "vendor") {
-        const rooms = await Room.find({ vendor: req.user.id })
+        const filter = { vendor: req.user.id };
+        if (search && search.trim()) {
+          const sRegex = new RegExp(search.trim(), "i");
+          filter.$or = [{ name: sRegex }, { roomType: sRegex }, { bedType: sRegex }];
+        }
+        const rooms = await Room.find(filter)
           .populate("hotel", "title city state images category")
           .sort({ createdAt: -1 })
           .lean();
@@ -48,6 +59,13 @@ export async function getRooms(req, res) {
       if (userRole === "admin") {
         const filter = {};
         if (vendorId) filter.vendor = vendorId;
+        if (req.query.active !== undefined && req.query.active !== "all") {
+          filter.active = req.query.active === "true" || req.query.active === true;
+        }
+        if (search && search.trim()) {
+          const sRegex = new RegExp(search.trim(), "i");
+          filter.$or = [{ name: sRegex }, { roomType: sRegex }, { bedType: sRegex }];
+        }
 
         const rooms = await Room.find(filter)
           .populate("hotel", "title city state images category")
@@ -61,7 +79,7 @@ export async function getRooms(req, res) {
 
     return res.status(400).json({
       ok: false,
-      error: "Please provide hotelId query parameter or authenticate as a vendor.",
+      error: "Please provide hotelId query parameter or authenticate as a vendor/admin.",
     });
   } catch (error) {
     console.error("getRooms error:", error);
@@ -110,6 +128,8 @@ export async function createRoom(req, res) {
       maxGuests = 2,
       bedType = "Double Bed",
       numberOfBeds = 1,
+      roomSize = "",
+      cancellationPolicy = "Free Cancellation Till Check-in",
       facilities = [],
       description = "",
       images = [],
@@ -165,11 +185,20 @@ export async function createRoom(req, res) {
       maxGuests: Math.max(1, Number(maxGuests) || 2),
       bedType: bedType ? bedType.trim() : "Double Bed",
       numberOfBeds: Math.max(1, Number(numberOfBeds) || 1),
+      roomSize: roomSize ? roomSize.trim() : "",
+      cancellationPolicy: cancellationPolicy ? cancellationPolicy.trim() : "Free Cancellation Till Check-in",
       facilities: cleanFacilities,
       description: description ? description.trim() : "",
       images: cleanImages,
       active: active !== undefined ? Boolean(active) : true,
     });
+
+    // Optionally update hotel's base price if room price is lower or hotel price is 0
+    const roomPriceNum = Number(pricePerNight);
+    if (roomPriceNum > 0 && (!hotel.price || hotel.price <= 0 || roomPriceNum < hotel.price)) {
+      hotel.price = roomPriceNum;
+      await hotel.save();
+    }
 
     const populatedRoom = await Room.findById(room._id)
       .populate("hotel", "title city state images category")
@@ -220,6 +249,8 @@ export async function updateRoom(req, res) {
       maxGuests,
       bedType,
       numberOfBeds,
+      roomSize,
+      cancellationPolicy,
       facilities,
       description,
       images,
@@ -250,6 +281,8 @@ export async function updateRoom(req, res) {
     if (maxGuests !== undefined) room.maxGuests = Math.max(1, Number(maxGuests));
     if (bedType !== undefined) room.bedType = bedType.trim();
     if (numberOfBeds !== undefined) room.numberOfBeds = Math.max(1, Number(numberOfBeds));
+    if (roomSize !== undefined) room.roomSize = roomSize.trim();
+    if (cancellationPolicy !== undefined) room.cancellationPolicy = cancellationPolicy.trim();
     if (description !== undefined) room.description = description.trim();
     if (active !== undefined) room.active = Boolean(active);
 
@@ -270,6 +303,14 @@ export async function updateRoom(req, res) {
     }
 
     await room.save();
+
+    // Check if hotel lowest price needs update
+    if (room.pricePerNight > 0) {
+      const lowestRoom = await Room.findOne({ hotel: room.hotel, active: true }).sort({ pricePerNight: 1 }).lean();
+      if (lowestRoom && lowestRoom.pricePerNight > 0) {
+        await Item.findByIdAndUpdate(room.hotel, { price: lowestRoom.pricePerNight });
+      }
+    }
 
     const updated = await Room.findById(room._id)
       .populate("hotel", "title city state images category")

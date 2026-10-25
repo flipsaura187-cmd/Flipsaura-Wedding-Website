@@ -110,12 +110,22 @@ export default function HotelRoomsSection({ item }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {rooms.map((room) => {
             const coverImage = room.images?.[0] || item?.images?.[0] || "/images/categories/hotels.jpg";
+            const photosCount = room.images?.length || 1;
             const isSingleLeft = room.availableRooms === 1;
+
+            // Merge facilities with cancellation policy if not already included
+            const displayFacilities = Array.isArray(room.facilities) ? [...room.facilities] : [];
+            if (
+              room.cancellationPolicy &&
+              !displayFacilities.some((f) => f.toLowerCase().includes("cancellation"))
+            ) {
+              displayFacilities.push(room.cancellationPolicy);
+            }
 
             return (
               <div
                 key={room._id}
-                className="bg-white rounded-3xl border border-brand-100 overflow-hidden shadow-xs hover:shadow-xl hover:border-brand-300 transition-all duration-300 flex flex-col group"
+                className="bg-white rounded-3xl border border-pink-200/90 overflow-hidden shadow-sm hover:shadow-xl hover:border-pink-300 transition-all duration-300 flex flex-col group"
               >
                 {/* Room Photo Gallery Container */}
                 <div className="relative aspect-[16/10] bg-gray-100 overflow-hidden">
@@ -125,10 +135,10 @@ export default function HotelRoomsSection({ item }) {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
 
-                  {/* Room Type badge */}
+                  {/* Room Type badge top-left */}
                   <div className="absolute top-3.5 left-3.5 flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-xl bg-brand-900/85 backdrop-blur-xs text-white text-xs font-bold shadow-md">
-                      {room.roomType || "Room"}
+                    <span className="px-3.5 py-1 rounded-xl bg-amber-950/75 backdrop-blur-md text-white text-xs font-bold shadow-md">
+                      {room.roomType || "Deluxe Room"}
                     </span>
                     {isSingleLeft && (
                       <span className="px-2.5 py-1 rounded-xl bg-rose-600 text-white text-[11px] font-bold animate-pulse shadow-md">
@@ -137,80 +147,82 @@ export default function HotelRoomsSection({ item }) {
                     )}
                   </div>
 
-                  {/* Photos count / Lightbox trigger */}
-                  {room.images?.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedImage(coverImage)}
-                      className="absolute bottom-3 right-3 bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-xs font-semibold px-2.5 py-1.5 rounded-xl shadow flex items-center gap-1.5 transition cursor-pointer"
-                    >
-                      <span>📸</span>
-                      <span>{room.images.length} Photo{room.images.length === 1 ? "" : "s"}</span>
-                    </button>
-                  )}
+                  {/* Photos count bottom-right badge / Lightbox trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedImage(coverImage)}
+                    className="absolute bottom-3 right-3 bg-black/75 hover:bg-black/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <span>📷</span>
+                    <span>{photosCount} Photo{photosCount === 1 ? "" : "s"}</span>
+                  </button>
                 </div>
 
                 {/* Room Info */}
                 <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
+                  <div className="space-y-3.5">
                     {/* Header + Price */}
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-serif text-xl font-bold text-ink leading-snug group-hover:text-brand-600 transition-colors">
+                        <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#b8246b] leading-tight group-hover:text-brand-700 transition-colors">
                           {room.name}
                         </h3>
-                        <p className="text-xs text-muted font-medium mt-0.5">
-                          {room.bedType || "Double Bed"} • {room.numberOfBeds || 1} Bed{room.numberOfBeds === 1 ? "" : "s"}
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium mt-1">
+                          {room.bedType || "1 King Bed"} • {room.numberOfBeds || 1} Bed{room.numberOfBeds === 1 ? "" : "s"}
                         </p>
                       </div>
 
                       <div className="text-right shrink-0">
-                        <div className="text-2xl font-bold text-brand-700">
+                        <div className="text-2xl sm:text-3xl font-extrabold text-[#b8246b]">
                           ₹{room.pricePerNight?.toLocaleString("en-IN")}
                         </div>
-                        <span className="text-[11px] text-muted font-semibold block">/ night</span>
+                        <span className="text-[11px] text-gray-500 font-medium block">/ night</span>
                       </div>
                     </div>
 
-                    {/* Capacity & Availability Tags */}
+                    {/* Capacity & Availability Tags (Matching Reference Image) */}
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-50 text-brand-900 font-bold border border-brand-100">
-                        👥 Max {room.maxGuests} Guests
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 text-purple-900 font-bold border border-purple-200">
+                        👥 Max {room.maxGuests || 2} Guests
                       </span>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface text-ink font-semibold border border-line">
-                        🛏️ {room.bedType || "Double Bed"}
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-900 font-bold border border-blue-200">
+                        🛏️ {room.bedType || "1 King Bed"}
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold border ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold border ${
                           room.availableRooms > 0
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                            : "bg-rose-50 text-rose-800 border-rose-200"
+                            ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                            : "bg-rose-50 text-rose-900 border-rose-200"
                         }`}
                       >
                         📦 {room.availableRooms > 0 ? `${room.availableRooms} Available` : "Sold Out"}
                       </span>
                     </div>
 
-                    {/* Description if present */}
-                    {room.description && (
-                      <p className="text-xs sm:text-sm text-muted leading-relaxed line-clamp-2">
+                    {/* Description & Room Size */}
+                    {(room.roomSize || room.description) && (
+                      <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                        {room.roomSize ? (
+                          <span className="font-semibold text-gray-800">{room.roomSize} </span>
+                        ) : null}
                         {room.description}
                       </p>
                     )}
 
-                    {/* Facilities / Amenities */}
-                    {room.facilities?.length > 0 && (
-                      <div className="pt-2 border-t border-brand-50">
-                        <span className="text-[11px] font-bold text-muted uppercase tracking-wider block mb-2">
-                          Room Facilities & Perks:
+                    {/* Facilities / Amenities with Pink Check Badges */}
+                    {displayFacilities.length > 0 && (
+                      <div className="pt-2 border-t border-pink-100">
+                        <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-2">
+                          ROOM FACILITIES & PERKS:
                         </span>
                         <div className="flex flex-wrap gap-1.5">
-                          {room.facilities.map((fac, idx) => (
+                          {displayFacilities.map((fac, idx) => (
                             <span
                               key={idx}
-                              className="text-xs px-2.5 py-1 rounded-lg bg-brand-50/70 text-ink/90 border border-brand-100/80 font-medium flex items-center gap-1"
+                              className="text-xs px-2.5 py-1 rounded-xl bg-pink-50/70 hover:bg-pink-50 text-brand-900 border border-pink-200/90 font-medium flex items-center gap-1 transition"
                             >
-                              <span className="text-brand-600">✓</span> {fac}
+                              <span className="text-brand-600 font-bold">✓</span>
+                              <span>{fac}</span>
                             </span>
                           ))}
                         </div>
@@ -218,9 +230,9 @@ export default function HotelRoomsSection({ item }) {
                     )}
                   </div>
 
-                  {/* Book Button */}
-                  <div className="pt-4 border-t border-brand-50 flex items-center justify-between gap-3">
-                    <span className="text-[11px] text-muted hidden sm:inline">
+                  {/* Book Button Footer */}
+                  <div className="pt-4 border-t border-pink-100 flex items-center justify-between gap-3">
+                    <span className="text-xs text-gray-500 font-medium">
                       Instant Booking Confirmation
                     </span>
 
@@ -228,7 +240,7 @@ export default function HotelRoomsSection({ item }) {
                       type="button"
                       onClick={() => handleBookRoom(room)}
                       disabled={room.availableRooms <= 0}
-                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="px-6 py-2.5 rounded-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span>Book Room</span>
                       <span>→</span>

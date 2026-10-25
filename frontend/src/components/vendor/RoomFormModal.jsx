@@ -64,6 +64,8 @@ export default function RoomFormModal({
     maxGuests: 2,
     bedType: "1 King Bed",
     numberOfBeds: 1,
+    roomSize: "",
+    cancellationPolicy: "Free Cancellation Till Check-in",
     facilities: ["Air Conditioning (AC)", "High-Speed Wi-Fi", "Attached Private Bathroom"],
     description: "",
     images: [],
@@ -94,6 +96,8 @@ export default function RoomFormModal({
         maxGuests: initialData.maxGuests !== undefined ? initialData.maxGuests : 2,
         bedType: initialData.bedType || "1 King Bed",
         numberOfBeds: initialData.numberOfBeds || 1,
+        roomSize: initialData.roomSize || "",
+        cancellationPolicy: initialData.cancellationPolicy || "Free Cancellation Till Check-in",
         facilities: Array.isArray(initialData.facilities) ? initialData.facilities : [],
         description: initialData.description || "",
         images: Array.isArray(initialData.images) ? initialData.images : [],
@@ -111,6 +115,8 @@ export default function RoomFormModal({
         maxGuests: 2,
         bedType: "1 King Bed",
         numberOfBeds: 1,
+        roomSize: "",
+        cancellationPolicy: "Free Cancellation Till Check-in",
         facilities: ["Air Conditioning (AC)", "High-Speed Wi-Fi", "Attached Private Bathroom"],
         description: "",
         images: [],
@@ -279,6 +285,8 @@ export default function RoomFormModal({
         maxGuests: Number(form.maxGuests),
         bedType: form.bedType.trim(),
         numberOfBeds: Number(form.numberOfBeds),
+        roomSize: form.roomSize.trim(),
+        cancellationPolicy: form.cancellationPolicy.trim(),
         facilities: form.facilities,
         description: form.description.trim(),
         images: form.images,
@@ -553,8 +561,38 @@ export default function RoomFormModal({
                 </select>
               </div>
 
+              {/* Room Size */}
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">
+                  Room Size / Dimensions
+                </label>
+                <input
+                  type="text"
+                  name="roomSize"
+                  value={form.roomSize}
+                  onChange={handleChange}
+                  placeholder="e.g. 140 sq ft (13 sq m)"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              {/* Cancellation Policy */}
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">
+                  Cancellation Policy
+                </label>
+                <input
+                  type="text"
+                  name="cancellationPolicy"
+                  value={form.cancellationPolicy}
+                  onChange={handleChange}
+                  placeholder="e.g. Free Cancellation Till Check-in"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
               {/* Active Toggle */}
-              <div className="sm:col-span-2 flex items-center pt-5">
+              <div className="sm:col-span-2 flex items-center pt-2">
                 <label className="relative flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"

@@ -127,6 +127,37 @@ router.get("/qr", async (req, res) => {
 });
 
 /**
+ * Resets/logs out the session on FireClashPro to clear corrupted or stuck states.
+ */
+router.post("/reset", async (req, res) => {
+  const provider = getWhatsAppProvider();
+  if (provider !== "fireclashpro") {
+    return res.json({ ok: false, error: "Only available for fireclashpro" });
+  }
+
+  try {
+    const apiKey = getApiKey();
+    const sessionsRes = await fetch(`${FIRECLASH_BASE}/sessions`, {
+      headers: { "X-API-Key": apiKey },
+    });
+    const sessions = await sessionsRes.json();
+    const session = Array.isArray(sessions) && sessions.length > 0 ? sessions[0] : null;
+
+    if (session) {
+      const sessionId = session.session_id || session.id;
+      await fetch(`${FIRECLASH_BASE}/sessions/${sessionId}/logout`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey },
+      });
+    }
+
+    res.json({ ok: true, message: "Session reset successfully" });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
  * Interactive QR Code Pairing & Status Page
  */
 router.get("/connect", (req, res) => {
@@ -155,7 +186,7 @@ router.get("/connect", (req, res) => {
       background: #ffffff;
       border-radius: 24px;
       box-shadow: 0 20px 40px -15px rgba(230, 63, 135, 0.12), 0 0 1px 1px rgba(0,0,0,0.05);
-      max-width: 480px;
+      max-width: 500px;
       width: 100%;
       padding: 36px 32px;
       text-align: center;
@@ -183,7 +214,7 @@ router.get("/connect", (req, res) => {
       color: #64748b;
       font-size: 14px;
       line-height: 1.5;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .qr-container {
       position: relative;
@@ -196,7 +227,7 @@ router.get("/connect", (req, res) => {
       align-items: center;
       justify-content: center;
       min-height: 300px;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
     .qr-container img {
       max-width: 250px;
@@ -204,6 +235,12 @@ router.get("/connect", (req, res) => {
       height: auto;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .timer-text {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 600;
+      margin-top: 10px;
     }
     .steps {
       text-align: left;
@@ -213,18 +250,33 @@ router.get("/connect", (req, res) => {
       padding: 16px 20px;
       font-size: 13px;
       color: #831843;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .steps ol { padding-left: 20px; }
     .steps li { margin-bottom: 6px; }
     .steps li:last-child { margin-bottom: 0; }
+    .trouble-box {
+      text-align: left;
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #92400e;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .trouble-box strong { color: #78350f; }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 14px;
+      flex: 1;
+      padding: 13px;
       border-radius: 14px;
       background: #e63f87;
       color: #ffffff;
@@ -235,6 +287,12 @@ router.get("/connect", (req, res) => {
       transition: all 0.2s;
     }
     .btn:hover { background: #d02f74; transform: translateY(-1px); }
+    .btn.btn-outline {
+      background: #ffffff;
+      color: #64748b;
+      border: 1px solid #cbd5e1;
+    }
+    .btn.btn-outline:hover { background: #f8fafc; color: #334155; }
     .connected-box {
       display: none;
       padding: 24px 16px;
@@ -250,32 +308,67 @@ router.get("/connect", (req, res) => {
   <div class="card">
     <div id="statusBadge" class="badge pending">Checking Connection...</div>
     <h1>Connect FlipsAura WhatsApp</h1>
-    <p class="sub">Scan this QR code with WhatsApp on your phone to activate instant booking notifications for Admin & Customers.</p>
+    <p class="sub">Scan this fresh QR code with WhatsApp on your phone to activate automated booking and payment messages.</p>
 
     <div id="qrBox" class="qr-container">
-      <div id="loadingText" style="color: #64748b; font-size: 14px;">Loading QR Code...</div>
+      <div id="loadingText" style="color: #64748b; font-size: 14px;">Generating fresh QR code...</div>
       <img id="qrImg" style="display: none;" alt="WhatsApp QR Code" />
+      <div id="timerText" class="timer-text" style="display: none;">Auto-refreshes in <span id="countdown">20</span>s</div>
     </div>
 
     <div id="connectedBox" class="connected-box">
       <div class="icon">✓</div>
       <h2 style="font-size: 20px; font-weight: 700; color: #166534; margin-bottom: 6px;">WhatsApp Connected!</h2>
       <p id="connectedPhone" style="color: #475569; font-size: 14px; margin-bottom: 16px;"></p>
-      <p style="color: #64748b; font-size: 13px;">New bookings will now trigger automated WhatsApp notifications to both Admin and Customers.</p>
+      <p style="color: #64748b; font-size: 13px;">New bookings and payments will now trigger automated WhatsApp notifications to both Admin and Customers.</p>
     </div>
 
     <div id="stepsBox" class="steps">
       <ol>
-        <li>Open <strong>WhatsApp</strong> on your phone.</li>
-        <li>Tap <strong>Linked Devices</strong> (in Menu ⋮ on Android or Settings on iPhone).</li>
-        <li>Tap <strong>Link a device</strong> and point your camera at this QR code.</li>
+        <li>Open <strong>WhatsApp</strong> on your mobile phone.</li>
+        <li>Tap <strong>Linked Devices</strong> (Menu ⋮ on Android or Settings on iPhone).</li>
+        <li>Tap <strong>Link a device</strong> and scan this QR code immediately.</li>
       </ol>
     </div>
 
-    <button id="refreshBtn" class="btn" onclick="fetchQR()">Refresh QR Code</button>
+    <div id="troubleBox" class="trouble-box">
+      💡 <strong>"Couldn't link device" aa raha hai?</strong>
+      <ul style="padding-left: 18px; margin-top: 4px;">
+        <li>WhatsApp me max 4 devices allowed hain. Agar pehle se 4 hain to ek purana remove karein.</li>
+        <li>Agar session stuck tha, to niche <strong>"Reset Session"</strong> button dabayein aur naya QR scan karein.</li>
+      </ul>
+    </div>
+
+    <div id="btnGroup" class="btn-group">
+      <button id="refreshBtn" class="btn" onclick="fetchQR()">Refresh QR</button>
+      <button id="resetBtn" class="btn btn-outline" onclick="resetSession()">Reset Session</button>
+    </div>
   </div>
 
   <script>
+    let countdownVal = 20;
+    let countdownInterval = null;
+    let isConnectedState = false;
+
+    function startCountdown() {
+      clearInterval(countdownInterval);
+      countdownVal = 20;
+      const cdEl = document.getElementById('countdown');
+      if (cdEl) cdEl.textContent = countdownVal;
+
+      countdownInterval = setInterval(() => {
+        if (isConnectedState) {
+          clearInterval(countdownInterval);
+          return;
+        }
+        countdownVal--;
+        if (cdEl) cdEl.textContent = countdownVal;
+        if (countdownVal <= 0) {
+          fetchQR();
+        }
+      }, 1000);
+    }
+
     async function checkStatus() {
       try {
         const res = await fetch('/api/whatsapp/status');
@@ -283,16 +376,20 @@ router.get("/connect", (req, res) => {
         const badge = document.getElementById('statusBadge');
         const qrBox = document.getElementById('qrBox');
         const stepsBox = document.getElementById('stepsBox');
-        const refreshBtn = document.getElementById('refreshBtn');
+        const troubleBox = document.getElementById('troubleBox');
+        const btnGroup = document.getElementById('btnGroup');
         const connectedBox = document.getElementById('connectedBox');
         const connectedPhone = document.getElementById('connectedPhone');
 
         if (data.connected) {
+          isConnectedState = true;
+          clearInterval(countdownInterval);
           badge.className = 'badge connected';
           badge.textContent = 'CONNECTED';
           qrBox.style.display = 'none';
           stepsBox.style.display = 'none';
-          refreshBtn.style.display = 'none';
+          troubleBox.style.display = 'none';
+          btnGroup.style.display = 'none';
           connectedBox.style.display = 'block';
           connectedPhone.textContent = data.phoneNumber ? 'Linked Number: +' + data.phoneNumber : 'Session Active';
           return true;
@@ -313,9 +410,11 @@ router.get("/connect", (req, res) => {
 
       const loadingText = document.getElementById('loadingText');
       const qrImg = document.getElementById('qrImg');
-      loadingText.textContent = 'Refreshing QR code...';
+      const timerText = document.getElementById('timerText');
+      loadingText.textContent = 'Fetching fresh QR code...';
       loadingText.style.display = 'block';
       qrImg.style.display = 'none';
+      timerText.style.display = 'none';
 
       try {
         const res = await fetch('/api/whatsapp/qr');
@@ -328,17 +427,37 @@ router.get("/connect", (req, res) => {
           qrImg.src = data.qrImage;
           qrImg.style.display = 'block';
           loadingText.style.display = 'none';
+          timerText.style.display = 'block';
+          startCountdown();
         } else {
-          loadingText.textContent = 'Waiting for QR code generation...';
+          loadingText.textContent = 'Waiting for QR generation... Please wait a few seconds and tap Refresh.';
         }
       } catch (e) {
-        loadingText.textContent = 'Failed to load QR code. Please check backend.';
+        loadingText.textContent = 'Failed to load QR code. Please check backend connection.';
+      }
+    }
+
+    async function resetSession() {
+      const loadingText = document.getElementById('loadingText');
+      const qrImg = document.getElementById('qrImg');
+      const timerText = document.getElementById('timerText');
+      loadingText.textContent = 'Resetting session and clearing stuck handshake...';
+      loadingText.style.display = 'block';
+      qrImg.style.display = 'none';
+      timerText.style.display = 'none';
+      clearInterval(countdownInterval);
+
+      try {
+        await fetch('/api/whatsapp/reset', { method: 'POST' });
+        setTimeout(fetchQR, 2000);
+      } catch (e) {
+        fetchQR();
       }
     }
 
     fetchQR();
-    // Auto-poll status every 6 seconds so as soon as user scans on phone, screen turns green
-    setInterval(checkStatus, 6000);
+    // Auto-poll status every 5 seconds so as soon as user scans on phone, screen turns green
+    setInterval(checkStatus, 5000);
   </script>
 </body>
 </html>`);

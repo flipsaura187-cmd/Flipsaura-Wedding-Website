@@ -61,6 +61,16 @@ const RoomSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    roomSize: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    cancellationPolicy: {
+      type: String,
+      default: "Free Cancellation Till Check-in",
+      trim: true,
+    },
     images: [
       {
         type: String,

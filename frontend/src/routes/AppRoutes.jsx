@@ -36,6 +36,7 @@ import AdminEvents from "@/pages/admin/events";
 import AdminEventForm from "@/pages/admin/event-form";
 import AdminEventRegistrations from "@/pages/admin/event-registrations";
 import AdminVendors from "@/pages/admin/vendors";
+import AdminHotels from "@/pages/admin/hotels";
 import AdminCategories from "@/pages/admin/categories";
 import AdminItems from "@/pages/admin/items";
 import AdminBookings from "@/pages/admin/bookings";
@@ -95,6 +96,7 @@ export default function AppRoutes() {
               <Route path="events/:id/edit" element={<AdminEventForm />} />
               <Route path="events/:id/registrations" element={<AdminEventRegistrations />} />
               <Route path="vendors" element={<AdminVendors />} />
+              <Route path="hotels" element={<AdminHotels />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="items" element={<AdminItems />} />
               <Route path="bookings" element={<AdminBookings />} />

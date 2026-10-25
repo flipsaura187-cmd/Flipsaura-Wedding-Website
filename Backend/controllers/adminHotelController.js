@@ -28,17 +28,18 @@ export async function getAdminHotels(req, res) {
 
     const { search, city, state, active } = req.query;
 
-    const query = {};
+    // 2. Base hotel filter: strictly include genuine hotel items (hotels category or items with rooms).
+    // Exclude Venue and Catering items that only happen to have "hotel" or "resort" in their business name.
+    const roomsHotelIds = await Room.distinct("hotel");
+    const hotelFilters = [];
     if (hotelCat) {
-      query.$or = [
-        { category: hotelCat._id },
-        { title: /hotel/i },
-        { title: /resort/i },
-        { title: /inn/i },
-      ];
-    } else {
-      query.$or = [{ title: /hotel/i }, { title: /resort/i }, { title: /inn/i }];
+      hotelFilters.push({ category: hotelCat._id });
     }
+    if (roomsHotelIds.length > 0) {
+      hotelFilters.push({ _id: { $in: roomsHotelIds } });
+    }
+
+    const query = hotelFilters.length > 0 ? { $or: hotelFilters } : {};
 
     if (city && city.trim() && city !== "all") {
       query.city = new RegExp(`^${city.trim()}$`, "i");

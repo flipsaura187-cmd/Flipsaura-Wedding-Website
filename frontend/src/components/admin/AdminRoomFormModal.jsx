@@ -92,6 +92,9 @@ export default function AdminRoomFormModal({
   const [customAmenity, setCustomAmenity] = useState("");
   const [directImageUrl, setDirectImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [showBulkUrlBox, setShowBulkUrlBox] = useState(false);
+  const [bulkUrlText, setBulkUrlText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -187,74 +190,141 @@ export default function AdminRoomFormModal({
     }));
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleMultipleFilesUpload = async (e) => {
+    const fileList = Array.from(e.target.files || []);
+    if (fileList.length === 0) return;
 
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (JPG, PNG, WebP).");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError("Image size exceeds 10MB limit.");
-      return;
+    // Validate files
+    const validFiles = [];
+    for (const f of fileList) {
+      if (!f.type.startsWith("image/")) {
+        setError(`"${f.name}" is not a valid image file.`);
+        return;
+      }
+      if (f.size > 12 * 1024 * 1024) {
+        setError(`"${f.name}" exceeds 12MB limit.`);
+        return;
+      }
+      validFiles.push(f);
     }
 
     setUploadingImage(true);
+    setUploadProgress({ current: 0, total: validFiles.length });
     setError("");
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64Data = reader.result;
-          const { data } = await api.post("/api/upload/direct", {
-            file: base64Data,
-            folder: "flipsaura/rooms",
-          });
+      const uploadedUrls = [];
+      for (let i = 0; i < validFiles.length; i++) {
+        setUploadProgress({ current: i + 1, total: validFiles.length });
+        const file = validFiles[i];
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+          reader.readAsDataURL(file);
+        });
 
-          if (!data?.ok || !data?.data?.url) {
-            throw new Error(data?.error || "Upload failed");
-          }
+        const { data } = await api.post("/api/upload/direct", {
+          file: base64Data,
+          folder: "flipsaura/rooms",
+        });
 
-          setForm((prev) => ({
-            ...prev,
-            images: [...prev.images, data.data.url],
-          }));
-        } catch (uploadErr) {
-          console.error("Room image direct upload error:", uploadErr);
-          setError(uploadErr.response?.data?.error || uploadErr.message || "Failed to upload image");
-        } finally {
-          setUploadingImage(false);
-          e.target.value = "";
+        if (data?.ok && data?.data?.url) {
+          uploadedUrls.push(data.data.url);
+        } else {
+          console.warn("Failed upload for file:", file.name, data?.error);
         }
-      };
-      reader.onerror = () => {
-        setError("Could not read image file.");
-        setUploadingImage(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      setError(err.message || "Image upload failed");
+      }
+
+      if (uploadedUrls.length > 0) {
+        setForm((prev) => ({
+          ...prev,
+          images: [...prev.images, ...uploadedUrls],
+        }));
+        setSuccessMsg(`Uploaded ${uploadedUrls.length} photo${uploadedUrls.length > 1 ? "s" : ""}!`);
+        setTimeout(() => setSuccessMsg(""), 3500);
+      }
+    } catch (uploadErr) {
+      console.error("Room images batch upload error:", uploadErr);
+      setError(uploadErr.response?.data?.error || uploadErr.message || "Failed to upload images");
+    } finally {
       setUploadingImage(false);
+      setUploadProgress({ current: 0, total: 0 });
+      e.target.value = "";
     }
   };
 
   const addDirectImageUrl = () => {
     const trimmed = directImageUrl.trim();
     if (!trimmed) return;
-    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("/")) {
-      setError("Please enter a valid image URL (e.g. https://...)");
+
+    // Check if comma or space separated
+    const potentialUrls = trimmed
+      .split(/[\s,]+/)
+      .map((u) => u.trim())
+      .filter((u) => u.startsWith("http://") || u.startsWith("https://") || u.startsWith("/"));
+
+    if (potentialUrls.length === 0) {
+      setError("Please enter a valid image URL starting with http://, https:// or /");
       return;
     }
 
     setForm((prev) => ({
       ...prev,
-      images: [...prev.images, trimmed],
+      images: [...prev.images, ...potentialUrls],
     }));
     setDirectImageUrl("");
     setError("");
+    setSuccessMsg(`Added ${potentialUrls.length} photo URL${potentialUrls.length > 1 ? "s" : ""}!`);
+    setTimeout(() => setSuccessMsg(""), 3500);
+  };
+
+  const handleAddBulkUrls = () => {
+    if (!bulkUrlText.trim()) return;
+
+    const urls = bulkUrlText
+      .split(/[\r\n,]+/)
+      .map((u) => u.trim())
+      .filter((u) => u.startsWith("http://") || u.startsWith("https://") || u.startsWith("/"));
+
+    if (urls.length === 0) {
+      setError("No valid image URLs found. Please enter valid URLs starting with http:// or https://");
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      images: [...prev.images, ...urls],
+    }));
+    setBulkUrlText("");
+    setShowBulkUrlBox(false);
+    setError("");
+    setSuccessMsg(`Added ${urls.length} photo URLs to room gallery!`);
+    setTimeout(() => setSuccessMsg(""), 3500);
+  };
+
+  const makeCoverImage = (index) => {
+    if (index === 0) return;
+    setForm((prev) => {
+      const copy = [...prev.images];
+      const [chosen] = copy.splice(index, 1);
+      return {
+        ...prev,
+        images: [chosen, ...copy],
+      };
+    });
+  };
+
+  const moveImage = (index, direction) => {
+    setForm((prev) => {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= prev.images.length) return prev;
+      const copy = [...prev.images];
+      const temp = copy[index];
+      copy[index] = copy[targetIndex];
+      copy[targetIndex] = temp;
+      return { ...prev, images: copy };
+    });
   };
 
   const removeImage = (index) => {
@@ -262,6 +332,11 @@ export default function AdminRoomFormModal({
       ...prev,
       images: prev.images.filter((_, idx) => idx !== index),
     }));
+  };
+
+  const clearAllImages = () => {
+    if (!confirm("Are you sure you want to remove all photos for this room?")) return;
+    setForm((prev) => ({ ...prev, images: [] }));
   };
 
   const handleSubmit = async (e) => {
@@ -677,92 +752,230 @@ export default function AdminRoomFormModal({
             />
           </div>
 
-          {/* Section 5: Room Photos */}
+          {/* Section 5: Room Photos (Multiple Photos) */}
           <div className="space-y-3 pt-2 border-t border-line">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-brand-600" />
-                5. Room Photos & Gallery
-              </h3>
-              <span className="text-xs text-muted">
-                {form.images.length} Photo{form.images.length === 1 ? "" : "s"}
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <label className="flex-1 cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  disabled={uploadingImage}
-                  className="hidden"
-                />
-                <div className="h-11 px-4 rounded-xl border border-dashed border-brand-300 bg-brand-50/50 hover:bg-brand-50 text-brand-700 text-xs font-semibold flex items-center justify-center gap-2 transition shadow-2xs">
-                  {uploadingImage ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-brand-300 border-t-brand-700 rounded-full animate-spin" />
-                      <span>Uploading photo...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>📁</span>
-                      <span>Upload Room Photo from Device</span>
-                    </>
-                  )}
-                </div>
-              </label>
-
-              <div className="flex-1 flex gap-2">
-                <input
-                  type="url"
-                  value={directImageUrl}
-                  onChange={(e) => setDirectImageUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addDirectImageUrl();
-                    }
-                  }}
-                  placeholder="Or paste image URL (https://...)"
-                  className="flex-1 px-3 py-2 rounded-xl border border-line bg-white text-ink text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
-                />
-                <button
-                  type="button"
-                  onClick={addDirectImageUrl}
-                  className="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-ink text-xs font-semibold transition cursor-pointer"
-                >
-                  Add URL
-                </button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-brand-600" />
+                  5. Room Photos & Gallery (Add Multiple Photos)
+                </h3>
+                <p className="text-[11px] text-muted mt-0.5">
+                  Select multiple files at once or paste multiple CDN URLs. First photo is used as primary card cover.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+                  {form.images.length} Photo{form.images.length === 1 ? "" : "s"}
+                </span>
+                {form.images.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={clearAllImages}
+                    className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
+                  >
+                    Clear All
+                  </button>
+                )}
               </div>
             </div>
 
-            {form.images.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                {form.images.map((imgUrl, idx) => (
-                  <div
-                    key={idx}
-                    className="relative aspect-[4/3] rounded-xl overflow-hidden border border-line bg-gray-50 group shadow-2xs"
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={`Room photo ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {idx === 0 && (
-                      <span className="absolute top-1.5 left-1.5 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
-                        Cover
-                      </span>
+            {/* Upload Options Row */}
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                {/* 1. Multiple Files Device Upload */}
+                <label className="flex-1 cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleMultipleFilesUpload}
+                    disabled={uploadingImage}
+                    className="hidden"
+                  />
+                  <div className="h-11 px-4 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/50 hover:bg-brand-50 text-brand-700 text-xs font-bold flex items-center justify-center gap-2 transition shadow-2xs">
+                    {uploadingImage ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-brand-300 border-t-brand-700 rounded-full animate-spin" />
+                        <span>
+                          Uploading {uploadProgress.current} of {uploadProgress.total} photos...
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-base">📸</span>
+                        <span>Upload Multiple Photos from Device</span>
+                      </>
                     )}
+                  </div>
+                </label>
+
+                {/* 2. Direct Single URL */}
+                <div className="flex-1 flex gap-2">
+                  <input
+                    type="url"
+                    value={directImageUrl}
+                    onChange={(e) => setDirectImageUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addDirectImageUrl();
+                      }
+                    }}
+                    placeholder="Paste image URL (https://...)"
+                    className="flex-1 px-3 py-2 rounded-xl border border-line bg-white text-ink text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addDirectImageUrl}
+                    className="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-ink text-xs font-semibold transition cursor-pointer shrink-0"
+                  >
+                    + Add
+                  </button>
+                </div>
+
+                {/* 3. Bulk URLs Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowBulkUrlBox(!showBulkUrlBox)}
+                  className={`px-3 py-2 rounded-xl border text-xs font-semibold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    showBulkUrlBox
+                      ? "bg-brand-600 text-white border-brand-600"
+                      : "bg-white hover:bg-gray-50 text-ink border-line"
+                  }`}
+                >
+                  <span>📋</span>
+                  <span>Bulk URLs</span>
+                </button>
+              </div>
+
+              {/* Bulk URLs Textarea Modal/Dropdown */}
+              {showBulkUrlBox && (
+                <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-900">
+                      📋 Paste Multiple Image URLs (One URL per line or comma-separated)
+                    </span>
                     <button
                       type="button"
-                      onClick={() => removeImage(idx)}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-bold shadow transition cursor-pointer"
+                      onClick={() => setShowBulkUrlBox(false)}
+                      className="text-xs text-amber-700 hover:text-amber-900"
                     >
-                      ✕
+                      ✕ Close
                     </button>
                   </div>
-                ))}
+                  <textarea
+                    rows={4}
+                    value={bulkUrlText}
+                    onChange={(e) => setBulkUrlText(e.target.value)}
+                    placeholder="https://example.com/room-photo-1.jpg&#10;https://example.com/room-photo-2.jpg&#10;https://example.com/room-bathroom.jpg"
+                    className="w-full p-2.5 rounded-xl border border-amber-200 bg-white text-xs font-mono text-ink placeholder:text-muted focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleAddBulkUrls}
+                      className="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                    >
+                      Add All URLs to Gallery
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Gallery Thumbnails with Reorder & Cover Selection */}
+            {form.images.length > 0 ? (
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between text-[11px] text-muted">
+                  <span>💡 Tip: Click <b>&quot;★ Make Cover&quot;</b> to set any photo as the main cover photo.</span>
+                  <span>Drag or use &larr; &rarr; to reorder</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {form.images.map((imgUrl, idx) => (
+                    <div
+                      key={idx}
+                      className={`relative aspect-[4/3] rounded-2xl overflow-hidden border-2 bg-gray-50 group shadow-2xs transition-all ${
+                        idx === 0
+                          ? "border-brand-500 ring-2 ring-brand-200"
+                          : "border-line hover:border-brand-300"
+                      }`}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`Room photo ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+
+                      {/* Cover Badge or Photo Number */}
+                      <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+                        {idx === 0 ? (
+                          <span className="bg-brand-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                            ★ Cover Photo
+                          </span>
+                        ) : (
+                          <span className="bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                            #{idx + 1}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Delete Button top-right */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-bold shadow transition cursor-pointer opacity-90 group-hover:opacity-100"
+                        title="Delete photo"
+                      >
+                        ✕
+                      </button>
+
+                      {/* Bottom Controls Bar */}
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-1.5 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1">
+                          {idx > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => moveImage(idx, -1)}
+                              className="w-5 h-5 rounded bg-white/20 hover:bg-white/40 text-white flex items-center justify-center text-[10px] font-bold transition cursor-pointer"
+                              title="Move left"
+                            >
+                              ←
+                            </button>
+                          )}
+                          {idx < form.images.length - 1 && (
+                            <button
+                              type="button"
+                              onClick={() => moveImage(idx, 1)}
+                              className="w-5 h-5 rounded bg-white/20 hover:bg-white/40 text-white flex items-center justify-center text-[10px] font-bold transition cursor-pointer"
+                              title="Move right"
+                            >
+                              →
+                            </button>
+                          )}
+                        </div>
+
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => makeCoverImage(idx)}
+                            className="text-[10px] text-white hover:text-amber-300 font-bold bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded transition cursor-pointer"
+                            title="Set as primary cover"
+                          >
+                            ★ Cover
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl border border-dashed border-gray-200 text-center bg-gray-50/50">
+                <p className="text-xs text-muted">
+                  No photos added yet. Upload from device or paste image URLs to showcase this room.
+                </p>
               </div>
             )}
           </div>

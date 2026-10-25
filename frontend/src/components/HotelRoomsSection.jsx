@@ -7,9 +7,83 @@ export default function HotelRoomsSection({ item }) {
   const router = useRouter();
   const [rooms, setRooms] = useState(item?.rooms || []);
   const [loading, setLoading] = useState(!item?.rooms);
-  const [selectedImage, setSelectedImage] = useState(null); // Lightbox for room photos
+  const [cardPhotoIndices, setCardPhotoIndices] = useState({});
+  const [galleryModal, setGalleryModal] = useState({
+    isOpen: false,
+    roomName: "",
+    images: [],
+    activeIndex: 0,
+  });
 
   const hotelId = item?._id;
+
+  const handleCardNextPhoto = (e, roomId, total) => {
+    e.stopPropagation();
+    setCardPhotoIndices((prev) => ({
+      ...prev,
+      [roomId]: ((prev[roomId] || 0) + 1) % total,
+    }));
+  };
+
+  const handleCardPrevPhoto = (e, roomId, total) => {
+    e.stopPropagation();
+    setCardPhotoIndices((prev) => ({
+      ...prev,
+      [roomId]: ((prev[roomId] || 0) - 1 + total) % total,
+    }));
+  };
+
+  const openGallery = (room, initialIndex = 0) => {
+    const list =
+      Array.isArray(room.images) && room.images.length > 0
+        ? room.images
+        : [item?.images?.[0] || "/images/categories/hotels.jpg"];
+    setGalleryModal({
+      isOpen: true,
+      roomName: room.name,
+      images: list,
+      activeIndex: initialIndex,
+    });
+  };
+
+  const nextGalleryPhoto = (e) => {
+    if (e) e.stopPropagation();
+    setGalleryModal((prev) => ({
+      ...prev,
+      activeIndex: (prev.activeIndex + 1) % prev.images.length,
+    }));
+  };
+
+  const prevGalleryPhoto = (e) => {
+    if (e) e.stopPropagation();
+    setGalleryModal((prev) => ({
+      ...prev,
+      activeIndex: (prev.activeIndex - 1 + prev.images.length) % prev.images.length,
+    }));
+  };
+
+  useEffect(() => {
+    if (!galleryModal.isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setGalleryModal((prev) => ({ ...prev, isOpen: false }));
+      } else if (e.key === "ArrowRight") {
+        setGalleryModal((prev) => ({
+          ...prev,
+          activeIndex: (prev.activeIndex + 1) % prev.images.length,
+        }));
+      } else if (e.key === "ArrowLeft") {
+        setGalleryModal((prev) => ({
+          ...prev,
+          activeIndex: (prev.activeIndex - 1 + prev.images.length) % prev.images.length,
+        }));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [galleryModal.isOpen]);
 
   // Dynamically fetch rooms from MongoDB
   useEffect(() => {
@@ -109,8 +183,13 @@ export default function HotelRoomsSection({ item }) {
         /* Rooms Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {rooms.map((room) => {
-            const coverImage = room.images?.[0] || item?.images?.[0] || "/images/categories/hotels.jpg";
-            const photosCount = room.images?.length || 1;
+            const roomImages =
+              Array.isArray(room.images) && room.images.length > 0
+                ? room.images
+                : [item?.images?.[0] || "/images/categories/hotels.jpg"];
+            const photosCount = roomImages.length;
+            const currentCardIndex = (cardPhotoIndices[room._id] || 0) % photosCount;
+            const currentImage = roomImages[currentCardIndex];
             const isSingleLeft = room.availableRooms === 1;
 
             // Merge facilities with cancellation policy if not already included
@@ -127,11 +206,14 @@ export default function HotelRoomsSection({ item }) {
                 key={room._id}
                 className="bg-white rounded-3xl border border-pink-200/90 overflow-hidden shadow-sm hover:shadow-xl hover:border-pink-300 transition-all duration-300 flex flex-col group"
               >
-                {/* Room Photo Gallery Container */}
-                <div className="relative aspect-[16/10] bg-gray-100 overflow-hidden">
+                {/* Room Photo Gallery Container with Interactive Carousel */}
+                <div
+                  className="relative aspect-[16/10] bg-gray-100 overflow-hidden cursor-pointer"
+                  onClick={() => openGallery(room, currentCardIndex)}
+                >
                   <img
-                    src={coverImage}
-                    alt={room.name}
+                    src={currentImage}
+                    alt={`${room.name} photo ${currentCardIndex + 1}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
 
@@ -147,14 +229,58 @@ export default function HotelRoomsSection({ item }) {
                     )}
                   </div>
 
+                  {/* On-card Previous / Next buttons if multiple photos */}
+                  {photosCount > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCardPrevPhoto(e, room._id, photosCount)}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-lg font-bold shadow-md transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                        title="Previous photo"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCardNextPhoto(e, room._id, photosCount)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-lg font-bold shadow-md transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                        title="Next photo"
+                      >
+                        ›
+                      </button>
+
+                      {/* Photo indicator dots at bottom center */}
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-xs">
+                        {roomImages.slice(0, 6).map((_, dotIdx) => (
+                          <span
+                            key={dotIdx}
+                            className={`w-1.5 h-1.5 rounded-full transition-all ${
+                              dotIdx === currentCardIndex
+                                ? "bg-white w-3"
+                                : "bg-white/50"
+                            }`}
+                          />
+                        ))}
+                        {photosCount > 6 && (
+                          <span className="text-[10px] text-white/80 font-bold ml-0.5">+</span>
+                        )}
+                      </div>
+                    </>
+                  )}
+
                   {/* Photos count bottom-right badge / Lightbox trigger */}
                   <button
                     type="button"
-                    onClick={() => setSelectedImage(coverImage)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openGallery(room, currentCardIndex);
+                    }}
                     className="absolute bottom-3 right-3 bg-black/75 hover:bg-black/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5 transition cursor-pointer"
                   >
                     <span>📷</span>
-                    <span>{photosCount} Photo{photosCount === 1 ? "" : "s"}</span>
+                    <span>
+                      {photosCount} Photo{photosCount === 1 ? "" : "s"}
+                    </span>
                   </button>
                 </div>
 
@@ -253,22 +379,97 @@ export default function HotelRoomsSection({ item }) {
         </div>
       )}
 
-      {/* Lightbox Modal for Room Photos */}
-      {selectedImage && (
+      {/* Full-Featured Room Photo Gallery Lightbox */}
+      {galleryModal.isOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 select-none"
+          onClick={() => setGalleryModal((prev) => ({ ...prev, isOpen: false }))}
         >
-          <div className="relative max-w-4xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl">
-            <img src={selectedImage} alt="Room full view" className="w-full h-full object-contain" />
+          {/* Gallery Top Bar */}
+          <div
+            className="flex items-center justify-between text-white max-w-5xl w-full mx-auto pb-3 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="font-serif font-bold text-lg sm:text-xl text-white">
+                {galleryModal.roomName}
+              </h3>
+              <p className="text-xs text-gray-400">
+                Photo {galleryModal.activeIndex + 1} of {galleryModal.images.length}
+              </p>
+            </div>
+
             <button
               type="button"
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 text-white hover:bg-black flex items-center justify-center font-bold text-sm transition"
+              onClick={() => setGalleryModal((prev) => ({ ...prev, isOpen: false }))}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-lg font-bold transition cursor-pointer"
+              title="Close gallery (Esc)"
             >
               ✕
             </button>
           </div>
+
+          {/* Main Stage with Navigation Arrows */}
+          <div
+            className="relative flex-1 flex items-center justify-center max-w-5xl w-full mx-auto my-auto overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={galleryModal.images[galleryModal.activeIndex]}
+              alt={`${galleryModal.roomName} photo ${galleryModal.activeIndex + 1}`}
+              className="max-h-[68vh] max-w-full rounded-2xl object-contain shadow-2xl transition-all duration-200"
+            />
+
+            {galleryModal.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={prevGalleryPhoto}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-2xl font-bold shadow-xl transition cursor-pointer"
+                  title="Previous (Left arrow)"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={nextGalleryPhoto}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-2xl font-bold shadow-xl transition cursor-pointer"
+                  title="Next (Right arrow)"
+                >
+                  ›
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Bottom Thumbnails Strip */}
+          {galleryModal.images.length > 1 && (
+            <div
+              className="max-w-5xl w-full mx-auto pt-3 shrink-0 flex items-center justify-center gap-2 overflow-x-auto py-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {galleryModal.images.map((thumbUrl, thumbIdx) => (
+                <button
+                  key={thumbIdx}
+                  type="button"
+                  onClick={() =>
+                    setGalleryModal((prev) => ({ ...prev, activeIndex: thumbIdx }))
+                  }
+                  className={`w-16 h-12 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                    thumbIdx === galleryModal.activeIndex
+                      ? "border-pink-500 scale-105 ring-2 ring-pink-500/40"
+                      : "border-white/30 opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  <img
+                    src={thumbUrl}
+                    alt={`Thumbnail ${thumbIdx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </section>

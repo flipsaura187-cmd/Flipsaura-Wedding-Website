@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "@/compat/navigation";
 import api from "@/api/axios";
 
-export default function HotelRoomsSection({ item }) {
+export default function HotelRoomsSection({ item, isTopPriority = false }) {
   const router = useRouter();
   const [rooms, setRooms] = useState(item?.rooms || []);
   const [loading, setLoading] = useState(!item?.rooms);
@@ -124,7 +124,7 @@ export default function HotelRoomsSection({ item }) {
   };
 
   return (
-    <section className="pt-10 border-t border-brand-100/80">
+    <section className={isTopPriority ? "pt-2" : "pt-10 border-t border-brand-100/80"}>
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
         <div>
@@ -181,7 +181,7 @@ export default function HotelRoomsSection({ item }) {
         </div>
       ) : (
         /* Rooms Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {rooms.map((room) => {
             const roomImages =
               Array.isArray(room.images) && room.images.length > 0

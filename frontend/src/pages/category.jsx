@@ -202,8 +202,8 @@ export default function CategoryPage() {
   const unitShort = filterMeta.pricingUnit?.short || "unit";
 
   return (
-    <section className="py-10 md:py-14 bg-white min-h-[70vh]">
-      <div className="max-w-container mx-auto px-4 sm:px-6">
+    <section className="py-8 md:py-12 bg-white min-h-[70vh] w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12">
         {/* Category Header */}
         <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
@@ -478,7 +478,7 @@ export default function CategoryPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             {items.map((it) => (
               <ItemCard key={it._id} item={it} />
             ))}

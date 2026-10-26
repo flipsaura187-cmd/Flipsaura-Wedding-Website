@@ -25,16 +25,20 @@ export default function AdminHotelsPage() {
   const [preselectedHotelId, setPreselectedHotelId] = useState("");
 
   const [actionMsg, setActionMsg] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const loadHotels = async () => {
     try {
       setLoading(true);
+      setLoadError("");
       const { data } = await api.get("/api/admin/hotels");
       if (data?.ok) {
         setHotels(data.data.hotels || []);
       }
     } catch (err) {
       console.error("Failed to load admin hotels:", err);
+      const msg = err.response?.data?.error || err.message || "Failed to load admin hotels";
+      setLoadError(msg);
     } finally {
       setLoading(false);
     }
@@ -229,8 +233,34 @@ export default function AdminHotelsPage() {
       {actionMsg && (
         <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium flex items-center justify-between gap-2 shadow-2xs">
           <span>✅ {actionMsg}</span>
-          <button onClick={() => setActionMsg("")} className="text-emerald-700 font-bold text-xs">
+          <button onClick={() => setActionMsg("")} className="text-emerald-700 font-bold text-xs cursor-pointer">
             ✕
+          </button>
+        </div>
+      )}
+
+      {/* API / Network Error Banner */}
+      {loadError && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div>
+              <p className="font-semibold text-amber-950">
+                Failed to load hotels ({loadError})
+              </p>
+              <p className="text-xs text-amber-850 mt-0.5">
+                {loadError.toLowerCase().includes("route not found")
+                  ? "The backend server does not have the hotel routes active yet. If testing on production, please deploy the latest commit on Render (Manual Deploy -> Deploy latest commit). If running locally, start the backend on http://localhost:5000."
+                  : "Please verify backend server connectivity and your admin authentication."}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={loadHotels}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition shrink-0 cursor-pointer self-start sm:self-auto"
+          >
+            🔄 Retry
           </button>
         </div>
       )}

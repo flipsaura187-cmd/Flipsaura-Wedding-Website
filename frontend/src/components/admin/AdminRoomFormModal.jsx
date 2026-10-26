@@ -397,7 +397,12 @@ export default function AdminRoomFormModal({
       }, 700);
     } catch (err) {
       console.error("Save room error:", err);
-      setError(err.response?.data?.error || err.message || "Failed to save room details.");
+      const rawError = err.response?.data?.error || err.message || "Failed to save room details.";
+      const friendlyError =
+        rawError === "Route not found"
+          ? "Route not found: Please ensure the latest backend commit is deployed on Render or running locally on http://localhost:5000."
+          : rawError;
+      setError(friendlyError);
     } finally {
       setSubmitting(false);
     }

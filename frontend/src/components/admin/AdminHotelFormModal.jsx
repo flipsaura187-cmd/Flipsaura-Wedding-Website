@@ -307,7 +307,12 @@ export default function AdminHotelFormModal({
       }, 700);
     } catch (err) {
       console.error("Save hotel error:", err);
-      setError(err.response?.data?.error || err.message || "Failed to save hotel.");
+      const rawError = err.response?.data?.error || err.message || "Failed to save hotel.";
+      const friendlyError =
+        rawError === "Route not found"
+          ? "Route not found: The backend server does not have the hotel management API active yet. Please trigger 'Deploy latest commit' in your Render dashboard (or ensure your local backend is running on http://localhost:5000)."
+          : rawError;
+      setError(friendlyError);
     } finally {
       setSubmitting(false);
     }

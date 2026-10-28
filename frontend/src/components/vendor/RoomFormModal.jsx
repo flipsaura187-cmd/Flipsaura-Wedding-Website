@@ -23,12 +23,17 @@ const POPULAR_AMENITIES = [
 
 const ROOM_TYPES = [
   "Deluxe Room",
+  "Deluxe AC Room",
+  "Super Deluxe Room",
   "Standard Room",
+  "Standard AC Room",
+  "Standard Non-AC Room",
   "Executive Room",
-  "Suite",
-  "AC Room",
-  "Non-AC Room",
+  "Suite Room",
+  "Executive Suite",
   "Family Suite",
+  "Resort Cottage",
+  "Villa",
   "Honeymoon Suite",
   "Presidential Suite",
   "Villa / Cottage",
@@ -42,7 +47,12 @@ const BED_TYPES = [
   "2 Twin Beds",
   "2 Double Beds",
   "1 Single Bed",
+  "1 King Bed + 1 Single Bed",
+  "1 Double Bed or 2 Single Beds",
   "King Bed + Sofa Bed",
+  "2 Queen Beds",
+  "3 Single Beds",
+  "Bunk Beds",
   "Custom / Extra Bed Available",
 ];
 
@@ -72,6 +82,13 @@ export default function RoomFormModal({
     active: true,
   });
 
+  const [isCustomRoomType, setIsCustomRoomType] = useState(false);
+  const [customRoomTypeInput, setCustomRoomTypeInput] = useState("");
+  const [customRoomTypeSelected, setCustomRoomTypeSelected] = useState("");
+  const [isCustomBedType, setIsCustomBedType] = useState(false);
+  const [customBedTypeInput, setCustomBedTypeInput] = useState("");
+  const [customBedsList, setCustomBedsList] = useState([]);
+
   const [customAmenity, setCustomAmenity] = useState("");
   const [directImageUrl, setDirectImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -90,14 +107,31 @@ export default function RoomFormModal({
     setSuccessMsg("");
 
     if (initialData) {
+      const initRt = initialData.roomType || "Deluxe Room";
+      const isCustomRt = Boolean(initRt && !ROOM_TYPES.includes(initRt));
+      setIsCustomRoomType(isCustomRt);
+      setCustomRoomTypeInput("");
+      setCustomRoomTypeSelected(isCustomRt ? initRt : "");
+
+      const initBt = initialData.bedType || "1 King Bed";
+      const isCustomBt = Boolean(initBt && !BED_TYPES.includes(initBt));
+      setIsCustomBedType(isCustomBt);
+      setCustomBedTypeInput("");
+      if (isCustomBt && initBt) {
+        const splitBeds = initBt.split(" + ").map((s) => s.trim()).filter(Boolean);
+        setCustomBedsList(splitBeds.length > 0 ? splitBeds : [initBt]);
+      } else {
+        setCustomBedsList([]);
+      }
+
       setForm({
         hotel: initialData.hotel?._id || initialData.hotel || "",
         name: initialData.name || "",
-        roomType: initialData.roomType || "Deluxe Room",
+        roomType: initRt,
         pricePerNight: initialData.pricePerNight !== undefined ? initialData.pricePerNight : "",
         availableRooms: initialData.availableRooms !== undefined ? initialData.availableRooms : 1,
         maxGuests: initialData.maxGuests !== undefined ? initialData.maxGuests : 2,
-        bedType: initialData.bedType || "1 King Bed",
+        bedType: initBt,
         numberOfBeds: initialData.numberOfBeds || 1,
         roomSize: initialData.roomSize || "",
         cancellationPolicy: initialData.cancellationPolicy || "Free Cancellation Till Check-in",
@@ -107,6 +141,13 @@ export default function RoomFormModal({
         active: initialData.active !== undefined ? initialData.active : true,
       });
     } else {
+      setIsCustomRoomType(false);
+      setCustomRoomTypeInput("");
+      setCustomRoomTypeSelected("");
+      setIsCustomBedType(false);
+      setCustomBedTypeInput("");
+      setCustomBedsList([]);
+
       // Auto-select hotel if only 1 exists
       const defaultHotelId = hotelItems.length === 1 ? hotelItems[0]._id : (hotelItems[0]?._id || "");
       setForm({
@@ -148,6 +189,46 @@ export default function RoomFormModal({
           : [...prev.facilities, amenityName],
       };
     });
+  };
+
+  const handleAddCustomRoomType = () => {
+    const val = customRoomTypeInput.trim();
+    if (!val) return;
+    setCustomRoomTypeSelected(val);
+    setForm((prev) => ({
+      ...prev,
+      roomType: val,
+      name: !prev.name || prev.name === prev.roomType ? val : prev.name,
+    }));
+    setCustomRoomTypeInput("");
+  };
+
+  const handleRemoveCustomRoomType = () => {
+    setCustomRoomTypeSelected("");
+    setForm((prev) => ({
+      ...prev,
+      roomType: "",
+    }));
+  };
+
+  const handleAddCustomBed = () => {
+    const val = customBedTypeInput.trim();
+    if (!val) return;
+    if (!customBedsList.includes(val)) {
+      const updated = [...customBedsList, val];
+      setCustomBedsList(updated);
+      setForm((prev) => ({ ...prev, bedType: updated.join(" + ") }));
+    }
+    setCustomBedTypeInput("");
+  };
+
+  const handleRemoveCustomBed = (indexToRemove) => {
+    const updated = customBedsList.filter((_, idx) => idx !== indexToRemove);
+    setCustomBedsList(updated);
+    setForm((prev) => ({
+      ...prev,
+      bedType: updated.length > 0 ? updated.join(" + ") : "",
+    }));
   };
 
   const addCustomAmenity = () => {
@@ -344,17 +425,34 @@ export default function RoomFormModal({
       return;
     }
 
+    const finalRoomType = (isCustomRoomType ? (customRoomTypeSelected.trim() || customRoomTypeInput.trim()) : form.roomType.trim()) || "Deluxe Room";
+
+    const allCustomBeds = [
+      ...customBedsList,
+      ...(customBedTypeInput.trim() && !customBedsList.includes(customBedTypeInput.trim()) ? [customBedTypeInput.trim()] : []),
+    ];
+    const finalBedType = (isCustomBedType ? (allCustomBeds.length > 0 ? allCustomBeds.join(" + ") : "") : form.bedType.trim()) || "1 King Bed";
+
+    if (isCustomRoomType && !finalRoomType) {
+      setError("Please write and add your custom room category name.");
+      return;
+    }
+    if (isCustomBedType && !finalBedType) {
+      setError("Please write and add your custom bed configuration.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const payload = {
         hotel: form.hotel,
         name: form.name.trim(),
-        roomType: form.roomType.trim(),
+        roomType: finalRoomType,
         pricePerNight: Number(form.pricePerNight),
         availableRooms: Number(form.availableRooms),
         maxGuests: Number(form.maxGuests),
-        bedType: form.bedType.trim(),
+        bedType: finalBedType,
         numberOfBeds: Number(form.numberOfBeds),
         roomSize: form.roomSize.trim(),
         cancellationPolicy: form.cancellationPolicy.trim(),
@@ -483,30 +581,131 @@ export default function RoomFormModal({
                 )}
               </div>
 
-              {/* Room Type Preset */}
+              {/* Room Type Preset & Custom */}
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">
-                  Room Category / Type <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  name="roomType"
-                  value={form.roomType}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setForm((prev) => ({
-                      ...prev,
-                      roomType: val,
-                      name: prev.name ? prev.name : val,
-                    }));
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
-                >
-                  {ROOM_TYPES.map((rt) => (
-                    <option key={rt} value={rt}>
-                      {rt}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-ink">
+                    Room Category / Type <span className="text-rose-500">*</span>
+                  </label>
+                  {!isCustomRoomType ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomRoomType(true);
+                        if (!customRoomTypeSelected && form.roomType && !ROOM_TYPES.includes(form.roomType)) {
+                          setCustomRoomTypeSelected(form.roomType);
+                        }
+                      }}
+                      className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 underline cursor-pointer"
+                    >
+                      + Custom Category
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomRoomType(false);
+                        const fallbackType = ROOM_TYPES.includes(form.roomType) ? form.roomType : ROOM_TYPES[0];
+                        setForm((prev) => ({
+                          ...prev,
+                          roomType: fallbackType,
+                          name: !prev.name || prev.name === customRoomTypeSelected ? fallbackType : prev.name,
+                        }));
+                      }}
+                      className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 underline cursor-pointer"
+                    >
+                      ← Choose from Presets
+                    </button>
+                  )}
+                </div>
+
+                {!isCustomRoomType ? (
+                  <select
+                    name="roomType"
+                    value={form.roomType}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__custom__") {
+                        setIsCustomRoomType(true);
+                        const initialCustom = customRoomTypeInput || "";
+                        setForm((prev) => ({
+                          ...prev,
+                          roomType: initialCustom,
+                          name: !prev.name || prev.name === prev.roomType ? initialCustom : prev.name,
+                        }));
+                      } else {
+                        setForm((prev) => ({
+                          ...prev,
+                          roomType: val,
+                          name: !prev.name || prev.name === prev.roomType ? val : prev.name,
+                        }));
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                  >
+                    <optgroup label="Popular Room Categories">
+                      {ROOM_TYPES.map((rt) => (
+                        <option key={rt} value={rt}>
+                          {rt}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Personalized / Custom">
+                      <option value="__custom__">✨ + Add Custom Room Category / Type...</option>
+                    </optgroup>
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={customRoomTypeInput}
+                        onChange={(e) => setCustomRoomTypeInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddCustomRoomType();
+                          }
+                        }}
+                        placeholder="Write custom room category (e.g. Royal Suite)..."
+                        autoFocus
+                        className="flex-1 px-3.5 py-2.5 rounded-xl border-2 border-brand-500 bg-white text-ink text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-brand-500 placeholder:font-normal placeholder:text-muted/60"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomRoomType}
+                        className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1 shrink-0 active:scale-95"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                    {customRoomTypeSelected ? (
+                      <div className="space-y-1.5 mt-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-brand-50 border-2 border-brand-300 text-brand-900 font-bold text-xs shadow-xs">
+                            <span>👑 {customRoomTypeSelected}</span>
+                            <button
+                              type="button"
+                              onClick={handleRemoveCustomRoomType}
+                              className="w-5 h-5 rounded-full bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 flex items-center justify-center font-black text-xs cursor-pointer transition ml-1"
+                              title="Remove room category"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-emerald-700 font-medium">
+                          ✓ Category added! Click <strong>✕</strong> to remove.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted">
+                        Type room category above and click <strong>+ Add</strong>.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Room Name / Title */}
@@ -615,21 +814,123 @@ export default function RoomFormModal({
 
               {/* Bed Type */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-ink mb-1">
-                  Bed Configuration
-                </label>
-                <select
-                  name="bedType"
-                  value={form.bedType}
-                  onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
-                >
-                  {BED_TYPES.map((bt) => (
-                    <option key={bt} value={bt}>
-                      {bt}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-ink">
+                    Bed Configuration
+                  </label>
+                  {!isCustomBedType ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomBedType(true);
+                        if (customBedsList.length === 0 && form.bedType && !BED_TYPES.includes(form.bedType)) {
+                          const splitBeds = form.bedType.split(" + ").map((s) => s.trim()).filter(Boolean);
+                          setCustomBedsList(splitBeds.length > 0 ? splitBeds : [form.bedType]);
+                        }
+                      }}
+                      className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 underline cursor-pointer"
+                    >
+                      + Custom Bed Config
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomBedType(false);
+                        const fallbackBed = BED_TYPES.includes(form.bedType) ? form.bedType : BED_TYPES[0];
+                        setForm((prev) => ({ ...prev, bedType: fallbackBed }));
+                      }}
+                      className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 underline cursor-pointer"
+                    >
+                      ← Choose from Presets
+                    </button>
+                  )}
+                </div>
+
+                {!isCustomBedType ? (
+                  <select
+                    name="bedType"
+                    value={form.bedType}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__custom__") {
+                        setIsCustomBedType(true);
+                        const initialCustom = customBedTypeInput || "";
+                        setForm((prev) => ({ ...prev, bedType: initialCustom }));
+                      } else {
+                        setForm((prev) => ({ ...prev, bedType: val }));
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                  >
+                    <optgroup label="Standard Bed Types">
+                      {BED_TYPES.map((bt) => (
+                        <option key={bt} value={bt}>
+                          {bt}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Personalized / Custom">
+                      <option value="__custom__">✨ + Add Custom Bed Configuration...</option>
+                    </optgroup>
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={customBedTypeInput}
+                        onChange={(e) => setCustomBedTypeInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddCustomBed();
+                          }
+                        }}
+                        placeholder="Write custom bed (e.g. Single Bed, Double Bed)..."
+                        autoFocus
+                        className="flex-1 px-3.5 py-2.5 rounded-xl border-2 border-brand-500 bg-white text-ink text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-brand-500 placeholder:font-normal placeholder:text-muted/60"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomBed}
+                        className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1 shrink-0 active:scale-95"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                    {customBedsList.length > 0 ? (
+                      <div className="space-y-1.5 mt-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {customBedsList.map((bed, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-brand-50 border-2 border-brand-300 text-brand-900 font-bold text-xs shadow-xs animate-in fade-in"
+                            >
+                              <span>🛏️ {bed}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCustomBed(idx)}
+                                className="w-5 h-5 rounded-full bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 flex items-center justify-center font-black text-xs cursor-pointer transition ml-1"
+                                title="Remove this bed"
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-emerald-700 font-medium">
+                          ✓ Bed added! Click <strong>✕</strong> on any tag to remove it, or type another to add more.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted">
+                        Type bed configuration above and click <strong>+ Add</strong>.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Room Size */}
@@ -660,6 +961,27 @@ export default function RoomFormModal({
                   placeholder="e.g. Free Cancellation Till Check-in"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
                 />
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {[
+                    "Free Cancellation Till Check-in",
+                    "Free Cancellation (Up to 24 hrs)",
+                    "Non-Refundable (Best Rate)",
+                    "50% Refund Till 48 hrs",
+                  ].map((policy) => (
+                    <button
+                      key={policy}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, cancellationPolicy: policy }))}
+                      className={`text-[10px] px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                        form.cancellationPolicy === policy
+                          ? "bg-brand-100 border-brand-400 text-brand-800 font-bold"
+                          : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {policy}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Active Toggle */}

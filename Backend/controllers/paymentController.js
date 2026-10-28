@@ -2,7 +2,7 @@ import { dbConnect } from "../lib/db.js";
 import Booking from "../models/Booking.js";
 import Item from "../models/Item.js";
 import { getRazorpay, verifyRazorpaySignature } from "../lib/razorpay.js";
-import { sendMail, bookingConfirmationHtml } from "../lib/mailer.js";
+import { sendMail, bookingConfirmationHtml, adminBookingAlertHtml, vendorBookingAlertHtml } from "../lib/mailer.js";
 import {
   sendBookingWhatsAppNotifications,
   sendPaymentWhatsAppNotifications,
@@ -66,6 +66,12 @@ export async function verifyPayment(req, res) {
     return res.status(403).json({ ok: false, error: "Forbidden" });
   }
 
+  // Idempotency: if booking is already paid, do not re-send duplicate emails or notifications
+  if (booking.status === "paid") {
+    console.log(`[Payment] Booking ${booking._id} already verified as paid. Skipping duplicate processing.`);
+    return res.json({ ok: true, data: { booking } });
+  }
+
   booking.status = "paid";
   booking.payment = {
     provider: "razorpay",
@@ -76,31 +82,68 @@ export async function verifyPayment(req, res) {
   };
   await booking.save();
 
-  // Send payment WhatsApp confirmation asynchronously to Customer & Admin
+  // Send WhatsApp payment confirmation asynchronously to Customer & Admin
   sendPaymentWhatsAppNotifications(booking._id).catch((error) =>
     console.error("[WhatsApp] Payment WhatsApp notification error:", error.message)
   );
 
-  // Send WhatsApp booking notifications (fallback in case booking creation dispatch failed)
-  sendBookingWhatsAppNotifications(booking._id).catch((error) =>
-    console.error("[WhatsApp] Payment verification booking notification error:", error.message)
-  );
+  // Send ONE authoritative confirmation email to the Customer & alert to Admin
+  Item.findById(booking.item)
+    .populate("vendor")
+    .lean()
+    .then((item) => {
+      const vendor = item?.vendor;
 
-  // Send email asynchronously in the background so verification responds instantly
-  Item.findById(booking.item).lean().then((item) => {
-    sendMail({
-      to: booking.email,
-      subject: `FlipsAura — Payment received (#${booking._id})`,
-      html: bookingConfirmationHtml({
-        name: booking.name,
-        itemTitle: item?.title || "Booking",
-        bookingId: booking._id,
-        eventDate: booking.eventDate,
-        amount: booking.amount,
-        status: "paid",
-      }),
-    }).catch((error) => console.error("payment mail error:", error.message));
-  }).catch((err) => console.error("item lookup error:", err.message));
+      // 1. Customer Confirmation Email
+      sendMail({
+        to: booking.email,
+        subject: `FlipsAura — Booking & Payment Confirmed (#${booking._id})`,
+        html: bookingConfirmationHtml({
+          name: booking.name,
+          itemTitle: item?.title || "Booking",
+          bookingId: booking._id,
+          eventDate: booking.eventDate,
+          amount: booking.amount,
+          status: "paid",
+          paymentId: razorpay_payment_id,
+          notes: booking.notes,
+          phone: booking.phone,
+          vendorName:
+            vendor?.vendorProfile?.businessName ||
+            vendor?.businessName ||
+            vendor?.name ||
+            "",
+          vendorPhone: vendor?.phone || item?.contactPhone || "",
+        }),
+      }).catch((error) => console.error("Customer payment mail error:", error.message));
+
+      // 2. Admin Immediate Alert Email
+      const adminEmail = (process.env.ADMIN_EMAIL || "flipsaura187@gmail.com").trim().toLowerCase();
+      sendMail({
+        to: adminEmail,
+        subject: `🚨 NEW PAID BOOKING (#${booking._id}): ${booking.name} booked ${item?.title || "Service"} (₹${booking.amount})`,
+        html: adminBookingAlertHtml({
+          booking,
+          item,
+          vendor,
+        }),
+      }).catch((error) => console.error("Admin booking alert mail error:", error.message));
+
+      // 3. Vendor Email Alert (if vendor has a valid non-internal email)
+      const vendorEmail = vendor?.email;
+      if (vendorEmail && !vendorEmail.endsWith(".local")) {
+        sendMail({
+          to: vendorEmail,
+          subject: `FlipsAura — New Confirmed Booking (#${booking._id}) for ${item?.title || "your listing"}`,
+          html: vendorBookingAlertHtml({
+            booking,
+            item,
+            vendor,
+          }),
+        }).catch((error) => console.error("Vendor booking alert mail error:", error.message));
+      }
+    })
+    .catch((err) => console.error("item lookup error:", err.message));
 
   res.json({ ok: true, data: { booking } });
 }

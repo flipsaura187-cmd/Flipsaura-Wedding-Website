@@ -416,6 +416,30 @@ export async function sendWhatsAppMessage({
       };
     }
 
+    if (data.error?.code === "PLAN_REQUIRED") {
+      console.warn(
+        `[WhatsApp Gateway Warning] FireClashPro subscription plan is required or expired. Choose a plan on fireclashpro.com to enable automatic WhatsApp dispatch.`
+      );
+      return {
+        success: false,
+        provider: "fireclashpro",
+        planRequired: true,
+        error: "FireClashPro active plan required to send WhatsApp messages. Please renew plan on fireclashpro.com.",
+      };
+    }
+
+    if (data.error?.code === "NOT_FOUND") {
+      console.warn(
+        `[WhatsApp Gateway Warning] Session ${sessionId} not found on FireClashPro. Session may need re-creation or plan activation.`
+      );
+      return {
+        success: false,
+        provider: "fireclashpro",
+        notFound: true,
+        error: "FireClashPro session not found. Please activate plan and re-link WhatsApp.",
+      };
+    }
+
     if (data.error?.code === "SESSION_NOT_CONNECTED") {
       console.warn(
         `[WhatsApp Gateway Warning] Session ${sessionId} is not connected on FireClashPro. Please scan QR code in fireclashpro.com dashboard.`
@@ -755,9 +779,54 @@ export function formatAdminPaymentWhatsAppMessage(booking, item, vendor) {
 }
 
 /**
+ * Formats WhatsApp notification text for Vendor when a customer confirms payment for a booking.
+ */
+export function formatVendorPaymentWhatsAppMessage(booking, item, vendor) {
+  const bookingId = String(booking?._id || "N/A");
+  const customerName = booking?.name || "Customer";
+  const customerPhone = booking?.phone || "N/A";
+  const serviceName = item?.title || "Booked Service";
+  const vendorName =
+    vendor?.vendorProfile?.businessName ||
+    vendor?.vendorProfile?.ownerName ||
+    vendor?.name ||
+    "Partner";
+  const bookingDate =
+    booking?.eventDate ||
+    (booking?.createdAt
+      ? new Date(booking.createdAt).toLocaleDateString("en-IN", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "N/A");
+  const amountStr =
+    booking?.amount !== undefined
+      ? `₹${Number(booking.amount).toLocaleString("en-IN")}`
+      : "";
+  const paymentId = booking?.payment?.paymentId || "Confirmed";
+
+  let msg = `*New Booking Confirmed — FlipsAura!* 🎉\n\n`;
+  msg += `Hi ${vendorName}!\n\n`;
+  msg += `You have received a new confirmed & paid booking on FlipsAura.\n\n`;
+  msg += `*Booking ID:* #${bookingId}\n`;
+  msg += `*Service / Room:* ${serviceName}\n`;
+  msg += `*Guest / Customer:* ${customerName}\n`;
+  msg += `*Contact Phone:* ${customerPhone}\n`;
+  msg += `*Event / Check-in Date:* 📅 ${bookingDate}\n`;
+  msg += `*Amount Paid:* ${amountStr}\n`;
+  msg += `*Payment ID:* ${paymentId}\n`;
+  if (booking?.notes) {
+    msg += `*Special Requests / Notes:* ${booking.notes}\n`;
+  }
+  msg += `\nPlease keep the reservation ready for the customer.`;
+  return msg;
+}
+
+/**
  * Orchestrates WhatsApp notifications when payment is verified:
  * - Persists and respects delivery status flags to prevent duplicates.
- * - Handles admin and customer notifications in complete isolation.
+ * - Handles admin, customer, and vendor notifications in complete isolation.
  * - Never throws or disrupts payment lifecycle.
  */
 export async function sendPaymentWhatsAppNotifications(bookingId) {
@@ -786,16 +855,21 @@ export async function sendPaymentWhatsAppNotifications(bookingId) {
     if (!booking.notifications.paymentCustomerWhatsApp) {
       booking.notifications.paymentCustomerWhatsApp = { sent: false };
     }
+    if (!booking.notifications.paymentVendorWhatsApp) {
+      booking.notifications.paymentVendorWhatsApp = { sent: false };
+    }
 
     if (
       booking.notifications.paymentAdminWhatsApp.sent &&
-      booking.notifications.paymentCustomerWhatsApp.sent
+      booking.notifications.paymentCustomerWhatsApp.sent &&
+      booking.notifications.paymentVendorWhatsApp.sent
     ) {
       return {
         success: true,
         skipped: true,
         admin: booking.notifications.paymentAdminWhatsApp,
         customer: booking.notifications.paymentCustomerWhatsApp,
+        vendor: booking.notifications.paymentVendorWhatsApp,
       };
     }
 
@@ -878,6 +952,43 @@ export async function sendPaymentWhatsAppNotifications(bookingId) {
       }
     }
 
+    // 3. Dispatch Vendor Payment Notification
+    if (!booking.notifications.paymentVendorWhatsApp.sent) {
+      try {
+        const vendorPhone =
+          vendor?.phone ||
+          vendor?.vendorProfile?.ownerPhone ||
+          vendor?.vendorProfile?.phone ||
+          vendor?.vendorProfile?.whatsapp ||
+          item?.contactPhone;
+
+        if (vendorPhone) {
+          const text = formatVendorPaymentWhatsAppMessage(booking, item, vendor);
+          const res = await sendWhatsAppMessage({ to: vendorPhone, text });
+          booking.notifications.paymentVendorWhatsApp = {
+            sent: !!res.success,
+            sentAt: res.success ? new Date() : null,
+            messageId: String(res.messageId || (res.success ? "sent" : "")),
+            error: res.success ? "" : String(res.error || "Failed"),
+          };
+        } else {
+          booking.notifications.paymentVendorWhatsApp = {
+            sent: false,
+            sentAt: null,
+            messageId: "",
+            error: "Vendor phone not recorded",
+          };
+        }
+      } catch (err) {
+        booking.notifications.paymentVendorWhatsApp = {
+          sent: false,
+          sentAt: null,
+          messageId: "",
+          error: err.message,
+        };
+      }
+    }
+
     try {
       await booking.save();
     } catch (saveErr) {
@@ -888,10 +999,12 @@ export async function sendPaymentWhatsAppNotifications(bookingId) {
       success: true,
       admin: booking.notifications.paymentAdminWhatsApp,
       customer: booking.notifications.paymentCustomerWhatsApp,
+      vendor: booking.notifications.paymentVendorWhatsApp,
     };
   } catch (outerErr) {
     console.error("[WhatsApp Payment Notification Error]", outerErr.message);
     return { success: false, error: outerErr.message };
   }
 }
+
 

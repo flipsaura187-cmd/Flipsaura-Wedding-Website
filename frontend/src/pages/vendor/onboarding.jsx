@@ -23,22 +23,37 @@ export const POPULAR_ROOM_FACILITIES = [
 
 export const ROOM_TYPES = [
   "Deluxe Room",
+  "Deluxe AC Room",
+  "Super Deluxe Room",
   "Standard Room",
+  "Standard AC Room",
+  "Standard Non-AC Room",
+  "Executive Room",
+  "Suite Room",
   "Executive Suite",
-  "Presidential Suite",
   "Family Suite",
-  "AC Room",
-  "Non-AC Room",
+  "Resort Cottage",
+  "Villa",
+  "Honeymoon Suite",
+  "Presidential Suite",
   "Villa / Cottage",
+  "Dormitory / Shared",
 ];
 
 export const BED_TYPES = [
   "1 King Bed",
   "1 Queen Bed",
-  "2 Single Beds",
-  "2 Double Beds",
   "1 Double Bed",
+  "2 Twin Beds",
+  "2 Double Beds",
+  "1 Single Bed",
+  "1 King Bed + 1 Single Bed",
+  "1 Double Bed or 2 Single Beds",
+  "King Bed + Sofa Bed",
+  "2 Queen Beds",
   "3 Single Beds",
+  "Bunk Beds",
+  "Custom / Extra Bed Available",
 ];
 
 export default function VendorOnboardingPage() {
@@ -1368,21 +1383,113 @@ export default function VendorOnboardingPage() {
                                       />
                                     </div>
 
+                                    {/* Room Type */}
                                     <div>
-                                      <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
-                                        Room Type
-                                      </label>
-                                      <select
-                                        value={room.roomType || "Deluxe Room"}
-                                        onChange={(e) => updateHotelRoom(rIdx, "roomType", e.target.value)}
-                                        className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
-                                      >
-                                        {ROOM_TYPES.map((t) => (
-                                          <option key={t} value={t}>
-                                            {t}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      {(() => {
+                                        const isCustomRt = Boolean(room.isCustomRoomType || (room.roomType && !ROOM_TYPES.includes(room.roomType)));
+                                        return (
+                                          <>
+                                            <div className="flex items-center justify-between mb-1.5">
+                                              <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
+                                                Room Type
+                                              </label>
+                                              {!isCustomRt ? (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    updateHotelRoom(rIdx, "isCustomRoomType", true);
+                                                    if (!room.roomType || ROOM_TYPES.includes(room.roomType)) {
+                                                      updateHotelRoom(rIdx, "roomType", "");
+                                                    }
+                                                  }}
+                                                  className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 underline cursor-pointer"
+                                                >
+                                                  + Custom
+                                                </button>
+                                              ) : (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    updateHotelRoom(rIdx, "isCustomRoomType", false);
+                                                    const fallback = ROOM_TYPES.includes(room.roomType) ? room.roomType : ROOM_TYPES[0];
+                                                    updateHotelRoom(rIdx, "roomType", fallback);
+                                                  }}
+                                                  className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 underline cursor-pointer"
+                                                >
+                                                  ← Presets
+                                                </button>
+                                              )}
+                                            </div>
+
+                                            {!isCustomRt ? (
+                                              <select
+                                                value={room.roomType || "Deluxe Room"}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  if (val === "__custom__") {
+                                                    updateHotelRoom(rIdx, "isCustomRoomType", true);
+                                                    updateHotelRoom(rIdx, "roomType", "");
+                                                  } else {
+                                                    updateHotelRoom(rIdx, "roomType", val);
+                                                  }
+                                                }}
+                                                className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
+                                              >
+                                                <optgroup label="Popular Categories">
+                                                  {ROOM_TYPES.map((t) => (
+                                                    <option key={t} value={t}>
+                                                      {t}
+                                                    </option>
+                                                  ))}
+                                                </optgroup>
+                                                <optgroup label="Personalized / Custom">
+                                                  <option value="__custom__">✨ + Add Custom Room Type...</option>
+                                                </optgroup>
+                                              </select>
+                                            ) : (
+                                              <div className="space-y-1.5">
+                                                <div className="flex gap-1.5">
+                                                  <input
+                                                    type="text"
+                                                    placeholder="Write your custom room category..."
+                                                    value={room.roomType || ""}
+                                                    onChange={(e) => updateHotelRoom(rIdx, "roomType", e.target.value)}
+                                                    className="w-full px-3.5 py-2 rounded-xl border-2 border-brand-500 bg-white text-xs md:text-sm text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 flex-1"
+                                                    autoFocus
+                                                  />
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      if (room.roomType?.trim()) {
+                                                        updateHotelRoom(rIdx, "roomType", room.roomType.trim());
+                                                      }
+                                                    }}
+                                                    className="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shrink-0 cursor-pointer"
+                                                  >
+                                                    + Add
+                                                  </button>
+                                                </div>
+                                                {room.roomType?.trim() && (
+                                                  <div className="flex items-center gap-2 mt-1">
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-brand-50 border border-brand-300 text-brand-900 font-bold text-xs shadow-xs">
+                                                      <span>👑 {room.roomType.trim()}</span>
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => updateHotelRoom(rIdx, "roomType", "")}
+                                                        className="w-4 h-4 rounded-full bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 flex items-center justify-center font-black text-xs cursor-pointer transition ml-1"
+                                                        title="Remove category"
+                                                      >
+                                                        ✕
+                                                      </button>
+                                                    </span>
+                                                    <span className="text-[11px] text-emerald-700 font-medium">✓ Added</span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
                                     </div>
 
                                     <div>
@@ -1428,21 +1535,113 @@ export default function VendorOnboardingPage() {
                                       />
                                     </div>
 
+                                    {/* Bed Configuration */}
                                     <div>
-                                      <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">
-                                        Bed Configuration
-                                      </label>
-                                      <select
-                                        value={room.bedType || "1 King Bed"}
-                                        onChange={(e) => updateHotelRoom(rIdx, "bedType", e.target.value)}
-                                        className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
-                                      >
-                                        {BED_TYPES.map((b) => (
-                                          <option key={b} value={b}>
-                                            {b}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      {(() => {
+                                        const isCustomBt = Boolean(room.isCustomBedType || (room.bedType && !BED_TYPES.includes(room.bedType)));
+                                        return (
+                                          <>
+                                            <div className="flex items-center justify-between mb-1.5">
+                                              <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
+                                                Bed Configuration
+                                              </label>
+                                              {!isCustomBt ? (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    updateHotelRoom(rIdx, "isCustomBedType", true);
+                                                    if (!room.bedType || BED_TYPES.includes(room.bedType)) {
+                                                      updateHotelRoom(rIdx, "bedType", "");
+                                                    }
+                                                  }}
+                                                  className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 underline cursor-pointer"
+                                                >
+                                                  + Custom
+                                                </button>
+                                              ) : (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    updateHotelRoom(rIdx, "isCustomBedType", false);
+                                                    const fallback = BED_TYPES.includes(room.bedType) ? room.bedType : BED_TYPES[0];
+                                                    updateHotelRoom(rIdx, "bedType", fallback);
+                                                  }}
+                                                  className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 underline cursor-pointer"
+                                                >
+                                                  ← Presets
+                                                </button>
+                                              )}
+                                            </div>
+
+                                            {!isCustomBt ? (
+                                              <select
+                                                value={room.bedType || "1 King Bed"}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  if (val === "__custom__") {
+                                                    updateHotelRoom(rIdx, "isCustomBedType", true);
+                                                    updateHotelRoom(rIdx, "bedType", "");
+                                                  } else {
+                                                    updateHotelRoom(rIdx, "bedType", val);
+                                                  }
+                                                }}
+                                                className="w-full px-3.5 py-2 rounded-xl border border-line text-xs md:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 bg-white"
+                                              >
+                                                <optgroup label="Standard Bed Types">
+                                                  {BED_TYPES.map((b) => (
+                                                    <option key={b} value={b}>
+                                                      {b}
+                                                    </option>
+                                                  ))}
+                                                </optgroup>
+                                                <optgroup label="Personalized / Custom">
+                                                  <option value="__custom__">✨ + Add Custom Bed Config...</option>
+                                                </optgroup>
+                                              </select>
+                                            ) : (
+                                              <div className="space-y-1.5">
+                                                <div className="flex gap-1.5">
+                                                  <input
+                                                    type="text"
+                                                    placeholder="Write your custom bed config (e.g. Double Bed)..."
+                                                    value={room.bedType || ""}
+                                                    onChange={(e) => updateHotelRoom(rIdx, "bedType", e.target.value)}
+                                                    className="w-full px-3.5 py-2 rounded-xl border-2 border-brand-500 bg-white text-xs md:text-sm text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 flex-1"
+                                                    autoFocus
+                                                  />
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      if (room.bedType?.trim()) {
+                                                        updateHotelRoom(rIdx, "bedType", room.bedType.trim());
+                                                      }
+                                                    }}
+                                                    className="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shrink-0 cursor-pointer"
+                                                  >
+                                                    + Add
+                                                  </button>
+                                                </div>
+                                                {room.bedType?.trim() && (
+                                                  <div className="flex items-center gap-2 mt-1">
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-brand-50 border border-brand-300 text-brand-900 font-bold text-xs shadow-xs">
+                                                      <span>🛏️ {room.bedType.trim()}</span>
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => updateHotelRoom(rIdx, "bedType", "")}
+                                                        className="w-4 h-4 rounded-full bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 flex items-center justify-center font-black text-xs cursor-pointer transition ml-1"
+                                                        title="Remove bed"
+                                                      >
+                                                        ✕
+                                                      </button>
+                                                    </span>
+                                                    <span className="text-[11px] text-emerald-700 font-medium">✓ Added</span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
                                     </div>
                                   </div>
 

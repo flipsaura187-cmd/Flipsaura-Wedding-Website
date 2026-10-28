@@ -15,7 +15,11 @@ export async function getBookings(req, res) {
         : { user: req.user.id };
 
   const bookings = await Booking.find(filter)
-    .populate("item")
+    .populate({
+      path: "item",
+      populate: { path: "vendor", select: "name phone vendorProfile" },
+    })
+    .populate("vendor", "name phone vendorProfile")
     .sort({ createdAt: -1 })
     .lean();
 
@@ -61,24 +65,29 @@ export async function createBooking(req, res) {
     status: "pending",
   });
 
-  // Send email asynchronously in the background so it never blocks or delays checkout
-  sendMail({
-    to: booking.email,
-    subject: `FlipsAura — Booking received (#${booking._id})`,
-    html: bookingConfirmationHtml({
-      name: booking.name,
-      itemTitle: item.title,
-      bookingId: booking._id,
-      eventDate: booking.eventDate,
-      amount: booking.amount,
-      status: "pending",
-    }),
-  }).catch((error) => console.error("booking mail error:", error.message));
+  // If booking is free/paid at creation, send confirmation immediately.
+  // For online checkouts, the official confirmation email and notifications are dispatched
+  // upon successful payment verification in paymentController.js to prevent duplicate emails.
+  if (booking.status === "paid" || booking.amount === 0) {
+    sendMail({
+      to: booking.email,
+      subject: `FlipsAura — Booking Confirmed (#${booking._id})`,
+      html: bookingConfirmationHtml({
+        name: booking.name,
+        itemTitle: item.title,
+        bookingId: booking._id,
+        eventDate: booking.eventDate,
+        amount: booking.amount,
+        status: "paid",
+        notes: booking.notes,
+        phone: booking.phone,
+      }),
+    }).catch((error) => console.error("booking mail error:", error.message));
 
-  // Send WhatsApp notifications asynchronously in the background (Admin & Customer)
-  sendBookingWhatsAppNotifications(booking._id).catch((error) =>
-    console.error("[WhatsApp] Booking notification error:", error.message)
-  );
+    sendBookingWhatsAppNotifications(booking._id).catch((error) =>
+      console.error("[WhatsApp] Booking notification error:", error.message)
+    );
+  }
 
   res.json({ ok: true, data: { booking } });
 }

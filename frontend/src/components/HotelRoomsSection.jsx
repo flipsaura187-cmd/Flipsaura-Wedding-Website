@@ -3,16 +3,48 @@ import { useState, useEffect } from "react";
 import { useRouter } from "@/compat/navigation";
 import api from "@/api/axios";
 
+function getAmenityIcon(name) {
+  const lower = (name || "").toLowerCase();
+  if (lower.includes("wifi") || lower.includes("wi-fi") || lower.includes("internet")) return "📶";
+  if (lower.includes("ac") || lower.includes("air condition")) return "❄️";
+  if (lower.includes("tv")) return "📺";
+  if (lower.includes("breakfast")) return "☕";
+  if (lower.includes("hot water") || lower.includes("geyser")) return "♨️";
+  if (lower.includes("bathroom")) return "🚿";
+  if (lower.includes("room service")) return "🛎️";
+  if (lower.includes("kettle") || lower.includes("tea")) return "🫖";
+  if (lower.includes("balcony") || lower.includes("view")) return "🪟";
+  if (lower.includes("fridge") || lower.includes("refrigerator")) return "🧊";
+  if (lower.includes("desk") || lower.includes("work")) return "💼";
+  if (lower.includes("housekeeping") || lower.includes("cleaning")) return "🧹";
+  if (lower.includes("safe")) return "🔒";
+  if (lower.includes("couple")) return "❤️";
+  if (lower.includes("cancel")) return "🛡️";
+  if (lower.includes("parking")) return "🅿️";
+  if (lower.includes("elevator") || lower.includes("lift")) return "🛗";
+  if (lower.includes("toiletries") || lower.includes("towel")) return "🧼";
+  return "✓";
+}
+
 export default function HotelRoomsSection({ item, isTopPriority = false }) {
   const router = useRouter();
   const [rooms, setRooms] = useState(item?.rooms || []);
   const [loading, setLoading] = useState(!item?.rooms);
   const [cardPhotoIndices, setCardPhotoIndices] = useState({});
+  
+  // Full screen photo gallery lightbox
   const [galleryModal, setGalleryModal] = useState({
     isOpen: false,
     roomName: "",
     images: [],
     activeIndex: 0,
+  });
+
+  // MakeMyTrip style "Click to View Details" modal
+  const [detailsModal, setDetailsModal] = useState({
+    isOpen: false,
+    room: null,
+    activePhotoIndex: 0,
   });
 
   const hotelId = item?._id;
@@ -62,6 +94,36 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
     }));
   };
 
+  const openRoomDetails = (room, e) => {
+    if (e) e.stopPropagation();
+    setDetailsModal({
+      isOpen: true,
+      room,
+      activePhotoIndex: 0,
+    });
+  };
+
+  const closeRoomDetails = () => {
+    setDetailsModal({
+      isOpen: false,
+      room: null,
+      activePhotoIndex: 0,
+    });
+  };
+
+  // Lock body scroll when any modal is open
+  useEffect(() => {
+    if (galleryModal.isOpen || detailsModal.isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [galleryModal.isOpen, detailsModal.isOpen]);
+
+  // Gallery keyboard controls
   useEffect(() => {
     if (!galleryModal.isOpen) return;
 
@@ -84,6 +146,20 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [galleryModal.isOpen]);
+
+  // Details Modal keyboard controls
+  useEffect(() => {
+    if (!detailsModal.isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        closeRoomDetails();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [detailsModal.isOpen]);
 
   // Dynamically fetch rooms from MongoDB
   useEffect(() => {
@@ -117,10 +193,6 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
       price: String(room.pricePerNight),
     });
     router.push(`/checkout?${query.toString()}`);
-  };
-
-  const handleStandardBooking = () => {
-    router.push(`/checkout?itemId=${hotelId}`);
   };
 
   return (
@@ -180,7 +252,7 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
           </div>
         </div>
       ) : (
-        /* Rooms Grid */
+        /* Rooms Grid (MakeMyTrip compact card design) */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {rooms.map((room) => {
             const roomImages =
@@ -192,7 +264,7 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
             const currentImage = roomImages[currentCardIndex];
             const isSingleLeft = room.availableRooms === 1;
 
-            // Merge facilities with cancellation policy if not already included
+            // Display facilities
             const displayFacilities = Array.isArray(room.facilities) ? [...room.facilities] : [];
             if (
               room.cancellationPolicy &&
@@ -200,6 +272,12 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
             ) {
               displayFacilities.push(room.cancellationPolicy);
             }
+
+            const visiblePerks = displayFacilities.slice(0, 3);
+            const remainingPerksCount = displayFacilities.length - visiblePerks.length;
+
+            const originalPrice = Math.round((room.pricePerNight || 1000) * 1.35);
+            const taxesEst = Math.round((room.pricePerNight || 1000) * 0.12);
 
             return (
               <div
@@ -229,7 +307,7 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
                     )}
                   </div>
 
-                  {/* On-card Previous / Next buttons if multiple photos */}
+                  {/* Previous / Next buttons */}
                   {photosCount > 1 && (
                     <>
                       <button
@@ -284,89 +362,105 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
                   </button>
                 </div>
 
-                {/* Room Info */}
-                <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="space-y-3.5">
-                    {/* Header + Price */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#b8246b] leading-tight group-hover:text-brand-700 transition-colors">
+                {/* Compact Room Info (MakeMyTrip Style) */}
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    {/* Header + Capacity */}
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <h3
+                          onClick={(e) => openRoomDetails(room, e)}
+                          className="font-serif text-lg sm:text-xl font-bold text-ink leading-snug hover:text-brand-700 transition-colors cursor-pointer"
+                          title="Click to view full room details"
+                        >
                           {room.name}
                         </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium mt-1">
-                          {room.bedType || "1 King Bed"} • {room.numberOfBeds || 1} Bed{room.numberOfBeds === 1 ? "" : "s"}
-                        </p>
+                        {room.roomSize && (
+                          <span className="text-[11px] font-semibold text-muted bg-gray-100 px-2 py-0.5 rounded-md shrink-0">
+                            {room.roomSize}
+                          </span>
+                        )}
                       </div>
 
-                      <div className="text-right shrink-0">
-                        <div className="text-2xl sm:text-3xl font-extrabold text-[#b8246b]">
-                          ₹{room.pricePerNight?.toLocaleString("en-IN")}
-                        </div>
-                        <span className="text-[11px] text-gray-500 font-medium block">/ night</span>
+                      <div className="flex items-center gap-2 text-xs text-muted font-medium mt-1">
+                        <span>🛏️ {room.bedType || "1 King Bed"}</span>
+                        <span>•</span>
+                        <span>👥 Max {room.maxGuests || 2} Guests</span>
                       </div>
                     </div>
 
-                    {/* Capacity & Availability Tags (Matching Reference Image) */}
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 text-purple-900 font-bold border border-purple-200">
-                        👥 Max {room.maxGuests || 2} Guests
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-900 font-bold border border-blue-200">
-                        🛏️ {room.bedType || "1 King Bed"}
-                      </span>
+                    {/* Key Perks Preview & 'View Details' Click Trigger */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {visiblePerks.map((fac, idx) => (
+                        <span
+                          key={idx}
+                          className="text-xs px-2.5 py-1 rounded-xl bg-pink-50/70 text-brand-900 border border-pink-200/90 font-medium inline-flex items-center gap-1"
+                        >
+                          <span className="text-brand-600 font-bold text-[11px]">
+                            {getAmenityIcon(fac)}
+                          </span>
+                          <span className="truncate max-w-[150px]">{fac}</span>
+                        </span>
+                      ))}
+
+                      {remainingPerksCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={(e) => openRoomDetails(room, e)}
+                          className="text-xs px-2.5 py-1 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold border border-brand-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>+{remainingPerksCount} more</span>
+                          <span>›</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Pricing Block (MakeMyTrip signature format) */}
+                    <div className="pt-2 border-t border-gray-100 flex items-baseline justify-between gap-2">
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xs text-gray-400 line-through">
+                            ₹{originalPrice.toLocaleString("en-IN")}
+                          </span>
+                          <span className="text-2xl font-extrabold text-ink">
+                            ₹{room.pricePerNight?.toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-gray-500 font-medium block">
+                          + ₹{taxesEst.toLocaleString("en-IN")} taxes & fees / night
+                        </span>
+                      </div>
+
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold border ${
+                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                           room.availableRooms > 0
-                            ? "bg-emerald-50 text-emerald-900 border-emerald-200"
-                            : "bg-rose-50 text-rose-900 border-rose-200"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : "bg-rose-50 text-rose-800 border-rose-200"
                         }`}
                       >
-                        📦 {room.availableRooms > 0 ? `${room.availableRooms} Available` : "Sold Out"}
+                        {room.availableRooms > 0
+                          ? `${room.availableRooms} Left`
+                          : "Sold Out"}
                       </span>
                     </div>
-
-                    {/* Description & Room Size */}
-                    {(room.roomSize || room.description) && (
-                      <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                        {room.roomSize ? (
-                          <span className="font-semibold text-gray-800">{room.roomSize} </span>
-                        ) : null}
-                        {room.description}
-                      </p>
-                    )}
-
-                    {/* Facilities / Amenities with Pink Check Badges */}
-                    {displayFacilities.length > 0 && (
-                      <div className="pt-2 border-t border-pink-100">
-                        <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-2">
-                          ROOM FACILITIES & PERKS:
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {displayFacilities.map((fac, idx) => (
-                            <span
-                              key={idx}
-                              className="text-xs px-2.5 py-1 rounded-xl bg-pink-50/70 hover:bg-pink-50 text-brand-900 border border-pink-200/90 font-medium flex items-center gap-1 transition"
-                            >
-                              <span className="text-brand-600 font-bold">✓</span>
-                              <span>{fac}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Book Button Footer */}
-                  <div className="pt-4 border-t border-pink-100 flex items-center justify-between gap-3">
-                    <span className="text-xs text-gray-500 font-medium">
-                      Instant Booking Confirmation
-                    </span>
+                  {/* Actions Row: 'View Details' and 'Book Room' */}
+                  <div className="pt-3 border-t border-gray-100 flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={(e) => openRoomDetails(room, e)}
+                      className="flex-1 py-2.5 px-3 rounded-xl border border-brand-200 hover:border-brand-300 hover:bg-brand-50/60 text-brand-800 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <span>Room Details</span>
+                      <span className="text-brand-600 font-bold">›</span>
+                    </button>
 
                     <button
                       type="button"
                       onClick={() => handleBookRoom(room)}
                       disabled={room.availableRooms <= 0}
-                      className="px-6 py-2.5 rounded-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-brand-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <span>Book Room</span>
                       <span>→</span>
@@ -376,6 +470,284 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* MAKE MY TRIP STYLE: ROOM DETAILS MODAL / BOTTOM SHEET */}
+      {detailsModal.isOpen && detailsModal.room && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in duration-200"
+          onClick={closeRoomDetails}
+        >
+          <div
+            className="w-full sm:max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200/60">
+                  {detailsModal.room.roomType || "Deluxe Room"}
+                </span>
+                <h3 className="font-serif font-bold text-xl sm:text-2xl text-ink mt-0.5">
+                  {detailsModal.room.name}
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeRoomDetails}
+                className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center text-base font-bold transition cursor-pointer"
+                title="Close (Esc)"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+              {/* Photo Showcase */}
+              {(() => {
+                const modalImages =
+                  Array.isArray(detailsModal.room.images) &&
+                  detailsModal.room.images.length > 0
+                    ? detailsModal.room.images
+                    : [item?.images?.[0] || "/images/categories/hotels.jpg"];
+                const activePhoto = modalImages[detailsModal.activePhotoIndex || 0];
+
+                return (
+                  <div className="space-y-2">
+                    <div
+                      className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-xs cursor-pointer group"
+                      onClick={() => openGallery(detailsModal.room, detailsModal.activePhotoIndex)}
+                    >
+                      <img
+                        src={activePhoto}
+                        alt={`${detailsModal.room.name} preview`}
+                        className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                      />
+
+                      {modalImages.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDetailsModal((prev) => ({
+                                ...prev,
+                                activePhotoIndex:
+                                  (prev.activePhotoIndex - 1 + modalImages.length) %
+                                  modalImages.length,
+                              }));
+                            }}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center font-bold shadow-md"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDetailsModal((prev) => ({
+                                ...prev,
+                                activePhotoIndex:
+                                  (prev.activePhotoIndex + 1) % modalImages.length,
+                              }));
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center font-bold shadow-md"
+                          >
+                            ›
+                          </button>
+                        </>
+                      )}
+
+                      <span className="absolute bottom-2.5 right-2.5 px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-xs font-semibold shadow-md flex items-center gap-1">
+                        <span>🔍</span>
+                        <span>Expand Gallery</span>
+                      </span>
+                    </div>
+
+                    {/* Thumbnail strip */}
+                    {modalImages.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {modalImages.map((src, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() =>
+                              setDetailsModal((prev) => ({
+                                ...prev,
+                                activePhotoIndex: i,
+                              }))
+                            }
+                            className={`w-14 h-11 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${
+                              i === detailsModal.activePhotoIndex
+                                ? "border-brand-600 ring-2 ring-brand-400/40 scale-105"
+                                : "border-gray-200 opacity-70 hover:opacity-100"
+                            }`}
+                          >
+                            <img src={src} alt="thumb" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* 4 Quick Stat Highlights */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="p-3 bg-brand-50/70 rounded-2xl border border-brand-100 text-center">
+                  <span className="text-base block mb-0.5">👥</span>
+                  <span className="text-[10px] uppercase font-bold text-gray-500 block">
+                    Capacity
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-ink">
+                    Max {detailsModal.room.maxGuests || 2} Guests
+                  </span>
+                </div>
+
+                <div className="p-3 bg-blue-50/70 rounded-2xl border border-blue-100 text-center">
+                  <span className="text-base block mb-0.5">🛏️</span>
+                  <span className="text-[10px] uppercase font-bold text-gray-500 block">
+                    Bed Setup
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-ink truncate block">
+                    {detailsModal.room.bedType || "1 King Bed"}
+                  </span>
+                </div>
+
+                <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-100 text-center">
+                  <span className="text-base block mb-0.5">📐</span>
+                  <span className="text-[10px] uppercase font-bold text-gray-500 block">
+                    Room Size
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-ink">
+                    {detailsModal.room.roomSize || "280 sq.ft"}
+                  </span>
+                </div>
+
+                <div className="p-3 bg-emerald-50/70 rounded-2xl border border-emerald-100 text-center">
+                  <span className="text-base block mb-0.5">📦</span>
+                  <span className="text-[10px] uppercase font-bold text-gray-500 block">
+                    Available
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-emerald-800">
+                    {detailsModal.room.availableRooms > 0
+                      ? `${detailsModal.room.availableRooms} Left`
+                      : "Sold Out"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              {detailsModal.room.description && (
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-1">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Room Overview
+                  </h4>
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                    {detailsModal.room.description}
+                  </p>
+                </div>
+              )}
+
+              {/* All Room Facilities & Amenities (Full Checklist) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-1.5">
+                    <span>✨</span>
+                    <span>Room Facilities & Amenities</span>
+                  </h4>
+                  <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
+                    {Array.isArray(detailsModal.room.facilities)
+                      ? detailsModal.room.facilities.length
+                      : 0}{" "}
+                    Included
+                  </span>
+                </div>
+
+                {Array.isArray(detailsModal.room.facilities) &&
+                detailsModal.room.facilities.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {detailsModal.room.facilities.map((fac, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-xl bg-pink-50/50 hover:bg-pink-50 text-ink border border-pink-100 text-xs font-medium flex items-center gap-2 transition"
+                      >
+                        <span className="text-base">{getAmenityIcon(fac)}</span>
+                        <span>{fac}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted italic">
+                    Standard hotel amenities included (Wi-Fi, AC, Daily Housekeeping).
+                  </p>
+                )}
+              </div>
+
+              {/* Policies & Perks */}
+              <div className="p-4 rounded-2xl bg-brand-50/50 border border-brand-100 space-y-2 text-xs text-gray-700">
+                <h4 className="font-bold uppercase tracking-wider text-brand-900 text-[11px] flex items-center gap-1.5">
+                  <span>🛡️</span> Booking & Hotel Policies
+                </h4>
+                <div className="space-y-1.5 leading-relaxed">
+                  <div className="flex items-start gap-2">
+                    <span className="text-emerald-600 font-bold">✓</span>
+                    <span>
+                      <b>Cancellation:</b>{" "}
+                      {detailsModal.room.cancellationPolicy ||
+                        "Free cancellation till check-in date"}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-emerald-600 font-bold">✓</span>
+                    <span>
+                      <b>Check-in / Check-out:</b> Standard check-in 12:00 PM • Standard check-out 11:00 AM
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-emerald-600 font-bold">✓</span>
+                    <span>
+                      <b>Guest Verification:</b> Valid government-issued photo ID required for all adults at check-in.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Sticky Bottom Action Bar */}
+            <div className="p-4 sm:p-5 border-t border-gray-100 bg-white flex items-center justify-between gap-4 shrink-0 shadow-lg">
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xs text-gray-400 line-through">
+                    ₹{Math.round((detailsModal.room.pricePerNight || 1000) * 1.35).toLocaleString("en-IN")}
+                  </span>
+                  <span className="text-2xl sm:text-3xl font-extrabold text-[#b8246b]">
+                    ₹{detailsModal.room.pricePerNight?.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <span className="text-[11px] text-gray-500 font-medium block">
+                  + ₹{Math.round((detailsModal.room.pricePerNight || 1000) * 0.12).toLocaleString("en-IN")} taxes & fees / night
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const r = detailsModal.room;
+                  closeRoomDetails();
+                  handleBookRoom(r);
+                }}
+                disabled={detailsModal.room.availableRooms <= 0}
+                className="px-6 sm:px-8 py-3 rounded-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-lg shadow-brand-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+              >
+                <span>Book This Room</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

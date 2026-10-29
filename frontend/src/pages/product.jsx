@@ -297,7 +297,7 @@ export default function ProductPage() {
                     </div>
                   </div>
 
-                  {/* Rest of Hotel Information: Amenities, Specifications, Vendor Info */}
+                  {/* Rest of Hotel Information: Amenities, Vendor Info */}
                   <div className="flex-1 w-full space-y-6">
                     {/* Vendor / Business Details Card */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white rounded-2xl border border-brand-100 shadow-xs">
@@ -331,42 +331,6 @@ export default function ProductPage() {
                       )}
                     </div>
 
-                    {/* Specifications */}
-                    {item.specifications?.filter((s) => {
-                      const k = (s.key || "").toLowerCase();
-                      const v = (s.value || "").toLowerCase();
-                      if (k.includes("rating")) return false;
-                      if (k.includes("makemytrip") || v.includes("makemytrip")) return false;
-                      return true;
-                    }).length > 0 && (
-                      <div className="p-5 bg-brand-50/60 rounded-2xl border border-brand-100">
-                        <h4 className="font-serif text-base font-bold text-ink mb-3">Specifications</h4>
-                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {item.specifications
-                            .filter((s) => {
-                              const k = (s.key || "").toLowerCase();
-                              const v = (s.value || "").toLowerCase();
-                              if (k.includes("rating")) return false;
-                              if (k.includes("makemytrip") || v.includes("makemytrip")) return false;
-                              return true;
-                            })
-                            .map((s, i) => (
-                            <div key={i} className="flex flex-col">
-                              <dt className="text-xs font-bold text-muted uppercase tracking-wider">{s.key}</dt>
-                              <dd className="text-sm font-semibold text-ink">
-                                {typeof s.value === "string" && s.value.startsWith("http") ? (
-                                  <a href={s.value} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline inline-flex items-center gap-1">
-                                    View Source Listing ↗
-                                  </a>
-                                ) : (
-                                  s.value
-                                )}
-                              </dd>
-                            </div>
-                          ))}
-                        </dl>
-                      </div>
-                    )}
 
                     {/* Categorized Hotel Amenities & Facilities */}
                     <ServiceAmenities
@@ -433,39 +397,6 @@ export default function ProductPage() {
                     </p>
                   </div>
 
-                  {item.specifications?.filter((s) => {
-                    const k = (s.key || "").toLowerCase();
-                    const v = (s.value || "").toLowerCase();
-                    if (k.includes("makemytrip") || v.includes("makemytrip")) return false;
-                    return true;
-                  }).length > 0 && (
-                    <div className="pt-4 border-t border-brand-100">
-                      <h3 className="font-serif text-xl font-bold text-ink mb-3">Specifications</h3>
-                      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-brand-50/60 rounded-2xl border border-brand-100">
-                        {item.specifications
-                          .filter((s) => {
-                            const k = (s.key || "").toLowerCase();
-                            const v = (s.value || "").toLowerCase();
-                            if (k.includes("makemytrip") || v.includes("makemytrip")) return false;
-                            return true;
-                          })
-                          .map((s, i) => (
-                          <div key={i} className="flex flex-col">
-                            <dt className="text-xs font-bold text-muted uppercase tracking-wider">{s.key}</dt>
-                            <dd className="text-sm font-semibold text-ink">
-                              {typeof s.value === "string" && s.value.startsWith("http") ? (
-                                <a href={s.value} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline inline-flex items-center gap-1">
-                                  View Source Listing ↗
-                                </a>
-                              ) : (
-                                s.value
-                              )}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </div>
-                  )}
 
                   {/* Categorized Amenities & Facilities */}
                   <ServiceAmenities

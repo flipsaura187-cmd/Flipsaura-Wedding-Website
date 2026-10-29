@@ -557,40 +557,6 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
         />
       </div>
 
-      {/* Specifications */}
-      <div className="space-y-3">
-        <label className={labelClass}>Specifications</label>
-        {form.specifications.map((spec, idx) => (
-          <div key={idx} className="flex gap-2 items-center">
-            <input
-              placeholder="Key (e.g. Area, Cuisine, AC)"
-              value={spec.key}
-              onChange={(e) => handleSpecChange(idx, "key", e.target.value)}
-              className={inputClass}
-            />
-            <input
-              placeholder="Value (e.g. 5000 sq ft, Vegetarian, Yes)"
-              value={spec.value}
-              onChange={(e) => handleSpecChange(idx, "value", e.target.value)}
-              className={inputClass}
-            />
-            <button
-              type="button"
-              onClick={() => removeSpec(idx)}
-              className="text-rose-600 hover:text-rose-800 text-lg font-bold px-2"
-            >
-              ✕
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={addSpec}
-          className="px-3 py-1.5 rounded-lg border border-brand-200 text-brand-700 hover:bg-brand-50 text-xs font-semibold transition"
-        >
-          + Add Specification
-        </button>
-      </div>
 
       {/* Facilities & Amenities */}
       <div className="space-y-3">

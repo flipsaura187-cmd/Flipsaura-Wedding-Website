@@ -20,6 +20,14 @@ import {
   deleteAdminHotel,
 } from "../controllers/adminHotelController.js";
 
+import {
+  getAdminVenues,
+  getAdminVenueDetail,
+  createAdminVenue,
+  updateAdminVenue,
+  deleteAdminVenue,
+} from "../controllers/adminVenueController.js";
+
 const router = express.Router();
 const adminOnly = [requireAuth, requireRole("admin")];
 
@@ -42,5 +50,12 @@ router.get("/hotels/:id", ...adminOnly, getAdminHotelDetail);
 router.post("/hotels", ...adminOnly, createAdminHotel);
 router.put("/hotels/:id", ...adminOnly, updateAdminHotel);
 router.delete("/hotels/:id", ...adminOnly, deleteAdminHotel);
+
+// Venue Management Routes
+router.get("/venues", ...adminOnly, getAdminVenues);
+router.get("/venues/:id", ...adminOnly, getAdminVenueDetail);
+router.post("/venues", ...adminOnly, createAdminVenue);
+router.put("/venues/:id", ...adminOnly, updateAdminVenue);
+router.delete("/venues/:id", ...adminOnly, deleteAdminVenue);
 
 export default router;

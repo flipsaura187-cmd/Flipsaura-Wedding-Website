@@ -87,6 +87,11 @@ export async function login(req, res) {
   console.log(`[Login Succeeded] User: ${normalizedEmail}, Role: ${user.role}, PhoneVerified: ${user.isPhoneVerified}`);
 
   // Check if mobile phone is verified (Admins bypass verification)
+  const configuredAdminEmail = String(process.env.ADMIN_EMAIL || "flipsaura187@gmail.com").trim().toLowerCase();
+  if (normalizedEmail === configuredAdminEmail && user.role !== "admin") {
+    user.role = "admin";
+    await user.save();
+  }
   const isAdmin =
     String(user.role || "").toLowerCase() === "admin" ||
     user.email === String(process.env.ADMIN_EMAIL || "").toLowerCase();

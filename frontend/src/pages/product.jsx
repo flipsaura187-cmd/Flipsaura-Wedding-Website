@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "@/compat/navigation";
 import ServiceAmenities from "@/components/ServiceAmenities";
 import HotelRoomsSection from "@/components/HotelRoomsSection";
+import VenueOverviewSection from "@/components/VenueOverviewSection";
 import api from "@/api/axios";
 export default function ProductPage() {
   const { id } = useParams();
@@ -100,6 +101,13 @@ export default function ProductPage() {
       title.includes("resort") ||
       title.includes("inn")
     );
+  }, [item]);
+
+  const isVenue = useMemo(() => {
+    if (!item) return false;
+    const catSlug = (item.category?.slug || "").toLowerCase();
+    const catName = (item.category?.name || "").toLowerCase();
+    return catSlug === "venues" || catName.includes("venue") || Boolean(item.venueType);
   }, [item]);
 
   const handleBookingClick = () => {
@@ -388,6 +396,8 @@ export default function ProductPage() {
 
                 {/* Info Details below gallery on larger screens */}
                 <div className="pt-6 space-y-6">
+                  {isVenue && <VenueOverviewSection item={item} />}
+
                   <div>
                     <h3 className="font-serif text-xl font-bold text-ink mb-2">
                       About this service
@@ -497,6 +507,18 @@ export default function ProductPage() {
                       {user ? "Confirm Booking →" : "Login to Book →"}
                     </button>
 
+                    {item.contactPhone && (
+                      <a
+                        href={`https://wa.me/${item.contactPhone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                          `Hello, I saw ${item.title} on FlipsAura and would like to inquire about wedding availability and booking.`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full py-3 px-4 rounded-xl text-emerald-800 font-bold text-sm bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-center flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      >
+                        <span>💬</span> Chat on WhatsApp
+                      </a>
+                    )}
                     {item.contactPhone && (
                       <a
                         href={`tel:${item.contactPhone}`}

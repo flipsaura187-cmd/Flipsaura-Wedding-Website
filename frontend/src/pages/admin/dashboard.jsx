@@ -88,7 +88,26 @@ export default function AdminDashboard() {
       </div>
 
       {/* Action / Management Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-white p-6 rounded-2xl border border-brand-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <h4 className="font-bold text-base text-ink mb-1.5 flex items-center gap-2">
+              <span>🏛️</span> Venues & Resorts
+            </h4>
+            <p className="text-xs sm:text-sm text-muted mb-5 leading-relaxed">
+              Add banquet halls, marriage lawns, resorts, rental tariffs, guest capacities, and plate prices.
+            </p>
+          </div>
+          <div>
+            <Link
+              href="/admin/venues"
+              className="inline-flex items-center px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs transition shadow-xs"
+            >
+              Manage Venues →
+            </Link>
+          </div>
+        </div>
+
         <div className="bg-white p-6 rounded-2xl border border-brand-100 shadow-sm flex flex-col justify-between">
           <div>
             <h4 className="font-bold text-base text-ink mb-1.5 flex items-center gap-2">

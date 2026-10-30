@@ -4,6 +4,7 @@ import Link from "@/compat/Link";
 import api from "@/api/axios";
 import AdminHotelFormModal from "@/components/admin/AdminHotelFormModal";
 import AdminRoomFormModal from "@/components/admin/AdminRoomFormModal";
+import AdminHotelDetailsModal from "@/components/admin/AdminHotelDetailsModal";
 
 export default function AdminHotelsPage() {
   const [hotels, setHotels] = useState([]);
@@ -23,6 +24,10 @@ export default function AdminHotelsPage() {
   const [roomModalOpen, setRoomModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [preselectedHotelId, setPreselectedHotelId] = useState("");
+
+  // Hotel Details Modal
+  const [detailsHotel, setDetailsHotel] = useState(null);
+  const [detailsHotelModalOpen, setDetailsHotelModalOpen] = useState(false);
 
   const [actionMsg, setActionMsg] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -211,7 +216,13 @@ export default function AdminHotelsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Link
+            href="/admin/venues"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold text-xs md:text-sm transition shadow-2xs"
+          >
+            <span>🏛️</span> Venues Section →
+          </Link>
           <button
             type="button"
             onClick={() => handleOpenAddRoom()}
@@ -510,13 +521,17 @@ export default function AdminHotelsPage() {
 
                     {/* Bottom Action Row */}
                     <div className="pt-3 border-t border-line flex flex-wrap items-center justify-between gap-2">
-                      <Link
-                        href={`/product/${hotel._id}`}
-                        target="_blank"
-                        className="text-xs text-brand-600 hover:text-brand-700 font-medium inline-flex items-center gap-1"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDetailsHotel(hotel);
+                          setDetailsHotelModalOpen(true);
+                        }}
+                        className="text-xs text-brand-600 hover:text-brand-700 font-medium inline-flex items-center gap-1 cursor-pointer"
+                        title="View full details directly here"
                       >
-                        Public Page ↗
-                      </Link>
+                        <span>👁️</span> Full Detail
+                      </button>
 
                       <div className="flex items-center gap-2 ml-auto">
                         <button
@@ -809,6 +824,23 @@ export default function AdminHotelsPage() {
         initialData={editingRoom}
         hotelList={hotels}
         preselectedHotelId={preselectedHotelId}
+      />
+
+      {/* Hotel Full Details Modal */}
+      <AdminHotelDetailsModal
+        isOpen={detailsHotelModalOpen}
+        onClose={() => setDetailsHotelModalOpen(false)}
+        hotel={detailsHotel}
+        rooms={allRooms}
+        onManageRooms={(hotelId) => {
+          handleManageHotelRooms(hotelId);
+        }}
+        onAddRoom={(hotelId) => {
+          handleOpenAddRoom(hotelId);
+        }}
+        onEditHotel={(h) => {
+          handleOpenEditHotel(h);
+        }}
       />
     </div>
   );

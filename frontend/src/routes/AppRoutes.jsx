@@ -19,6 +19,8 @@ import RegisterPage from "@/pages/register";
 import VerifyOtpPage from "@/pages/verify-otp";
 import ResetPasswordPage from "@/pages/reset-password";
 import ProductPage from "@/pages/product";
+import VenueDetailPage from "@/pages/venue-detail";
+import VenueListingView from "@/components/venue/VenueListingView";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import RefundPolicy from "@/pages/refund-cancellation-policy";
 import ShippingPolicy from "@/pages/shipping-policy";
@@ -37,6 +39,7 @@ import AdminEventForm from "@/pages/admin/event-form";
 import AdminEventRegistrations from "@/pages/admin/event-registrations";
 import AdminVendors from "@/pages/admin/vendors";
 import AdminHotels from "@/pages/admin/hotels";
+import AdminVenues from "@/pages/admin/venues";
 import AdminCategories from "@/pages/admin/categories";
 import AdminItems from "@/pages/admin/items";
 import AdminBookings from "@/pages/admin/bookings";
@@ -67,6 +70,10 @@ export default function AppRoutes() {
             <Route path="/blogs" element={<BlogsPage />} />
             <Route path="/blogs/:slug" element={<BlogDetail />} />
             <Route path="/categories/:slug" element={<CategoryPage />} />
+            <Route path="/venues" element={<VenueListingView />} />
+            <Route path="/venue_details/:id" element={<VenueDetailPage />} />
+            <Route path="/venue-details/:id" element={<VenueDetailPage />} />
+            <Route path="/venues/:id" element={<VenueDetailPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -97,6 +104,7 @@ export default function AppRoutes() {
               <Route path="events/:id/registrations" element={<AdminEventRegistrations />} />
               <Route path="vendors" element={<AdminVendors />} />
               <Route path="hotels" element={<AdminHotels />} />
+              <Route path="venues" element={<AdminVenues />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="items" element={<AdminItems />} />
               <Route path="bookings" element={<AdminBookings />} />

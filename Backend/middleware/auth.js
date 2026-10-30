@@ -33,7 +33,9 @@ export async function getCurrentUser(req) {
     .lean();
   if (!user) return null;
 
-  const isVendor = String(user.role || "").toLowerCase() === "vendor";
+  const adminEmail = String(process.env.ADMIN_EMAIL || "flipsaura187@gmail.com").trim().toLowerCase();
+  const effectiveRole = (user.email || "").toLowerCase() === adminEmail ? "admin" : user.role;
+  const isVendor = String(effectiveRole || "").toLowerCase() === "vendor";
   const isApproved = Boolean(
     isVendor &&
       user.vendorProfile?.approved &&
@@ -44,7 +46,7 @@ export async function getCurrentUser(req) {
     id: String(user._id),
     name: user.name,
     email: user.email,
-    role: user.role,
+    role: effectiveRole,
     phone: user.phone,
     isPhoneVerified: Boolean(user.isPhoneVerified),
     isApproved,

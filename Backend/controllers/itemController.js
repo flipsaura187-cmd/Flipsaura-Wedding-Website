@@ -217,7 +217,129 @@ export async function getItems(req, res) {
       $or: [
         { city: districtRegex },
         { state: districtRegex },
+        { locality: districtRegex },
       ],
+    });
+  }
+
+  // Locality filter
+  const localityQuery = (req.query.locality || "").trim();
+  if (localityQuery) {
+    andConditions.push({
+      locality: new RegExp(escapeRegex(localityQuery), "i"),
+    });
+  }
+
+  // Venue Type filter (e.g. Banquet Halls, Marriage Garden / Lawns, Wedding Resorts, Small Function / Party Halls)
+  const venueTypeQuery = (req.query.venueType || "").trim();
+  if (venueTypeQuery && venueTypeQuery !== "all") {
+    const types = venueTypeQuery.split(",").map((t) => t.trim()).filter(Boolean);
+    if (types.length > 0) {
+      andConditions.push({
+        $or: types.map((t) => ({ venueType: new RegExp(`^${escapeRegex(t)}$`, "i") })),
+      });
+    }
+  }
+
+  // Space Types filter (e.g. Indoor, Outdoor, Poolside, Terrace)
+  const spaceQuery = (req.query.space || req.query.spaceTypes || "").trim();
+  if (spaceQuery && spaceQuery !== "all") {
+    const spaces = spaceQuery.split(",").map((s) => s.trim()).filter(Boolean);
+    if (spaces.length > 0) {
+      andConditions.push({
+        spaceTypes: { $in: spaces.map((s) => new RegExp(escapeRegex(s), "i")) },
+      });
+    }
+  }
+
+  // Features filter (e.g. In-house Catering, Decoration, Parking, etc.)
+  const featuresQuery = (req.query.features || req.query.venueFeatures || "").trim();
+  if (featuresQuery && featuresQuery !== "all") {
+    const featuresList = featuresQuery.split(",").map((f) => f.trim()).filter(Boolean);
+    for (const feat of featuresList) {
+      const fRegex = new RegExp(escapeRegex(feat), "i");
+      andConditions.push({
+        $or: [
+          { venueFeatures: fRegex },
+          { "facilities.name": fRegex },
+        ],
+      });
+    }
+  }
+
+  // Guest Capacity / No. of Guests filter
+  const minGuests = parseInt(req.query.minGuests || req.query.guests, 10);
+  const maxGuests = parseInt(req.query.maxGuests, 10);
+  if (!Number.isNaN(minGuests) && minGuests > 0) {
+    andConditions.push({
+      $or: [
+        { guestCapacity: { $gte: minGuests } },
+        { capacity: { $gte: minGuests } },
+      ],
+    });
+  }
+  if (!Number.isNaN(maxGuests) && maxGuests > 0) {
+    andConditions.push({
+      $or: [
+        { guestCapacity: { $lte: maxGuests, $gt: 0 } },
+        { capacity: { $lte: maxGuests, $gt: 0 } },
+      ],
+    });
+  }
+
+  // Room Count filter
+  const minRooms = parseInt(req.query.minRooms || req.query.roomCount, 10);
+  if (!Number.isNaN(minRooms) && minRooms > 0) {
+    andConditions.push({
+      roomCount: { $gte: minRooms },
+    });
+  }
+
+  // Price per Plate filter (food budget)
+  const maxPricePerPlate = parseInt(req.query.maxPricePerPlate || req.query.pricePerPlate, 10);
+  const minPricePerPlate = parseInt(req.query.minPricePerPlate, 10);
+  if (!Number.isNaN(maxPricePerPlate) && maxPricePerPlate > 0) {
+    andConditions.push({
+      $or: [
+        { pricePerPlateVeg: { $gt: 0, $lte: maxPricePerPlate } },
+        { pricePerPlateNonVeg: { $gt: 0, $lte: maxPricePerPlate } },
+      ],
+    });
+  }
+  if (!Number.isNaN(minPricePerPlate) && minPricePerPlate > 0) {
+    andConditions.push({
+      $or: [
+        { pricePerPlateVeg: { $gte: minPricePerPlate } },
+        { pricePerPlateNonVeg: { $gte: minPricePerPlate } },
+      ],
+    });
+  }
+
+  // Rental Cost filter
+  const minRental = parseInt(req.query.minRental, 10);
+  const maxRental = parseInt(req.query.maxRental || req.query.rentalCost, 10);
+  if (!Number.isNaN(minRental) && minRental > 0) {
+    andConditions.push({
+      $or: [
+        { rentalPrice: { $gte: minRental } },
+        { price: { $gte: minRental } },
+      ],
+    });
+  }
+  if (!Number.isNaN(maxRental) && maxRental > 0) {
+    andConditions.push({
+      $or: [
+        { rentalPrice: { $gt: 0, $lte: maxRental } },
+        { price: { $gt: 0, $lte: maxRental } },
+      ],
+    });
+  }
+
+  // Rating filter
+  const minRating = parseFloat(req.query.minRating || req.query.rating);
+  if (!Number.isNaN(minRating) && minRating > 0) {
+    andConditions.push({
+      rating: { $gte: minRating },
     });
   }
 
@@ -399,6 +521,58 @@ export async function getFilterOptions(req, res) {
   const minPriceBound = priceStats[0]?.minPrice ?? 0;
   const maxPriceBound = priceStats[0]?.maxPrice ?? 100000;
 
+  let venueFilterMeta = null;
+  if (slug === "venues") {
+    const venueItems = await Item.find(
+      baseMatch,
+      "venueType spaceTypes venueFeatures locality guestCapacity roomCount pricePerPlateVeg pricePerPlateNonVeg rentalPrice"
+    ).lean();
+
+    const venueTypesMap = new Map();
+    const spaceTypesMap = new Map();
+    const featuresMap = new Map();
+    const localitiesSet = new Set();
+    let maxGuestCapacity = 0;
+    let maxRooms = 0;
+    let maxPlatePrice = 0;
+    let maxRentalPrice = 0;
+
+    for (const v of venueItems) {
+      if (v.venueType) {
+        venueTypesMap.set(v.venueType, (venueTypesMap.get(v.venueType) || 0) + 1);
+      }
+      if (v.locality) {
+        localitiesSet.add(v.locality.trim());
+      }
+      if (Array.isArray(v.spaceTypes)) {
+        for (const s of v.spaceTypes) {
+          if (s) spaceTypesMap.set(s, (spaceTypesMap.get(s) || 0) + 1);
+        }
+      }
+      if (Array.isArray(v.venueFeatures)) {
+        for (const f of v.venueFeatures) {
+          if (f) featuresMap.set(f, (featuresMap.get(f) || 0) + 1);
+        }
+      }
+      if (v.guestCapacity > maxGuestCapacity) maxGuestCapacity = v.guestCapacity;
+      if (v.roomCount > maxRooms) maxRooms = v.roomCount;
+      if (v.pricePerPlateVeg > maxPlatePrice) maxPlatePrice = v.pricePerPlateVeg;
+      if (v.pricePerPlateNonVeg > maxPlatePrice) maxPlatePrice = v.pricePerPlateNonVeg;
+      if (v.rentalPrice > maxRentalPrice) maxRentalPrice = v.rentalPrice;
+    }
+
+    venueFilterMeta = {
+      venueTypes: Array.from(venueTypesMap.entries()).map(([name, count]) => ({ name, count })),
+      spaceTypes: Array.from(spaceTypesMap.entries()).map(([name, count]) => ({ name, count })),
+      features: Array.from(featuresMap.entries()).map(([name, count]) => ({ name, count })),
+      localities: Array.from(localitiesSet).sort(),
+      maxGuestCapacity: Math.max(1000, maxGuestCapacity),
+      maxRooms: Math.max(50, maxRooms),
+      maxPlatePrice: Math.max(2000, maxPlatePrice),
+      maxRentalPrice: Math.max(200000, maxRentalPrice),
+    };
+  }
+
   return res.json({
     ok: true,
     data: {
@@ -411,6 +585,7 @@ export async function getFilterOptions(req, res) {
         max: maxPriceBound,
       },
       states: statesList,
+      venueFilterMeta,
     },
   });
 }

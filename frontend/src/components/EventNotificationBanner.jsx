@@ -9,6 +9,7 @@ export default function EventNotificationBanner() {
 
   useEffect(() => {
     let isMounted = true;
+    
     const fetchEvents = async () => {
       try {
         const res = await api.get("/api/events?status=PUBLISHED");

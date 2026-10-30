@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "@/compat/navigation";
 import ItemCard from "@/components/ItemCard";
 import Pagination from "@/components/Pagination";
+import VenueListingView from "@/components/venue/VenueListingView";
 import api from "@/api/axios";
 
 const ALL_BIHAR_DISTRICTS = [
@@ -50,6 +51,9 @@ const ALL_BIHAR_DISTRICTS = [
 
 export default function CategoryPage() {
   const { slug } = useParams();
+  if (slug === "venues") {
+    return <VenueListingView />;
+  }
   const router = useRouter();
   const sp = useSearchParams();
 

@@ -5,6 +5,37 @@ import Image from "@/compat/Image";
 import api from "@/api/axios";
 import axios from "axios";
 
+export const VENUE_PRIMARY_CATEGORIES = [
+  { id: "Banquet Halls", label: "Banquet Halls", icon: "🏛️" },
+  { id: "Marriage Garden / Lawns", label: "Marriage Garden / Lawns", icon: "🌿" },
+  { id: "Wedding Resorts", label: "Wedding Resorts", icon: "🏰" },
+  { id: "Small Function / Party Halls", label: "Party Halls", icon: "🎉" },
+];
+
+export const VENUE_SPACE_OPTIONS = [
+  { id: "Indoor", label: "Indoor (Banquet Hall)", icon: "🏛️" },
+  { id: "Outdoor", label: "Outdoor (Lawn / Garden)", icon: "🌿" },
+  { id: "Poolside", label: "Poolside", icon: "🏊" },
+  { id: "Terrace", label: "Terrace / Rooftop", icon: "🌇" },
+  { id: "Courtyard", label: "Courtyard", icon: "🏕️" },
+];
+
+export const VENUE_FEATURE_OPTIONS = [
+  "In-House Catering Available",
+  "Outside Catering Allowed",
+  "Pure Vegetarian Available",
+  "In-House Decorators Provided",
+  "Outside Decorators Allowed",
+  "Central Air Conditioning (AC)",
+  "24/7 Power Backup Generator",
+  "Valet Parking Available",
+  "Bridal Dressing Room Available",
+  "DJ & Sound System Allowed",
+  "Hawan & Fire Rituals Permitted",
+  "Baraat Allowed with Band",
+  "Overnight Wedding Allowed",
+];
+
 export default function ItemForm({ onSaved, initialData = null, categories }) {
   const router = useRouter();
   const isEdit = !!initialData?._id;
@@ -21,6 +52,24 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
     contactPhone: "",
     contactEmail: "",
     capacity: "",
+    venueType: "Banquet Halls",
+    locality: "",
+    rentalPrice: "",
+    pricePerPlateVeg: "",
+    pricePerPlateNonVeg: "",
+    roomCount: "",
+    spaceTypes: ["Indoor"],
+    venueFeatures: [
+      "In-House Catering Available",
+      "Outside Catering Allowed",
+      "Central Air Conditioning (AC)",
+      "24/7 Power Backup Generator",
+      "Bridal Dressing Room Available",
+      "Valet Parking Available",
+      "DJ & Sound System Allowed",
+      "Hawan & Fire Rituals Permitted",
+      "Baraat Allowed with Band",
+    ],
     active: true,
     featured: false,
   });
@@ -44,7 +93,23 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
         city: initialData.city || "",
         contactPhone: initialData.contactPhone || "",
         contactEmail: initialData.contactEmail || "",
-        capacity: initialData.capacity || "",
+        capacity: initialData.capacity || initialData.guestCapacity || "",
+        venueType: initialData.venueType || "Banquet Halls",
+        locality: initialData.locality || "",
+        rentalPrice: initialData.rentalPrice || initialData.price || "",
+        pricePerPlateVeg: initialData.pricePerPlateVeg || "",
+        pricePerPlateNonVeg: initialData.pricePerPlateNonVeg || "",
+        roomCount: initialData.roomCount || "",
+        spaceTypes: Array.isArray(initialData.spaceTypes) && initialData.spaceTypes.length > 0 ? initialData.spaceTypes : ["Indoor"],
+        venueFeatures: Array.isArray(initialData.venueFeatures) && initialData.venueFeatures.length > 0 ? initialData.venueFeatures : [
+          "In-House Catering Available",
+          "Outside Catering Allowed",
+          "Central Air Conditioning (AC)",
+          "24/7 Power Backup Generator",
+          "Bridal Dressing Room Available",
+          "Valet Parking Available",
+          "DJ & Sound System Allowed",
+        ],
         active: initialData.active !== undefined ? initialData.active : true,
         featured: initialData.featured || false,
       });
@@ -124,6 +189,34 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
   const removeImage = (idx) =>
     setForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
 
+  const selectedCat = categories?.find((c) => String(c?._id) === String(form.category));
+  const isVenueCat =
+    selectedCat?.slug === "venues" ||
+    /venue/i.test(selectedCat?.name || "") ||
+    form.category === "venues";
+
+  const handleSpaceToggle = (spaceId) => {
+    setForm((prev) => {
+      const exists = (prev.spaceTypes || []).includes(spaceId);
+      const next = exists
+        ? prev.spaceTypes.filter((s) => s !== spaceId)
+        : [...(prev.spaceTypes || []), spaceId];
+      return { ...prev, spaceTypes: next.length > 0 ? next : ["Indoor"] };
+    });
+  };
+
+  const handleFeatureToggle = (feat) => {
+    setForm((prev) => {
+      const exists = (prev.venueFeatures || []).includes(feat);
+      return {
+        ...prev,
+        venueFeatures: exists
+          ? prev.venueFeatures.filter((f) => f !== feat)
+          : [...(prev.venueFeatures || []), feat],
+      };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -133,6 +226,16 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
       ...form,
       price: Number(form.price),
       capacity: form.capacity ? Number(form.capacity) : undefined,
+      guestCapacity: form.capacity ? Number(form.capacity) : undefined,
+      rentalPrice: isVenueCat && form.rentalPrice ? Number(form.rentalPrice) : (isVenueCat ? Number(form.price) : undefined),
+      pricePerPlateVeg: isVenueCat && form.pricePerPlateVeg ? Number(form.pricePerPlateVeg) : undefined,
+      pricePerPlateNonVeg: isVenueCat && form.pricePerPlateNonVeg ? Number(form.pricePerPlateNonVeg) : undefined,
+      roomCount: isVenueCat && form.roomCount ? Number(form.roomCount) : undefined,
+      spaceTypes: isVenueCat ? form.spaceTypes : undefined,
+      venueFeatures: isVenueCat ? form.venueFeatures : undefined,
+      facilities: isVenueCat && Array.isArray(form.venueFeatures)
+        ? form.venueFeatures.map((f) => ({ group: "Popular Amenities", name: f, highlight: true }))
+        : form.facilities,
       specifications: form.specifications.filter((s) => s.key && s.value),
       images: form.images.filter((url) => url.trim()),
     };
@@ -288,6 +391,178 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
           </label>
         </div>
       </div>
+
+      {/* VENUE-SPECIFIC INPUTS (When Category is Venue/Resorts) */}
+      {isVenueCat && (
+        <div className="bg-brand-50/50 p-5 rounded-2xl border border-brand-100 space-y-5 animate-in fade-in duration-200">
+          <div className="border-b border-brand-200/70 pb-2">
+            <h3 className="font-serif font-bold text-base text-ink flex items-center gap-2">
+              <span>🏛️</span> Venue Category, Pricing & Facilities
+            </h3>
+            <p className="text-xs text-muted mt-0.5">
+              Select primary category (Banquet, Lawn, Resort, Party Hall), plate budget, rental tariff, stay rooms, and facilities.
+            </p>
+          </div>
+
+          {/* Primary Category Selector */}
+          <div>
+            <label className={labelClass}>Step 1: Venue Primary Category *</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {VENUE_PRIMARY_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, venueType: cat.id }))}
+                  className={`p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                    form.venueType === cat.id
+                      ? "bg-brand-600 text-white border-brand-600 shadow-sm"
+                      : "bg-white text-ink border-brand-200 hover:border-brand-400"
+                  }`}
+                >
+                  <span className="text-xl block mb-1">{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Locality & Stay Rooms Count */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Locality / Area / Landmark</label>
+              <input
+                name="locality"
+                value={form.locality || ""}
+                onChange={handleChange}
+                placeholder="e.g. Bailey Road, Kankarbagh, Old GT Road"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Stay Rooms Count (Room Count)</label>
+              <input
+                type="number"
+                min="0"
+                name="roomCount"
+                value={form.roomCount || ""}
+                onChange={handleChange}
+                placeholder="e.g. 10 rooms available for stay"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Pricing: Rental & Food Price per Plate */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200">
+              <label className="block text-xs font-bold text-amber-950 mb-1">
+                Venue Rental Cost (₹ / day)
+              </label>
+              <input
+                type="number"
+                min="0"
+                name="rentalPrice"
+                value={form.rentalPrice || ""}
+                onChange={(e) => {
+                  handleChange(e);
+                  if (!form.price || form.price === form.rentalPrice) {
+                    setForm((prev) => ({ ...prev, price: e.target.value }));
+                  }
+                }}
+                placeholder="e.g. 75000"
+                className="w-full px-3 py-1.5 rounded-lg border border-amber-300 bg-white text-ink text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <span className="text-[10px] text-amber-800 mt-1 block">Full venue rental budget</span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">
+              <label className="block text-xs font-bold text-emerald-950 mb-1">
+                Veg Price per Plate (₹ / plate)
+              </label>
+              <input
+                type="number"
+                min="0"
+                name="pricePerPlateVeg"
+                value={form.pricePerPlateVeg || ""}
+                onChange={handleChange}
+                placeholder="e.g. 600"
+                className="w-full px-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-ink text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <span className="text-[10px] text-emerald-800 mt-1 block">Veg catering food budget</span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-200">
+              <label className="block text-xs font-bold text-rose-950 mb-1">
+                Non-Veg Price per Plate (₹ / plate)
+              </label>
+              <input
+                type="number"
+                min="0"
+                name="pricePerPlateNonVeg"
+                value={form.pricePerPlateNonVeg || ""}
+                onChange={handleChange}
+                placeholder="e.g. 850"
+                className="w-full px-3 py-1.5 rounded-lg border border-rose-300 bg-white text-ink text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500"
+              />
+              <span className="text-[10px] text-rose-800 mt-1 block">Non-Veg catering food budget</span>
+            </div>
+          </div>
+
+          {/* Space Types */}
+          <div>
+            <label className={labelClass}>Spaces Available (Space Types)</label>
+            <div className="flex flex-wrap gap-2">
+              {VENUE_SPACE_OPTIONS.map((sp) => {
+                const isSelected = (form.spaceTypes || []).includes(sp.id);
+                return (
+                  <button
+                    key={sp.id}
+                    type="button"
+                    onClick={() => handleSpaceToggle(sp.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-brand-600 text-white border-brand-600 shadow-xs"
+                        : "bg-white text-ink border-brand-200 hover:border-brand-400"
+                    }`}
+                  >
+                    <span>{sp.icon}</span>
+                    <span>{sp.label}</span>
+                    {isSelected && <span>✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Features Checklist */}
+          <div>
+            <label className={labelClass}>Venue Features, Catering & Facilities</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {VENUE_FEATURE_OPTIONS.map((feat) => {
+                const isChecked = (form.venueFeatures || []).includes(feat);
+                return (
+                  <label
+                    key={feat}
+                    className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-medium cursor-pointer transition-colors ${
+                      isChecked
+                        ? "bg-white border-brand-500 text-brand-900 font-semibold shadow-2xs"
+                        : "bg-white/70 border-brand-100 text-ink/80 hover:bg-white"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleFeatureToggle(feat)}
+                      className="rounded text-brand-600 focus:ring-brand-500"
+                    />
+                    <span>{feat}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div>
         <label className={labelClass}>About (short description)</label>

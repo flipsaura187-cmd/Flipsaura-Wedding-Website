@@ -47,14 +47,17 @@ export function maskPhoneNumber(phone) {
  * Detects the active WhatsApp provider based on environment configuration.
  */
 export function getWhatsAppProvider() {
-  const provider = (process.env.WHATSAPP_PROVIDER || "").trim().toLowerCase();
+  const provider = (process.env.WHATSAPP_PROVIDER || process.env.OTP_PROVIDER || "").trim().toLowerCase();
   if (provider) return provider;
 
   if (process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
     return "meta";
   }
 
-  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  if (
+    (process.env.TWILIO_ACCOUNT_SID || process.env.Twilio_Account_SID) &&
+    (process.env.TWILIO_AUTH_TOKEN || process.env.Twilio_Auth_Token)
+  ) {
     return "twilio";
   }
 
@@ -295,9 +298,14 @@ export async function sendWhatsAppMessage({
 
   // 4. Twilio WhatsApp API
   if (provider === "twilio") {
-    const accountSid = (process.env.TWILIO_ACCOUNT_SID || "").trim();
-    const authToken = (process.env.TWILIO_AUTH_TOKEN || "").trim();
-    const twilioFromNumber = (process.env.TWILIO_WHATSAPP_NUMBER || "").trim();
+    const accountSid = (process.env.TWILIO_ACCOUNT_SID || process.env.Twilio_Account_SID || "").trim();
+    const authToken = (process.env.TWILIO_AUTH_TOKEN || process.env.Twilio_Auth_Token || "").trim();
+    const twilioFromNumber = (
+      process.env.TWILIO_PHONE_NUMBER ||
+      process.env.TWILIO_WHATSAPP_NUMBER ||
+      process.env.WHATSAPP_ADMIN_PHONE ||
+      ""
+    ).trim();
 
     if (!accountSid || !authToken || !twilioFromNumber) {
       console.warn("[Twilio WhatsApp] Missing Twilio credentials in environment");
@@ -471,7 +479,8 @@ export async function sendWhatsAppMessage({
 }
 
 /**
- * Sends a WhatsApp OTP to a user for account or phone verification.
+ * Sends a verification OTP to a user for account or phone verification via Twilio (SMS/WhatsApp)
+ * with automatic fallback to WhatsApp gateway.
  * Preserves the exact signature and behavior expected across the application.
  */
 export async function sendWhatsAppOtp(phone, otp) {
@@ -479,8 +488,32 @@ export async function sendWhatsAppOtp(phone, otp) {
   if (!normalizedPhone || normalizedPhone.length < 10) {
     return {
       success: false,
-      error: "Invalid mobile number format for WhatsApp delivery",
+      error: "Invalid mobile number format for verification delivery",
     };
+  }
+
+  // 1. Try Twilio if Twilio credentials are configured
+  const hasTwilio = Boolean(
+    (process.env.TWILIO_ACCOUNT_SID || process.env.Twilio_Account_SID) &&
+    (process.env.TWILIO_AUTH_TOKEN || process.env.Twilio_Auth_Token)
+  );
+
+  if (hasTwilio) {
+    try {
+      const { sendTwilioOtp } = await import("./twilio.js");
+      const twilioRes = await sendTwilioOtp(phone, otp);
+      if (twilioRes.success) {
+        return {
+          ...twilioRes,
+          devOtp: otp,
+        };
+      }
+      console.warn(
+        `[Twilio OTP Delivery Warning]: ${twilioRes.error}. Falling back to WhatsApp gateway...`
+      );
+    } catch (err) {
+      console.warn(`[Twilio Import/Dispatch Exception]: ${err.message}. Falling back to WhatsApp gateway...`);
+    }
   }
 
   const messageText = `*FlipsAura Account Verification*\n\nYour 6-digit verification code is: *${otp}*\n\nThis OTP is valid for 10 minutes. Please enter this code to complete your signup.\n\n_Note: Please do not share this OTP with anyone._\n\nThank you,\nTeam FlipsAura`;
@@ -502,6 +535,8 @@ export async function sendWhatsAppOtp(phone, otp) {
     devOtp: otp,
   };
 }
+
+export const sendVerificationOtp = sendWhatsAppOtp;
 
 /**
  * Sends a WhatsApp notification to the Admin for a newly created booking.

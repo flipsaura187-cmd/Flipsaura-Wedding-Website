@@ -72,6 +72,9 @@ export default function RegisterPage() {
         if (res.data?.maskedPhone) {
           queryParams.set("maskedPhone", res.data.maskedPhone);
         }
+        if (res.data?.devOtp) {
+          queryParams.set("code", res.data.devOtp);
+        }
         router.push(`/verify-otp?${queryParams.toString()}`);
       } else {
         // Redirect user to login page so they must explicitly log in
@@ -369,8 +372,8 @@ export default function RegisterPage() {
 
               <div>
                 <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>Mobile Number (WhatsApp) *</span>
-                  <span className="text-[11px] text-brand-600 font-semibold normal-case">OTP sent on WhatsApp</span>
+                  <span>Mobile Number *</span>
+                  <span className="text-[11px] text-brand-600 font-semibold normal-case">OTP sent via Twilio / SMS</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
@@ -392,7 +395,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 <p className="text-[11px] text-muted mt-1">
-                  We will send a 6-digit verification code to this WhatsApp number.
+                  We will send a 6-digit verification code to this mobile number.
                 </p>
               </div>
 

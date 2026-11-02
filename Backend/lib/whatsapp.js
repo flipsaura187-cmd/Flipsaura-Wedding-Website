@@ -492,28 +492,19 @@ export async function sendWhatsAppOtp(phone, otp) {
     };
   }
 
-  // 1. Try Twilio if Twilio credentials are configured
-  const hasTwilio = Boolean(
-    (process.env.TWILIO_ACCOUNT_SID || process.env.Twilio_Account_SID) &&
-    (process.env.TWILIO_AUTH_TOKEN || process.env.Twilio_Auth_Token)
-  );
-
-  if (hasTwilio) {
-    try {
-      const { sendTwilioOtp } = await import("./twilio.js");
-      const twilioRes = await sendTwilioOtp(phone, otp);
-      if (twilioRes.success) {
-        return {
-          ...twilioRes,
-          devOtp: otp,
-        };
-      }
-      console.warn(
-        `[Twilio OTP Delivery Warning]: ${twilioRes.error}. Falling back to WhatsApp gateway...`
-      );
-    } catch (err) {
-      console.warn(`[Twilio Import/Dispatch Exception]: ${err.message}. Falling back to WhatsApp gateway...`);
+  // 1. Send Normal SMS via SMS Gateway / Twilio
+  try {
+    const { sendNormalSmsOtp } = await import("./sms.js");
+    const smsRes = await sendNormalSmsOtp(phone, otp);
+    if (smsRes.success) {
+      return {
+        ...smsRes,
+        devOtp: otp,
+      };
     }
+    console.warn(`[Normal SMS Dispatch Warning]: ${smsRes.error}. Falling back to WhatsApp...`);
+  } catch (err) {
+    console.warn(`[Normal SMS Exception]: ${err.message}. Falling back to WhatsApp...`);
   }
 
   const messageText = `*FlipsAura Account Verification*\n\nYour 6-digit verification code is: *${otp}*\n\nThis OTP is valid for 10 minutes. Please enter this code to complete your signup.\n\n_Note: Please do not share this OTP with anyone._\n\nThank you,\nTeam FlipsAura`;

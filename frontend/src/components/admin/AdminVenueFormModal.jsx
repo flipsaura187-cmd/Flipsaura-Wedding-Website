@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import api from "@/api/axios";
+import { CATALOGUE_GROUPS } from "@/constants/catalogue";
 
 export const VENUE_PRIMARY_CATEGORIES = [
   {
@@ -115,6 +116,8 @@ export default function AdminVenueFormModal({
   const [form, setForm] = useState({
     title: "",
     venueType: "Banquet Halls",
+    mainCategories: [],
+    subcategories: [],
     ownerName: "",
     contactPhone: "",
     contactEmail: "",
@@ -154,6 +157,9 @@ export default function AdminVenueFormModal({
   const [customFeature, setCustomFeature] = useState("");
   const [directImageUrl, setDirectImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
+  const [customSubcategoriesMap, setCustomSubcategoriesMap] = useState({});
+  const [customInputs, setCustomInputs] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -167,6 +173,8 @@ export default function AdminVenueFormModal({
       setForm({
         title: initialData.title || "",
         venueType: initialData.venueType || "Banquet Halls",
+        mainCategories: Array.isArray(initialData.mainCategories) ? initialData.mainCategories : [],
+        subcategories: Array.isArray(initialData.subcategories) ? initialData.subcategories : [],
         ownerName: initialData.vendor?.vendorProfile?.ownerName || initialData.vendor?.name || "",
         contactPhone: initialData.contactPhone || initialData.vendor?.phone || "",
         contactEmail: initialData.contactEmail || initialData.vendor?.email || "",
@@ -202,10 +210,39 @@ export default function AdminVenueFormModal({
         featured: Boolean(initialData.featured),
         sourceUrl: initialData.sourceUrl || "",
       });
+
+      const initialCustomMap =
+        initialData.customSubcategoriesMap && typeof initialData.customSubcategoriesMap === "object"
+          ? { ...initialData.customSubcategoriesMap }
+          : {};
+
+      // Detect any subcategories that are not in default lists and place in custom map
+      const allDefaultSubs = new Set(CATALOGUE_GROUPS.flatMap((g) => g.subcategories));
+      const unmappedSubs = (initialData.subcategories || []).filter((s) => !allDefaultSubs.has(s));
+      if (unmappedSubs.length > 0) {
+        unmappedSubs.forEach((unmapped) => {
+          let found = false;
+          for (const k of Object.keys(initialCustomMap)) {
+            if (Array.isArray(initialCustomMap[k]) && initialCustomMap[k].includes(unmapped)) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            const fallbackGroup =
+              (initialData.mainCategories && initialData.mainCategories[0]) || "Additional Facilities";
+            initialCustomMap[fallbackGroup] = [...(initialCustomMap[fallbackGroup] || []), unmapped];
+          }
+        });
+      }
+      setCustomSubcategoriesMap(initialCustomMap);
     } else {
+      setCustomSubcategoriesMap({});
       setForm({
         title: "",
         venueType: "Banquet Halls",
+        mainCategories: [],
+        subcategories: [],
         ownerName: "",
         contactPhone: "",
         contactEmail: "",
@@ -296,68 +333,89 @@ export default function AdminVenueFormModal({
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (JPG, PNG, WebP).");
+    const invalid = files.find((f) => !f.type.startsWith("image/"));
+    if (invalid) {
+      setError("Please select valid image files (JPG, PNG, WebP).");
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError("Image size exceeds 10MB limit.");
+    const oversize = files.find((f) => f.size > 10 * 1024 * 1024);
+    if (oversize) {
+      setError("One or more images exceed the 10MB limit.");
       return;
     }
 
     setUploadingImage(true);
+    setUploadProgress(`Uploading 1 of ${files.length}...`);
     setError("");
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64Data = reader.result;
-          const { data } = await api.post("/api/upload/direct", {
-            file: base64Data,
-            folder: "flipsaura/venues",
-          });
+      const uploadedUrls = [];
+      for (let i = 0; i < files.length; i++) {
+        setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
+        const file = files[i];
+        const url = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async () => {
+            try {
+              const base64Data = reader.result;
+              const { data } = await api.post("/api/upload/direct", {
+                file: base64Data,
+                folder: "flipsaura/venues",
+              });
 
-          if (!data?.ok || !data?.data?.url) {
-            throw new Error(data?.error || "Upload failed");
-          }
+              if (!data?.ok || !data?.data?.url) {
+                throw new Error(data?.error || `Upload failed for ${file.name}`);
+              }
+              resolve(data.data.url);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+          reader.readAsDataURL(file);
+        });
+        uploadedUrls.push(url);
+      }
 
-          setForm((prev) => ({
-            ...prev,
-            images: [...prev.images, data.data.url],
-          }));
-        } catch (uploadErr) {
-          console.error("Direct upload error:", uploadErr);
-          setError(uploadErr.response?.data?.error || uploadErr.message || "Failed to upload image");
-        } finally {
-          setUploadingImage(false);
-          e.target.value = "";
-        }
-      };
-      reader.onerror = () => {
-        setError("Could not read image file.");
-        setUploadingImage(false);
-      };
-      reader.readAsDataURL(file);
+      setForm((prev) => ({
+        ...prev,
+        images: [...prev.images, ...uploadedUrls],
+      }));
     } catch (err) {
-      setError(err.message || "Image upload failed");
+      console.error("Multiple image upload error:", err);
+      setError(err.response?.data?.error || err.message || "Failed to upload one or more images");
+    } finally {
       setUploadingImage(false);
+      setUploadProgress("");
+      e.target.value = "";
     }
   };
 
   const addDirectImage = () => {
-    const url = directImageUrl.trim();
-    if (!url) return;
-    if (!form.images.includes(url)) {
-      setForm((prev) => ({
-        ...prev,
-        images: [...prev.images, url],
-      }));
+    const raw = directImageUrl.trim();
+    if (!raw) return;
+
+    const splitUrls = raw
+      .split(/[\s,\n]+/)
+      .map((u) => u.trim())
+      .filter((u) => u.startsWith("http://") || u.startsWith("https://") || u.startsWith("/"));
+
+    if (splitUrls.length === 0) {
+      setError("Please enter valid URL(s) starting with http://, https://, or /");
+      return;
     }
+
+    setForm((prev) => {
+      const nextImages = [...prev.images];
+      splitUrls.forEach((u) => {
+        if (!nextImages.includes(u)) nextImages.push(u);
+      });
+      return { ...prev, images: nextImages };
+    });
     setDirectImageUrl("");
   };
 
@@ -365,6 +423,139 @@ export default function AdminVenueFormModal({
     setForm((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== idx),
+    }));
+  };
+
+  // Custom Item Handlers
+  const handleAddCustomToGroup = (catName, catKey) => {
+    const val = (customInputs[catKey] || "").trim();
+    if (!val) return;
+
+    setCustomSubcategoriesMap((prev) => {
+      const existing = prev[catName] || [];
+      if (existing.includes(val)) return prev;
+      return { ...prev, [catName]: [...existing, val] };
+    });
+
+    setForm((prev) => {
+      const nextSubs = prev.subcategories.includes(val) ? prev.subcategories : [...prev.subcategories, val];
+      const nextMain = prev.mainCategories.includes(catName) ? prev.mainCategories : [...prev.mainCategories, catName];
+      return {
+        ...prev,
+        subcategories: nextSubs,
+        mainCategories: nextMain,
+      };
+    });
+
+    setCustomInputs((prev) => ({ ...prev, [catKey]: "" }));
+  };
+
+  const handleRemoveCustomFromGroup = (catName, itemName) => {
+    setCustomSubcategoriesMap((prev) => {
+      const existing = prev[catName] || [];
+      return { ...prev, [catName]: existing.filter((item) => item !== itemName) };
+    });
+
+    setForm((prev) => ({
+      ...prev,
+      subcategories: prev.subcategories.filter((s) => s !== itemName),
+    }));
+  };
+
+  // Catalogue toggle helpers
+  const toggleSubcategory = (catName, subName) => {
+    setForm((prev) => {
+      const isSubSelected = prev.subcategories.includes(subName);
+      const nextSubcategories = isSubSelected
+        ? prev.subcategories.filter((s) => s !== subName)
+        : [...prev.subcategories, subName];
+
+      const group = CATALOGUE_GROUPS.find((g) => g.name === catName);
+      const customItems = customSubcategoriesMap[catName] || [];
+      const allKnownGroupSubs = [...(group?.subcategories || []), ...customItems];
+      const anySelectedInGroup = allKnownGroupSubs.some((s) => nextSubcategories.includes(s));
+
+      let nextMainCategories = [...prev.mainCategories];
+      if (anySelectedInGroup && !nextMainCategories.includes(catName)) {
+        nextMainCategories.push(catName);
+      } else if (!anySelectedInGroup && nextMainCategories.includes(catName)) {
+        nextMainCategories = nextMainCategories.filter((c) => c !== catName);
+      }
+
+      // If in Additional Facilities, also sync with venueFeatures
+      let nextFeatures = [...prev.venueFeatures];
+      if (catName === "Additional Facilities") {
+        if (!isSubSelected && !nextFeatures.includes(subName)) {
+          nextFeatures.push(subName);
+        } else if (isSubSelected) {
+          nextFeatures = nextFeatures.filter((f) => f !== subName);
+        }
+      }
+
+      return {
+        ...prev,
+        subcategories: nextSubcategories,
+        mainCategories: nextMainCategories,
+        venueFeatures: nextFeatures,
+      };
+    });
+  };
+
+  const selectAllInGroup = (catName) => {
+    const group = CATALOGUE_GROUPS.find((g) => g.name === catName);
+    if (!group) return;
+    const customItems = customSubcategoriesMap[catName] || [];
+    const allInGroup = [...group.subcategories, ...customItems];
+
+    setForm((prev) => {
+      const combined = Array.from(new Set([...prev.subcategories, ...allInGroup]));
+      const nextMain = Array.from(new Set([...prev.mainCategories, catName]));
+      let nextFeatures = [...prev.venueFeatures];
+      if (catName === "Additional Facilities") {
+        nextFeatures = Array.from(new Set([...nextFeatures, ...allInGroup]));
+      }
+      return {
+        ...prev,
+        subcategories: combined,
+        mainCategories: nextMain,
+        venueFeatures: nextFeatures,
+      };
+    });
+  };
+
+  const clearAllInGroup = (catName) => {
+    const group = CATALOGUE_GROUPS.find((g) => g.name === catName);
+    if (!group) return;
+    const customItems = customSubcategoriesMap[catName] || [];
+    const allInGroup = [...group.subcategories, ...customItems];
+
+    setForm((prev) => {
+      const filtered = prev.subcategories.filter((s) => !allInGroup.includes(s));
+      const nextMain = prev.mainCategories.filter((c) => c !== catName);
+      return {
+        ...prev,
+        subcategories: filtered,
+        mainCategories: nextMain,
+      };
+    });
+  };
+
+  const selectAllCatalogueServices = () => {
+    const allSubs = CATALOGUE_GROUPS.flatMap((g) => g.subcategories);
+    const allCustomSubs = Object.values(customSubcategoriesMap).flat();
+    const allCats = CATALOGUE_GROUPS.map((g) => g.name);
+    setForm((prev) => ({
+      ...prev,
+      subcategories: Array.from(new Set([...prev.subcategories, ...allSubs, ...allCustomSubs])),
+      mainCategories: Array.from(new Set([...prev.mainCategories, ...allCats])),
+    }));
+  };
+
+  const clearAllCatalogueServices = () => {
+    setForm((prev) => ({
+      ...prev,
+      subcategories: [],
+      mainCategories: [],
     }));
   };
 
@@ -388,6 +579,9 @@ export default function AdminVenueFormModal({
       const payload = {
         title: form.title.trim(),
         venueType: form.venueType,
+        mainCategories: form.mainCategories,
+        subcategories: form.subcategories,
+        customSubcategoriesMap: customSubcategoriesMap,
         ownerName: form.ownerName.trim(),
         contactPhone: form.contactPhone.trim(),
         contactEmail: form.contactEmail.trim(),
@@ -814,6 +1008,169 @@ export default function AdminVenueFormModal({
                 </div>
                 <span className="text-[10px] text-rose-800 mt-1 block">Non-Veg catering food budget</span>
               </div>
+            </div>
+          </div>
+
+          {/* STEP: Event Services Catalogue & Equipment Setup */}
+          <div className="space-y-5 bg-sand-50/50 p-5 sm:p-6 rounded-3xl border border-brand-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-200 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🎪</span>
+                  <h3 className="font-serif font-bold text-base sm:text-lg text-ink">
+                    Event Services Catalogue & Equipment Setup
+                  </h3>
+                </div>
+                <p className="text-xs text-muted mt-0.5">
+                  Click on services to select or deselect. Selected items appear on customer search and venue profile.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
+                  {form.subcategories.length} Selected
+                </span>
+                <button
+                  type="button"
+                  onClick={selectAllCatalogueServices}
+                  className="px-3 py-1 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-2xs cursor-pointer"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAllCatalogueServices}
+                  className="px-3 py-1 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold cursor-pointer"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {CATALOGUE_GROUPS.map((group, groupIdx) => {
+                const customGroupItems = customSubcategoriesMap[group.name] || [];
+                const allGroupItems = [...group.subcategories, ...customGroupItems];
+                const groupSelectedCount = allGroupItems.filter((s) =>
+                  form.subcategories.includes(s)
+                ).length;
+                const isAllSelectedInGroup =
+                  groupSelectedCount > 0 && groupSelectedCount === allGroupItems.length;
+
+                return (
+                  <div
+                    key={group.key}
+                    className="p-4 sm:p-5 rounded-2xl bg-white border border-brand-200/90 shadow-2xs space-y-3"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-brand-100/70 pb-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl p-1 bg-sand-100 rounded-lg">{group.icon}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-ink">
+                              {String.fromCharCode(65 + groupIdx)}. {group.name}
+                            </h4>
+                            <span
+                              className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                                groupSelectedCount > 0
+                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                  : "bg-slate-100 text-slate-500"
+                              }`}
+                            >
+                              {groupSelectedCount} of {allGroupItems.length} selected
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-muted">{group.description}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => selectAllInGroup(group.name)}
+                          className="px-2.5 py-1 text-[11px] font-bold text-brand-700 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          {isAllSelectedInGroup ? "✓ All Selected" : "+ Select All"}
+                        </button>
+                        {groupSelectedCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => clearAllInGroup(group.name)}
+                            className="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Subcategories Chips Grid */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {allGroupItems.map((sub) => {
+                        const isSelected = form.subcategories.includes(sub);
+                        const isCustom = customGroupItems.includes(sub);
+
+                        return (
+                          <div
+                            key={sub}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs scale-[1.02]"
+                                : "bg-white text-ink/80 border-brand-200 hover:border-brand-400 hover:bg-brand-50/50"
+                            }`}
+                            onClick={() => toggleSubcategory(group.name, sub)}
+                          >
+                            <span className={isSelected ? "text-white font-bold" : "text-brand-500 font-bold"}>
+                              {isSelected ? "✓" : "+"}
+                            </span>
+                            <span>{sub}</span>
+                            {isCustom && (
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveCustomFromGroup(group.name, sub);
+                                }}
+                                className="ml-1 text-[10px] px-1 py-0.5 rounded hover:bg-black/20 text-white/90 hover:text-white transition cursor-pointer"
+                                title="Delete custom item"
+                              >
+                                ✕
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Inline Custom Item Input */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-brand-100/60 mt-2">
+                      <input
+                        type="text"
+                        placeholder={`+ Add custom item to ${group.name}...`}
+                        value={customInputs[group.key] || ""}
+                        onChange={(e) =>
+                          setCustomInputs((prev) => ({ ...prev, [group.key]: e.target.value }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddCustomToGroup(group.name, group.key);
+                          }
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl border border-brand-200 text-xs bg-brand-50/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:max-w-xs placeholder:text-muted"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddCustomToGroup(group.name, group.key)}
+                        className="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shrink-0 shadow-2xs transition-all cursor-pointer"
+                      >
+                        + Add Custom
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

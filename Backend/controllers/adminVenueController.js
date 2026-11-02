@@ -197,6 +197,9 @@ export async function createAdminVenue(req, res) {
       rentalPrice = 0,
       pricePerPlateVeg = 0,
       pricePerPlateNonVeg = 0,
+      mainCategories = [],
+      subcategories = [],
+      customSubcategoriesMap = {},
       spaceTypes = [],
       venueFeatures = [],
       facilities = [],
@@ -320,6 +323,14 @@ export async function createAdminVenue(req, res) {
       .map((f) => String(f).trim())
       .filter(Boolean);
 
+    const cleanMainCategories = (Array.isArray(mainCategories) ? mainCategories : [])
+      .map((c) => String(c).trim())
+      .filter(Boolean);
+
+    const cleanSubcategories = (Array.isArray(subcategories) ? subcategories : [])
+      .map((s) => String(s).trim())
+      .filter(Boolean);
+
     const numericRental = Math.max(0, Number(rentalPrice) || 0);
     const numericVegPlate = Math.max(0, Number(pricePerPlateVeg) || 0);
     const numericNonVegPlate = Math.max(0, Number(pricePerPlateNonVeg) || 0);
@@ -354,6 +365,9 @@ export async function createAdminVenue(req, res) {
       roomCount: numericRooms,
       spaceTypes: cleanSpaces,
       venueFeatures: cleanFeatures,
+      mainCategories: cleanMainCategories,
+      subcategories: cleanSubcategories,
+      customSubcategoriesMap: typeof customSubcategoriesMap === "object" && customSubcategoriesMap !== null ? customSubcategoriesMap : {},
       about: about.trim() || `${title} is a premier ${venueType} located in ${locality ? `${locality}, ` : ""}${city}.`,
       description: description.trim() || about.trim(),
       facilities: formattedFacilities,
@@ -415,6 +429,9 @@ export async function updateAdminVenue(req, res) {
       rentalPrice,
       pricePerPlateVeg,
       pricePerPlateNonVeg,
+      mainCategories,
+      subcategories,
+      customSubcategoriesMap,
       spaceTypes,
       venueFeatures,
       facilities,
@@ -474,6 +491,23 @@ export async function updateAdminVenue(req, res) {
       venue.venueFeatures = (Array.isArray(venueFeatures) ? venueFeatures : [])
         .map((f) => String(f).trim())
         .filter(Boolean);
+    }
+
+    if (mainCategories !== undefined) {
+      venue.mainCategories = (Array.isArray(mainCategories) ? mainCategories : [])
+        .map((c) => String(c).trim())
+        .filter(Boolean);
+    }
+
+    if (subcategories !== undefined) {
+      venue.subcategories = (Array.isArray(subcategories) ? subcategories : [])
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    }
+
+    if (customSubcategoriesMap !== undefined) {
+      venue.customSubcategoriesMap = typeof customSubcategoriesMap === "object" && customSubcategoriesMap !== null ? customSubcategoriesMap : {};
+      venue.markModified("customSubcategoriesMap");
     }
 
     if (about !== undefined) venue.about = about.trim();

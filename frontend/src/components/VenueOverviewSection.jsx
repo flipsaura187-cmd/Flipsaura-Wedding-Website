@@ -34,7 +34,7 @@ export default function VenueOverviewSection({ item }) {
       </div>
 
       {/* Key Metrics Grid: Capacity, Rooms, Spaces */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-brand-50/50 p-3.5 rounded-2xl border border-brand-100 text-center sm:text-left">
           <span className="text-xl mb-1 block">👥</span>
           <span className="text-[11px] text-muted font-medium block">Guest Capacity</span>
@@ -64,17 +64,6 @@ export default function VenueOverviewSection({ item }) {
             {spaces.length > 0 ? spaces.join(", ") : "Indoor Banquet"}
           </span>
           <span className="text-[10px] text-purple-700 block mt-0.5">Indoor / Outdoor</span>
-        </div>
-
-        <div className="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-100 text-center sm:text-left">
-          <span className="text-xl mb-1 block">⭐</span>
-          <span className="text-[11px] text-muted font-medium block">Review Rating</span>
-          <span className="text-base sm:text-lg font-bold text-amber-950">
-            ★ {item.rating?.toFixed ? item.rating.toFixed(1) : item.rating || "4.8"}
-          </span>
-          <span className="text-[10px] text-amber-700 block mt-0.5">
-            {item.reviewsCount > 0 ? `${item.reviewsCount} Reviews` : "Verified Rating"}
-          </span>
         </div>
       </div>
 

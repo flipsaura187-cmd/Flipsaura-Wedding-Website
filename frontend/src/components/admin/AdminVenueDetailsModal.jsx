@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Link from "@/compat/Link";
+import { CATALOGUE_GROUPS } from "@/constants/catalogue";
 
 export default function AdminVenueDetailsModal({
   isOpen,
@@ -241,6 +242,65 @@ export default function AdminVenueDetailsModal({
             ) : (
               <p className="text-xs text-muted">No specific amenities configured yet.</p>
             )}
+          </div>
+
+          {/* EVENT SERVICES & CATALOGUE SETUPS */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-brand-50/40 border border-brand-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-brand-900 flex items-center gap-1.5">
+                <span>🎪</span> Event Services Catalogue & Equipment Setup
+              </h4>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+                {(venue.subcategories || []).length} Services Selected
+              </span>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              {CATALOGUE_GROUPS.map((group, groupIdx) => {
+                const selectedInGroup = (venue.subcategories || []).filter((sub) =>
+                  group.subcategories.includes(sub)
+                );
+
+                if (selectedInGroup.length === 0) return null;
+
+                return (
+                  <div
+                    key={group.key}
+                    className="p-3 bg-white rounded-xl border border-brand-100 space-y-2 shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{group.icon}</span>
+                        <span className="font-bold text-ink">
+                          {String.fromCharCode(65 + groupIdx)}. {group.name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        {selectedInGroup.length} items
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {selectedInGroup.map((sub) => (
+                        <span
+                          key={sub}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sand-50 border border-brand-200 text-[11px] font-semibold text-ink"
+                        >
+                          <span className="text-emerald-600 font-bold">✓</span>
+                          <span>{sub}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {(!venue.subcategories || venue.subcategories.length === 0) && (
+                <p className="text-xs text-muted italic">
+                  No catalogue subcategories configured yet. Click "Edit Venue" to select from Tent, Furniture, Stage, DJ, Lighting, Power & Facilities.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* ABOUT & DESCRIPTION */}

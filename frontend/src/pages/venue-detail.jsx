@@ -4,6 +4,7 @@ import { useParams, useRouter } from "@/compat/navigation";
 import Link from "@/compat/Link";
 import api from "@/api/axios";
 import VenueOverviewSection from "@/components/VenueOverviewSection";
+import { CATALOGUE_GROUPS } from "@/constants/catalogue";
 
 export default function VenueDetailPage() {
   const { id } = useParams();
@@ -30,11 +31,12 @@ export default function VenueDetailPage() {
         setError("");
         const { data } = await api.get(`/api/items/${id}`);
         if (data?.ok && data.data) {
-          setVenue(data.data);
+          const loadedVenue = data.data.item || data.data.venue || data.data;
+          setVenue(loadedVenue);
 
           // Fetch similar venues in the same city or category
           try {
-            const city = data.data.city || "";
+            const city = loadedVenue.city || "";
             const simRes = await api.get(`/api/items?category=venues&limit=4`);
             if (simRes.data?.ok) {
               const list = simRes.data.data.items || [];
@@ -170,18 +172,6 @@ Please share availability and final quote.`;
           </div>
 
           <div className="flex items-center gap-3 self-start md:self-end">
-            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3.5 py-1.5 rounded-2xl">
-              <span className="text-amber-500 font-bold text-lg">★</span>
-              <div>
-                <span className="text-sm font-bold text-amber-950 block leading-tight">
-                  {venue.rating?.toFixed ? venue.rating.toFixed(1) : venue.rating || "4.8"}
-                </span>
-                <span className="text-[10px] text-amber-800 leading-none">
-                  {venue.reviewsCount > 0 ? `${venue.reviewsCount} Reviews` : "Customer Rating"}
-                </span>
-              </div>
-            </div>
-
             <button
               type="button"
               onClick={() => {
@@ -267,6 +257,101 @@ Please share availability and final quote.`;
                 </p>
               </div>
             )}
+
+            {/* EVENT SERVICES & CATALOGUE SETUPS (Tent, Furniture, Stage, DJ, Lighting, Power & Facilities) */}
+            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-brand-100 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-100 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🎪</span>
+                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-ink">
+                      Included Event Services & Equipment Setups
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted mt-1">
+                    Complete wedding & event catalogue available at this venue (Tent, Stage, Sound, Lighting, Seating & Facilities).
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shrink-0">
+                    ✓ {(venue.subcategories || []).length} Setups Configured
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {CATALOGUE_GROUPS.map((group, groupIdx) => {
+                  const customItemsForGroup = Array.isArray(venue.customSubcategoriesMap?.[group.name])
+                    ? venue.customSubcategoriesMap[group.name]
+                    : [];
+                  const allGroupKnown = [...group.subcategories, ...customItemsForGroup];
+                  const selectedInGroup = (venue.subcategories || []).filter((sub) =>
+                    allGroupKnown.includes(sub)
+                  );
+                  const isCatIncluded =
+                    (venue.mainCategories || []).includes(group.name) || selectedInGroup.length > 0;
+
+                  return (
+                    <div
+                      key={group.key}
+                      className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                        selectedInGroup.length > 0
+                          ? "bg-sand-50/40 border-brand-200 shadow-2xs"
+                          : "bg-slate-50/60 border-slate-100 opacity-75"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-brand-100/60 pb-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl p-1.5 bg-white rounded-xl shadow-2xs border border-brand-100">
+                            {group.icon}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm sm:text-base text-ink">
+                                {String.fromCharCode(65 + groupIdx)}. {group.name}
+                              </h4>
+                              {selectedInGroup.length > 0 ? (
+                                <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
+                                  ✓ {selectedInGroup.length} Included
+                                </span>
+                              ) : (
+                                <span className="text-[11px] px-2 py-0.5 rounded-full text-muted bg-slate-100">
+                                  Available on booking request
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+                              {group.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Subcategories chips */}
+                      {selectedInGroup.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-3">
+                          {selectedInGroup.map((sub) => (
+                            <div
+                              key={sub}
+                              className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-brand-200/80 text-xs font-semibold text-ink shadow-2xs"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                ✓
+                              </span>
+                              <span className="truncate">{sub}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted pt-2.5 italic">
+                          Standard or custom setups can be arranged upon inquiry with venue management.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* DETAILED FEATURES & RULES */}
             <div className="bg-white p-6 sm:p-7 rounded-3xl border border-brand-100 shadow-xs space-y-4">

@@ -77,6 +77,14 @@ export default function ItemCard({ item }) {
           </div>
         )}
 
+        {isVenue && Array.isArray(item.subcategories) && item.subcategories.length > 0 && (
+          <div className="pt-0.5">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <span>🎪</span> {item.subcategories.length} Setups Included
+            </span>
+          </div>
+        )}
+
         <div className="mt-2 pt-2 border-t border-brand-50 flex items-center justify-between">
           {isHotel ? (
             <div className="leading-tight">
@@ -130,9 +138,11 @@ export default function ItemCard({ item }) {
             </span>
           )}
 
-          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-            ★ {item.rating?.toFixed?.(1) || item.rating || "—"}
-          </span>
+          {!isVenue && (
+            <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+              ★ {item.rating?.toFixed?.(1) || item.rating || "—"}
+            </span>
+          )}
         </div>
       </div>
     </Link>

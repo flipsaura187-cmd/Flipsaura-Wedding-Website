@@ -723,34 +723,6 @@ export default function VenueListingView() {
               </div>
             </div>
 
-            {/* 7. Rating Filter */}
-            <div className="space-y-2 pt-3 border-t border-brand-50">
-              <label className="block text-xs font-bold text-ink uppercase tracking-wider">
-                ⭐ Customer Rating
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { label: "All", val: "" },
-                  { label: "4.5+ ★", val: "4.5" },
-                  { label: "4.0+ ★", val: "4.0" },
-                  { label: "3.5+ ★", val: "3.5" },
-                ].map((rt) => (
-                  <button
-                    key={rt.label}
-                    type="button"
-                    onClick={() => updateFilter({ minRating: rt.val })}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                      filters.minRating === rt.val
-                        ? "bg-amber-500 text-white border-amber-500 shadow-xs"
-                        : "bg-surface text-ink border-brand-100 hover:border-brand-300"
-                    }`}
-                  >
-                    {rt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* 8. Features & Facilities Filter */}
             <div className="space-y-2 pt-3 border-t border-brand-50">
               <label className="block text-xs font-bold text-ink uppercase tracking-wider">
@@ -875,14 +847,6 @@ export default function VenueListingView() {
                         <span className="absolute bottom-3 left-3 bg-ink/80 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-xs">
                           {venue.venueType || "Banquet Hall"}
                         </span>
-
-                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs text-amber-700 font-bold text-xs px-2.5 py-1 rounded-full shadow-xs flex items-center gap-1">
-                          <span>★</span>
-                          <span>{venue.rating?.toFixed ? venue.rating.toFixed(1) : venue.rating || "4.8"}</span>
-                          {venue.reviewsCount > 0 && (
-                            <span className="text-[10px] text-muted font-normal">({venue.reviewsCount})</span>
-                          )}
-                        </div>
                       </Link>
 
                       {/* Content Section */}
@@ -935,6 +899,32 @@ export default function VenueListingView() {
                                   ✓ {feat}
                                 </span>
                               ))}
+                            </div>
+                          )}
+
+                          {/* Catalogue Services & Setups Badges */}
+                          {Array.isArray(venue.mainCategories) && venue.mainCategories.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                              {venue.mainCategories.slice(0, 3).map((cat) => (
+                                <span
+                                  key={cat}
+                                  className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md"
+                                >
+                                  <span>🎪</span> {cat}
+                                </span>
+                              ))}
+                              {venue.mainCategories.length > 3 && (
+                                <span className="text-[10px] text-muted font-medium">
+                                  +{venue.mainCategories.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {Array.isArray(venue.subcategories) && venue.subcategories.length > 0 && (
+                            <div className="text-[11px] text-brand-700 font-semibold mt-1 flex items-center gap-1">
+                              <span>✨</span>
+                              <span>{venue.subcategories.length} Event Services & Setups Included</span>
                             </div>
                           )}
                         </div>

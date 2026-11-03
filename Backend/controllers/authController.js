@@ -15,6 +15,17 @@ import {
   setAuthCookie,
   signToken,
 } from "../middleware/auth.js";
+import {
+  redisGet,
+  redisGetJSON,
+  redisSet,
+  redisSetJSON,
+  redisDel,
+  redisAcquireLock,
+  redisReleaseLock,
+  redisIncrWithTTL,
+  invalidateUserAuthCache,
+} from "../lib/redis.js";
 
 const LoginSchema = z.object({
   email: z.string().email(),
@@ -75,15 +86,44 @@ export async function login(req, res) {
   const parsed = LoginSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ ok: false, error: "Invalid email or password format" });
 
+  const normalizedEmail = (parsed.data?.email || "").trim().toLowerCase();
+
+  // 1. Rate-limiting check: Shield against brute-force attacks via Redis (5 attempts / 15 min)
+  const attemptsKey = `auth:login:attempts:${normalizedEmail}`;
+  const failedAttempts = await redisGet(attemptsKey);
+  if (failedAttempts && Number(failedAttempts) >= 5) {
+    return res.status(429).json({
+      ok: false,
+      error: "Too many failed login attempts. For security, please wait 15 minutes before trying again.",
+    });
+  }
+
+  // 2. Negative cache check: Avoid database query if email was recently confirmed non-existent
+  const isCachedNotFound = await redisGet(`auth:user:notfound:${normalizedEmail}`);
+  if (isCachedNotFound) {
+    return res.status(401).json({ ok: false, error: "Invalid credentials" });
+  }
+
   await dbConnect();
-  const normalizedEmail = parsed.data.email.trim().toLowerCase();
   console.log(`[Login Attempt] Email: ${normalizedEmail}`);
   const user = await User.findOne({ email: normalizedEmail });
 
-  if (!user || !(await user.verifyPassword(parsed.data.password))) {
-    console.warn(`[Login Failed] Invalid credentials for: ${normalizedEmail}`);
+  if (!user) {
+    await redisSet(`auth:user:notfound:${normalizedEmail}`, "1", 60); // 60s negative cache
+    console.warn(`[Login Failed] User not found: ${normalizedEmail}`);
     return res.status(401).json({ ok: false, error: "Invalid credentials" });
   }
+
+  // 3. Strict password verification on the database user document (NEVER bypassed)
+  const isPasswordValid = await user.verifyPassword(parsed.data.password);
+  if (!isPasswordValid) {
+    await redisIncrWithTTL(attemptsKey, 900); // 15 min TTL
+    console.warn(`[Login Failed] Invalid password for: ${normalizedEmail}`);
+    return res.status(401).json({ ok: false, error: "Invalid credentials" });
+  }
+
+  // Password matched: clear failed attempts counter
+  await redisDel(attemptsKey);
   console.log(`[Login Succeeded] User: ${normalizedEmail}, Role: ${user.role}, PhoneVerified: ${user.isPhoneVerified}`);
 
   // Check if mobile phone is verified (Admins bypass verification)
@@ -104,6 +144,14 @@ export async function login(req, res) {
     user.phoneOtpLastSent = new Date();
     await user.save();
 
+    // Cache temporary login OTP in Redis (10 min TTL)
+    await redisSetJSON(`auth:signup:otp:${normalizedEmail}`, {
+      email: normalizedEmail,
+      phone: user.phone,
+      hashedOtp: user.phoneOtp,
+      expiresAt: user.phoneOtpExpires.getTime(),
+    }, 600);
+
     const sendResult = await sendWhatsAppOtp(user.phone, otp);
 
     return res.status(403).json({
@@ -118,6 +166,21 @@ export async function login(req, res) {
       },
     });
   }
+
+  // 4. Cache non-sensitive user metadata and active session in Redis
+  await redisSetJSON(`auth:session:${user._id}`, {
+    id: String(user._id),
+    role: user.role,
+    isPhoneVerified: Boolean(user.isPhoneVerified),
+    loginAt: Date.now(),
+  }, 604800); // 7 days (matches JWT expiration)
+
+  await redisSetJSON(`auth:user:meta:${normalizedEmail}`, {
+    id: String(user._id),
+    email: user.email,
+    role: user.role,
+    isPhoneVerified: Boolean(user.isPhoneVerified),
+  }, 3600); // 1 hour
 
   const token = signToken({ uid: String(user._id), role: user.role });
   setAuthCookie(res, token);
@@ -170,10 +233,24 @@ export async function register(req, res) {
     });
   }
 
-  await dbConnect();
-
   const normalizedEmail = email.trim().toLowerCase();
-  let user = await User.findOne({ email: normalizedEmail });
+
+  // Prevent concurrent duplicate signup requests (15s distributed lock)
+  const signupLockKey = `auth:signup:lock:${normalizedEmail}`;
+  const lockAcquired = await redisAcquireLock(signupLockKey, 15);
+  if (!lockAcquired) {
+    return res.status(429).json({
+      ok: false,
+      error: "A registration request is already being processed for this email. Please wait a moment.",
+    });
+  }
+
+  try {
+    await dbConnect();
+    // Invalidate negative lookup cache
+    await redisDel(`auth:user:notfound:${normalizedEmail}`);
+
+    let user = await User.findOne({ email: normalizedEmail });
 
   if (user) {
     if (user.isPhoneVerified) {
@@ -254,6 +331,15 @@ export async function register(req, res) {
   user.phoneOtpLastSent = new Date();
   await user.save();
 
+  // Store temporary signup verification data in Redis (10 min TTL)
+  await redisSetJSON(`auth:signup:otp:${normalizedEmail}`, {
+    email: normalizedEmail,
+    phone: user.phone,
+    hashedOtp: user.phoneOtp,
+    expiresAt: user.phoneOtpExpires.getTime(),
+  }, 600);
+  await redisSet(`auth:signup:otp:cooldown:${normalizedEmail}`, "1", 45);
+
   // Send WhatsApp OTP via FireClashPro
   const sendResult = await sendWhatsAppOtp(user.phone, otp);
 
@@ -273,6 +359,9 @@ export async function register(req, res) {
       devOtp: otp,
     },
   });
+  } finally {
+    await redisReleaseLock(signupLockKey);
+  }
 }
 
 export async function verifyOtp(req, res) {
@@ -345,6 +434,11 @@ export async function verifyOtp(req, res) {
   user.phoneOtpExpires = null;
   await user.save();
 
+  // Delete temporary Redis verification data and invalidate cached auth info
+  await redisDel(`auth:signup:otp:${normalizedEmail}`);
+  await redisDel(`auth:signup:otp:cooldown:${normalizedEmail}`);
+  await invalidateUserAuthCache(normalizedEmail, user._id);
+
   // Ensure user is not auto-logged in: they must explicitly log in with their password
   clearAuthCookie(res);
 
@@ -380,6 +474,15 @@ export async function resendOtp(req, res) {
     });
   }
 
+  // Check fast cooldown in Redis first
+  const redisCooldown = await redisGet(`auth:signup:otp:cooldown:${normalizedEmail}`);
+  if (redisCooldown) {
+    return res.status(429).json({
+      ok: false,
+      error: "Please wait 45 seconds before requesting another OTP.",
+    });
+  }
+
   const now = Date.now();
   if (user.phoneOtpLastSent && now - new Date(user.phoneOtpLastSent).getTime() < 45000) {
     const waitSec = Math.ceil((45000 - (now - new Date(user.phoneOtpLastSent).getTime())) / 1000);
@@ -394,6 +497,15 @@ export async function resendOtp(req, res) {
   user.phoneOtpExpires = new Date(now + 10 * 60 * 1000);
   user.phoneOtpLastSent = new Date(now);
   await user.save();
+
+  // Update temporary OTP cache and reset cooldown in Redis
+  await redisSetJSON(`auth:signup:otp:${normalizedEmail}`, {
+    email: normalizedEmail,
+    phone: user.phone,
+    hashedOtp: user.phoneOtp,
+    expiresAt: user.phoneOtpExpires.getTime(),
+  }, 600);
+  await redisSet(`auth:signup:otp:cooldown:${normalizedEmail}`, "1", 45);
 
   const sendResult = await sendWhatsAppOtp(user.phone, otp);
 
@@ -410,7 +522,19 @@ export async function resendOtp(req, res) {
   });
 }
 
-export function logout(req, res) {
+export async function logout(req, res) {
+  try {
+    const token = req.cookies?.token || req.headers?.authorization?.replace("Bearer ", "");
+    if (token) {
+      const { verifyToken } = await import("../middleware/auth.js");
+      const decoded = verifyToken(token);
+      if (decoded?.uid) {
+        await redisDel(`auth:session:${decoded.uid}`);
+      }
+    }
+  } catch (err) {
+    // Gracefully ignore token extraction issues on logout
+  }
   clearAuthCookie(res);
   res.json({ ok: true, data: { loggedOut: true } });
 }
@@ -527,6 +651,11 @@ export async function resetPassword(req, res) {
   user.resetPasswordToken = null;
   user.resetPasswordExpires = null;
   await user.save();
+
+  // Invalidate cached user metadata, session, and reset failed login attempt counters
+  const userEmail = (user.email || "").toLowerCase().trim();
+  await invalidateUserAuthCache(userEmail, user._id);
+  await redisDel(`auth:login:attempts:${userEmail}`);
 
   res.json({
     ok: true,

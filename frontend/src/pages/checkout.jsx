@@ -214,6 +214,8 @@ export default function CheckoutPageCom() {
   const itemId = sp.get("itemId");
   const roomId = sp.get("roomId");
   const roomName = sp.get("roomName");
+  const packageKey = sp.get("package") || "";
+  const packageName = sp.get("packageName") || "";
   const queryPrice = sp.get("price") ? Number(sp.get("price")) : null;
 
   const [item, setItem] = useState(null);
@@ -324,14 +326,20 @@ export default function CheckoutPageCom() {
 
   // Initialize category option defaults when categoryType resolves
   useEffect(() => {
-    if (config.defaultOption) {
+    if (packageName) {
+      setForm((prev) => ({
+        ...prev,
+        categoryOption: prev.categoryOption || packageName,
+        secondaryOption: prev.secondaryOption || config.defaultSecondaryOption || "",
+      }));
+    } else if (config.defaultOption) {
       setForm((prev) => ({
         ...prev,
         categoryOption: prev.categoryOption || config.defaultOption,
         secondaryOption: prev.secondaryOption || config.defaultSecondaryOption || "",
       }));
     }
-  }, [config]);
+  }, [config, packageName]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -379,8 +387,9 @@ export default function CheckoutPageCom() {
 
       // Build readable, highly-structured notes for WhatsApp, Admin & Vendor dashboards
       const notesParts = [];
+      if (packageName) notesParts.push(`Selected Plan: ${packageName}`);
       if (roomName) notesParts.push(`Room: ${roomName}`);
-      if (form.categoryOption) notesParts.push(`${config.optionLabel || "Type"}: ${form.categoryOption}`);
+      if (form.categoryOption && form.categoryOption !== packageName) notesParts.push(`${config.optionLabel || "Type"}: ${form.categoryOption}`);
       if (form.secondaryOption) notesParts.push(`${config.secondaryOptionLabel || "Preference"}: ${form.secondaryOption}`);
       if (form.time?.trim()) notesParts.push(`Time: ${form.time.trim()}`);
       if (config.showCheckOut && form.secondaryDate) notesParts.push(`Check-out: ${form.secondaryDate}`);
@@ -789,18 +798,29 @@ export default function CheckoutPageCom() {
                       <span>🛏️</span> {roomName}
                     </div>
                   )}
+                  {packageName && (
+                    <div className="inline-flex items-center gap-1 text-xs text-brand-700 font-bold bg-white px-2 py-0.5 rounded-md border border-brand-200 mt-1.5">
+                      <span>📦 Plan:</span> {packageName}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Dynamic Category summary pills */}
               <div className="space-y-1.5 text-xs text-muted bg-white/80 p-3.5 rounded-xl border border-brand-100">
+                {packageName && (
+                  <div className="flex justify-between items-center pb-1.5 mb-1.5 border-b border-brand-100/70">
+                    <span className="font-medium text-ink">Selected Package:</span>
+                    <span className="font-bold text-brand-700">{packageName}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-ink">Requested Date:</span>
                   <span className="font-semibold text-brand-700">
                     {form.date ? form.date : "Not selected yet"}
                   </span>
                 </div>
-                {form.categoryOption && (
+                {form.categoryOption && form.categoryOption !== packageName && (
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-ink">{config.optionLabel}:</span>
                     <span className="font-semibold text-ink">{form.categoryOption}</span>
@@ -823,7 +843,7 @@ export default function CheckoutPageCom() {
               {/* Price details */}
               <div className="space-y-2 text-sm pt-1">
                 <div className="flex justify-between text-muted">
-                  <span>{roomName ? `Tariff (${roomName})` : "Service Price"}</span>
+                  <span>{packageName ? `Package Tariff (${packageName})` : roomName ? `Tariff (${roomName})` : "Service Price"}</span>
                   <span className="font-semibold text-ink">
                     ₹{payableAmount.toLocaleString("en-IN")}
                   </span>

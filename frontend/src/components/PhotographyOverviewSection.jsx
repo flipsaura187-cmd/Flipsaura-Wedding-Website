@@ -1,11 +1,30 @@
 "use client";
 import React, { useState } from "react";
 
-export default function PhotographyOverviewSection({ item }) {
+export default function PhotographyOverviewSection({
+  item,
+  selectedPkgKey,
+  onSelectPackage,
+}) {
   if (!item) return null;
 
   const pkg = item.photographyPackages || {};
-  const [selectedPkg, setSelectedPkg] = useState("standard");
+  const [internalSelectedPkg, setInternalSelectedPkg] = useState("standard");
+  const activePkgKey = selectedPkgKey !== undefined ? selectedPkgKey : internalSelectedPkg;
+
+  const handleSelectPackage = (p) => {
+    setInternalSelectedPkg(p.key);
+    if (onSelectPackage) {
+      onSelectPackage({
+        key: p.key,
+        label: p.label,
+        title: p.data?.title || `${p.label} Package`,
+        price: Number(p.data?.price) || 0,
+        description: p.data?.description || "",
+        deliverables: p.data?.deliverables || [],
+      });
+    }
+  };
 
   const packagesList = [
     {
@@ -61,15 +80,15 @@ export default function PhotographyOverviewSection({ item }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {packagesList.map(({ key, label, badgeClass, activeRing, data }) => {
-              const isSelected = selectedPkg === key;
+              const isSelected = activePkgKey === key;
 
               return (
                 <div
                   key={key}
-                  onClick={() => setSelectedPkg(key)}
+                  onClick={() => handleSelectPackage({ key, label, data })}
                   className={`p-5 rounded-2xl border bg-white shadow-xs transition-all cursor-pointer relative flex flex-col justify-between ${
                     isSelected
-                      ? `border-brand-500 ${activeRing} shadow-md`
+                      ? `border-brand-500 ring-2 ring-brand-500 shadow-md bg-brand-50/10`
                       : "border-brand-100 hover:border-brand-300 hover:shadow"
                   }`}
                 >
@@ -79,8 +98,8 @@ export default function PhotographyOverviewSection({ item }) {
                         {label} Package
                       </span>
                       {isSelected && (
-                        <span className="text-[11px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
-                          ● Selected
+                        <span className="text-[11px] font-bold text-brand-700 bg-brand-100/80 border border-brand-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <span>✓</span> Selected
                         </span>
                       )}
                     </div>
@@ -99,7 +118,7 @@ export default function PhotographyOverviewSection({ item }) {
                     <div className="pt-2 border-t border-brand-50">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-2xl font-bold text-brand-700">
-                          {data.price > 0 ? `₹${data.price.toLocaleString("en-IN")}` : "Price on Request"}
+                          {data.price > 0 ? `₹${Number(data.price).toLocaleString("en-IN")}` : "Price on Request"}
                         </span>
                         {data.price > 0 && (
                           <span className="text-xs text-muted font-normal">all inclusive</span>
@@ -123,21 +142,36 @@ export default function PhotographyOverviewSection({ item }) {
                     )}
                   </div>
 
-                  {phone && (
-                    <div className="pt-4 mt-4 border-t border-brand-50">
+                  <div className="pt-4 mt-4 border-t border-brand-50 flex flex-col sm:flex-row items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectPackage({ key, label, data });
+                      }}
+                      className={`w-full py-2.5 px-3 rounded-xl text-center text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-brand-600 text-white shadow-sm ring-2 ring-brand-600"
+                          : "bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100"
+                      }`}
+                    >
+                      {isSelected ? "✓ Selected Plan" : `Select ${label} Plan`}
+                    </button>
+
+                    {phone && (
                       <a
                         href={`https://wa.me/${phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
-                          `Hello, I would like to book or inquire about the ${label} Package (₹${data.price || "On Request"}) of ${item.title} on FlipsAura.`
+                          `Hello, I would like to book or inquire about the ${label} Package (₹${data.price ? Number(data.price).toLocaleString("en-IN") : "On Request"}) of ${item.title} on FlipsAura.`
                         )}`}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full py-2 px-3 rounded-xl text-center text-xs font-bold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 block transition-all"
+                        className="w-full sm:w-auto py-2.5 px-3 rounded-xl text-center text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 whitespace-nowrap transition-all cursor-pointer"
                       >
-                        Enquire for {label} Package →
+                        💬 WhatsApp
                       </a>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })}

@@ -6,6 +6,8 @@ import AdminHotelFormModal from "@/components/admin/AdminHotelFormModal";
 import AdminPhotographyFormModal from "@/components/admin/AdminPhotographyFormModal";
 import AdminMehandiFormModal from "@/components/admin/AdminMehandiFormModal";
 import AdminHomeSetupFormModal from "@/components/admin/AdminHomeSetupFormModal";
+import AdminPlanningDecorFormModal from "@/components/admin/AdminPlanningDecorFormModal";
+import AdminCateringFormModal from "@/components/admin/AdminCateringFormModal";
 import Link from "@/compat/Link";
 import api from "@/api/axios";
 
@@ -64,6 +66,28 @@ const SERVICE_CATEGORY_CARDS = [
     highlights: ["Basic, Standard, Premium & Luxury Packages", "Bridal & Arabic Styles", "100% Organic Henna", "Home Visits & Group Setup"],
     bgGradient: "from-emerald-500/10 via-teal-500/5 to-transparent",
     borderColor: "hover:border-emerald-400 hover:shadow-emerald-500/10",
+  },
+  {
+    type: "planning-decor",
+    title: "Planning & Decor",
+    icon: "🎨",
+    badge: "Themes & Mandap",
+    badgeColor: "bg-rose-100 text-rose-800 border-rose-200",
+    description: "Wedding themes, royal floral mandaps, entrance styling, Haldi/Sangeet decor & full coordination.",
+    highlights: ["Decor Themes", "Mandap & Stage Styling", "Entrance & Pathway", "Pre-Wedding Setup", "Event Coordination"],
+    bgGradient: "from-rose-500/10 via-pink-500/5 to-transparent",
+    borderColor: "hover:border-rose-400 hover:shadow-rose-500/10",
+  },
+  {
+    type: "catering",
+    title: "Food / Catering",
+    icon: "🍽️",
+    badge: "Per-Plate Feasts",
+    badgeColor: "bg-orange-100 text-orange-800 border-orange-200",
+    description: "Wedding feasts, pure veg & multi-cuisine buffets, live chaat stalls, mocktail bars & royal service.",
+    highlights: ["Veg & Non-Veg Menus", "North Indian & Mughlai", "Live Chaat & Dosa Counters", "Desserts & Live Jalebi", "Royal Crockery & Waiters"],
+    bgGradient: "from-orange-500/10 via-amber-500/5 to-transparent",
+    borderColor: "hover:border-orange-400 hover:shadow-orange-500/10",
   },
   {
     type: "generic",
@@ -170,6 +194,26 @@ export default function VendorItems() {
       return "mehandi";
     }
 
+    if (
+      slug === "planning-decor" ||
+      slug.includes("planning") ||
+      slug.includes("decor") ||
+      name.includes("decor") ||
+      name.includes("planning")
+    ) {
+      return "planning-decor";
+    }
+
+    if (
+      slug === "food-catering" ||
+      slug.includes("catering") ||
+      name.includes("catering") ||
+      name.includes("food") ||
+      (item.pricePerPlateVeg !== undefined && Number(item.pricePerPlateVeg) > 0)
+    ) {
+      return "catering";
+    }
+
     return "generic";
   };
 
@@ -186,6 +230,10 @@ export default function VendorItems() {
         return { label: "Photography & Video", icon: "📷", color: "bg-purple-50 text-purple-700 border-purple-200" };
       case "mehandi":
         return { label: "Mehndi Services", icon: "🌿", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+      case "planning-decor":
+        return { label: "Planning & Decor", icon: "🎨", color: "bg-rose-50 text-rose-800 border-rose-200" };
+      case "catering":
+        return { label: "Food / Catering", icon: "🍽️", color: "bg-orange-50 text-orange-800 border-orange-200" };
       default:
         return { label: item.category?.name || "Service", icon: "✨", color: "bg-gray-100 text-gray-700 border-gray-200" };
     }
@@ -563,7 +611,35 @@ export default function VendorItems() {
         />
       )}
 
-      {/* 5. Generic Item Form Modal */}
+      {/* 5. Planning & Decor Form Modal (Themes, Mandaps & Concepts) */}
+      {activeCategoryType === "planning-decor" && (
+        <AdminPlanningDecorFormModal
+          isOpen={true}
+          isVendor={true}
+          initialData={editingItem}
+          onClose={closeModal}
+          onSaved={() => {
+            closeModal();
+            load();
+          }}
+        />
+      )}
+
+      {/* 6. Food / Catering Form Modal (Per-Plate Feasts & Live Counters) */}
+      {activeCategoryType === "catering" && (
+        <AdminCateringFormModal
+          isOpen={true}
+          isVendor={true}
+          initialData={editingItem}
+          onClose={closeModal}
+          onSaved={() => {
+            closeModal();
+            load();
+          }}
+        />
+      )}
+
+      {/* 7. Generic Item Form Modal */}
       {activeCategoryType === "generic" && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"

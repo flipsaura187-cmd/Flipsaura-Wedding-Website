@@ -5,6 +5,7 @@ import ServiceAmenities from "@/components/ServiceAmenities";
 import HotelRoomsSection from "@/components/HotelRoomsSection";
 import VenueOverviewSection from "@/components/VenueOverviewSection";
 import PhotographyOverviewSection from "@/components/PhotographyOverviewSection";
+import MehandiOverviewSection from "@/components/MehandiOverviewSection";
 import api from "@/api/axios";
 export default function ProductPage() {
   const { id } = useParams();
@@ -14,6 +15,7 @@ export default function ProductPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
 
   // Review form state
   const [rating, setRating] = useState(0);
@@ -124,12 +126,69 @@ export default function ProductPage() {
     );
   }, [item]);
 
+  const isMehandi = useMemo(() => {
+    if (!item) return false;
+    const catSlug = (item.category?.slug || "").toLowerCase();
+    const catName = (item.category?.name || "").toLowerCase();
+    return (
+      catSlug.includes("mehndi") ||
+      catSlug.includes("mehandi") ||
+      catName.includes("mehndi") ||
+      catName.includes("mehandi") ||
+      Boolean(item.mehandiPackages?.basic?.price || item.mehandiPackages?.standard?.price)
+    );
+  }, [item]);
+
+  // Pre-select default package (standard or first valid tier)
+  useEffect(() => {
+    if (!item) return;
+    const pkgs = item.photographyPackages || item.mehandiPackages;
+    if (pkgs) {
+      const list = [
+        { key: "basic", label: "Basic", data: pkgs.basic },
+        { key: "standard", label: "Standard", data: pkgs.standard },
+        { key: "premium", label: "Premium", data: pkgs.premium },
+        { key: "luxury", label: "Luxury", data: pkgs.luxury },
+      ].filter((p) => p.data && (Number(p.data.price) > 0 || p.data.deliverables?.length > 0));
+
+      if (list.length > 0) {
+        const defaultPkg = list.find((p) => p.key === "standard") || list[0];
+        setSelectedPackage({
+          key: defaultPkg.key,
+          label: defaultPkg.label,
+          title: defaultPkg.data.title || `${defaultPkg.label} Package`,
+          price: Number(defaultPkg.data.price) || 0,
+          description: defaultPkg.data.description || "",
+          deliverables: defaultPkg.data.deliverables || [],
+        });
+      } else {
+        setSelectedPackage(null);
+      }
+    } else {
+      setSelectedPackage(null);
+    }
+  }, [item]);
+
+  // Compute effective price based on package selection or base item price
+  const effectivePrice = useMemo(() => {
+    if (selectedPackage && selectedPackage.price !== undefined && selectedPackage.price !== null && Number(selectedPackage.price) > 0) {
+      return Number(selectedPackage.price);
+    }
+    return Number(item?.price) || 0;
+  }, [selectedPackage, item]);
+
   const handleBookingClick = () => {
+    let checkoutUrl = `/checkout?itemId=${item?._id}`;
+    if (selectedPackage && effectivePrice > 0) {
+      checkoutUrl += `&price=${encodeURIComponent(effectivePrice)}`;
+      checkoutUrl += `&package=${encodeURIComponent(selectedPackage.key)}`;
+      checkoutUrl += `&packageName=${encodeURIComponent(selectedPackage.title || `${selectedPackage.label} Package`)}`;
+    }
     if (!user) {
-      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+      const returnUrl = encodeURIComponent(checkoutUrl);
       router.push(`/login?next=${returnUrl}`);
     } else {
-      router.push(`/checkout?itemId=${item?._id}`);
+      router.push(checkoutUrl);
     }
   };
 
@@ -411,7 +470,20 @@ export default function ProductPage() {
                 {/* Info Details below gallery on larger screens */}
                 <div className="pt-6 space-y-6">
                   {isVenue && <VenueOverviewSection item={item} />}
-                  {isPhotography && <PhotographyOverviewSection item={item} />}
+                  {isPhotography && (
+                    <PhotographyOverviewSection
+                      item={item}
+                      selectedPkgKey={selectedPackage?.key}
+                      onSelectPackage={setSelectedPackage}
+                    />
+                  )}
+                  {isMehandi && (
+                    <MehandiOverviewSection
+                      item={item}
+                      selectedPkgKey={selectedPackage?.key}
+                      onSelectPackage={setSelectedPackage}
+                    />
+                  )}
 
                   <div>
                     <h3 className="font-serif text-xl font-bold text-ink mb-2">
@@ -448,12 +520,22 @@ export default function ProductPage() {
                     </h1>
                   </div>
 
-                  {item.price && item.price > 0 ? (
-                    <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
-                      <span className="text-3xl font-bold text-brand-700">
-                        ₹{item.price.toLocaleString("en-IN")}
-                      </span>
-                      <span className="text-xs text-muted font-medium">starting price</span>
+                  {effectivePrice > 0 ? (
+                    <div className="pt-2 border-t border-brand-50 space-y-2">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-brand-700">
+                          ₹{effectivePrice.toLocaleString("en-IN")}
+                        </span>
+                        <span className="text-xs text-muted font-medium">
+                          {selectedPackage ? "plan price (all inclusive)" : "starting price"}
+                        </span>
+                      </div>
+                      {selectedPackage && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-brand-50 border border-brand-200 text-xs font-bold text-brand-700">
+                          <span>✓ Selected Plan:</span>
+                          <span>{selectedPackage.title || `${selectedPackage.label} Package`}</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-baseline gap-2 pt-2 border-t border-brand-50">
@@ -519,13 +601,19 @@ export default function ProductPage() {
                       onClick={handleBookingClick}
                       className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-base bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-lg shadow-brand-500/25 transition-all cursor-pointer"
                     >
-                      {user ? "Confirm Booking →" : "Login to Book →"}
+                      {user
+                        ? selectedPackage
+                          ? `Confirm Booking (${selectedPackage.label || "Plan"} – ₹${effectivePrice.toLocaleString("en-IN")}) →`
+                          : "Confirm Booking →"
+                        : "Login to Book →"}
                     </button>
 
                     {item.contactPhone && (
                       <a
                         href={`https://wa.me/${item.contactPhone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
-                          `Hello, I saw ${item.title} on FlipsAura and would like to inquire about wedding availability and booking.`
+                          selectedPackage
+                            ? `Hello, I saw ${item.title} on FlipsAura and would like to book the ${selectedPackage.title || `${selectedPackage.label} Package`} (₹${effectivePrice.toLocaleString("en-IN")}).`
+                            : `Hello, I saw ${item.title} on FlipsAura and would like to inquire about wedding availability and booking.`
                         )}`}
                         target="_blank"
                         rel="noreferrer"

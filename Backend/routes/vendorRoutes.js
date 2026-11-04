@@ -37,6 +37,16 @@ import {
   updateAdminHomeSetup,
   deleteAdminHomeSetup,
 } from "../controllers/adminHomeSetupController.js";
+import {
+  createAdminPlanningDecor,
+  updateAdminPlanningDecor,
+  deleteAdminPlanningDecor,
+} from "../controllers/adminPlanningDecorController.js";
+import {
+  createAdminCatering,
+  updateAdminCatering,
+  deleteAdminCatering,
+} from "../controllers/adminCateringController.js";
 
 const router = express.Router();
 const vendorAuth = [requireAuth, requireRole("user", "vendor", "admin")];
@@ -88,5 +98,15 @@ router.delete("/mehandi/:id", ...vendorAuth, deleteAdminMehandi);
 router.post("/home-setup", ...vendorAuth, createAdminHomeSetup);
 router.put("/home-setup/:id", ...vendorAuth, updateAdminHomeSetup);
 router.delete("/home-setup/:id", ...vendorAuth, deleteAdminHomeSetup);
+
+// Planning & Decor
+router.post("/planning-decor", ...vendorAuth, createAdminPlanningDecor);
+router.put("/planning-decor/:id", ...vendorAuth, updateAdminPlanningDecor);
+router.delete("/planning-decor/:id", ...vendorAuth, deleteAdminPlanningDecor);
+
+// Food / Catering
+router.post("/catering", ...vendorAuth, createAdminCatering);
+router.put("/catering/:id", ...vendorAuth, updateAdminCatering);
+router.delete("/catering/:id", ...vendorAuth, deleteAdminCatering);
 
 export default router;

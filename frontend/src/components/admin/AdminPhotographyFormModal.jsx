@@ -2,13 +2,84 @@
 import React, { useState, useEffect } from "react";
 import api from "@/api/axios";
 
+// Default Photography Catalogue Options
+const DEFAULT_PHOTOGRAPHY_CATALOGUE = [
+  {
+    id: "styles",
+    name: "A. Photography & Coverage Styles",
+    icon: "📷",
+    description: "Candid, traditional, drone cinematography, and specialty shoots.",
+    subcategories: [
+      "Candid Wedding Photography",
+      "Traditional Photography",
+      "Pre-Wedding Couple Shoot",
+      "Post-Wedding Shoot",
+      "Cinematic Wedding Film (Teaser + Movie)",
+      "Traditional HD/4K Videography",
+      "Drone Aerial 4K Cinematography",
+      "Instagram Reels & 60-Sec Highlights",
+      "Same-Day Edit / Next-Day Sangeet Teaser",
+      "Engagement / Ring Ceremony Coverage",
+      "Haldi & Mehndi Vibrant Shoot",
+      "Maternity & Baby Shoot",
+      "360 Degree Video Booth Setup",
+      "Live Streaming (YouTube / Zoom)",
+    ],
+  },
+  {
+    id: "gear",
+    name: "B. Production Equipment & Gear",
+    icon: "🎥",
+    description: "Cinema cameras, gimbals, lighting, and aerial setups.",
+    subcategories: [
+      "Sony FX3 / A7S III Cinema Line 4K Cameras",
+      "Canon R5 / Nikon Z8 High-Resolution Bodies",
+      "DJI Ronin Gimbal Stabilizers",
+      "DJI 4K Cinema Drone",
+      "Godox / Profoto Studio Strobes & Continuous Lights",
+      "Wireless Audio Kit & Collar Mics",
+      "Video Jib / Crane with Remote Head",
+      "LED Wall Telecast Switcher Kit",
+    ],
+  },
+  {
+    id: "deliverables",
+    name: "C. Albums & Deliverables",
+    icon: "📖",
+    description: "Luxury albums, digital drives, and raw coverage access.",
+    subcategories: [
+      "Luxury Italian Leather Flush-Mount Album (40+ Sheets)",
+      "Premium Velvet Hardcover Photo Album",
+      "Mini Parent / Pocket Albums",
+      "High-Resolution Retouched Cloud Gallery",
+      "Raw Footage & All Photos on 1TB/2TB Hard Drive",
+      "Custom Wooden USB Pen Drive Box",
+      "Framed Canvas Wall Enlargements",
+    ],
+  },
+  {
+    id: "team",
+    name: "D. Crew, Travel & Policies",
+    icon: "👥",
+    description: "Team size, destination travel, and booking flexibility.",
+    subcategories: [
+      "Available for Destination / Outstation Shoots",
+      "Crew of 2 to 4 Professional Photographers & Videographers",
+      "Large Production Crew of 6+ Directors & Cinematographers",
+      "Female Photographer Available for Bridal Prep",
+      "Next-Day Teaser Delivery Guarantee",
+    ],
+  },
+];
+
 export default function AdminPhotographyFormModal({
   isOpen,
   onClose,
   initialData,
   onSaved,
+  isVendor = false,
 }) {
-  const [activeTab, setActiveTab] = useState("basic"); // basic | about | packages | photos | albums | videos
+  const [activeTab, setActiveTab] = useState("basic"); // basic | options | packages | photos | albums | videos | about
 
   const [form, setForm] = useState({
     name: "",
@@ -24,9 +95,12 @@ export default function AdminPhotographyFormModal({
     photos: [],
     albums: [],
     videos: [],
+    mainCategories: [],
+    subcategories: [],
+    customSubcategoriesMap: {},
     photographyPackages: {
       basic: {
-        price: "",
+        price: "25000",
         title: "Basic Package",
         description: "1 Day Pre-Wedding or single ceremony coverage with digital photos.",
         deliverables: [
@@ -36,7 +110,7 @@ export default function AdminPhotographyFormModal({
         ],
       },
       standard: {
-        price: "",
+        price: "50000",
         title: "Standard Package",
         description: "Complete 1-day wedding day photography & traditional HD video coverage.",
         deliverables: [
@@ -47,7 +121,7 @@ export default function AdminPhotographyFormModal({
         ],
       },
       premium: {
-        price: "",
+        price: "95000",
         title: "Premium Package",
         description: "2-Day comprehensive wedding, sangeet & reception coverage with cinema style.",
         deliverables: [
@@ -58,7 +132,7 @@ export default function AdminPhotographyFormModal({
         ],
       },
       luxury: {
-        price: "",
+        price: "175000",
         title: "Luxury Package",
         description: "Ultra-luxury multi-day wedding celebration with dedicated celebrity crew.",
         deliverables: [
@@ -75,6 +149,10 @@ export default function AdminPhotographyFormModal({
     rating: "4.8",
     reviewsCount: "0",
   });
+
+  // Custom Category & Option states
+  const [customCategoryName, setCustomCategoryName] = useState("");
+  const [customOptionInputs, setCustomOptionInputs] = useState({});
 
   // Direct image & album inputs
   const [directPhotoUrl, setDirectPhotoUrl] = useState("");
@@ -108,90 +186,42 @@ export default function AdminPhotographyFormModal({
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Load initial data on edit
   useEffect(() => {
-    if (!isOpen) return;
-    setError("");
-    setSuccessMsg("");
-    setActiveTab("basic");
-
     if (initialData) {
-      const pkg = initialData.photographyPackages || {};
       setForm({
-        name: initialData.title || "",
-        address: initialData.address || initialData.vendor?.vendorProfile?.address || "",
+        name: initialData.title || initialData.name || "",
+        address: initialData.address || "",
         locality: initialData.locality || "",
-        city: initialData.city || initialData.vendor?.vendorProfile?.city || "Daudnagar",
-        state: initialData.state || initialData.vendor?.vendorProfile?.state || "Bihar",
-        pincode: initialData.pincode || initialData.vendor?.vendorProfile?.pincode || "",
+        city: initialData.city || "Daudnagar",
+        state: initialData.state || "Bihar",
+        pincode: initialData.pincode || "",
         contactPhone: initialData.contactPhone || initialData.vendor?.phone || "",
         contactEmail: initialData.contactEmail || initialData.vendor?.email || "",
         about: initialData.about || "",
-        description: initialData.description || "",
+        description: initialData.description || initialData.about || "",
         photos: Array.isArray(initialData.images) ? initialData.images : [],
         albums: Array.isArray(initialData.albums) ? initialData.albums : [],
         videos: Array.isArray(initialData.videos) ? initialData.videos : [],
+        mainCategories: Array.isArray(initialData.mainCategories) ? initialData.mainCategories : [],
+        subcategories: Array.isArray(initialData.subcategories) ? initialData.subcategories : [],
+        customSubcategoriesMap: initialData.customSubcategoriesMap || {},
         photographyPackages: {
           basic: {
-            price: pkg.basic?.price !== undefined ? String(pkg.basic.price) : "",
-            title: pkg.basic?.title || "Basic Package",
-            description: pkg.basic?.description || "",
-            deliverables: Array.isArray(pkg.basic?.deliverables) ? pkg.basic.deliverables : [],
-          },
-          standard: {
-            price: pkg.standard?.price !== undefined ? String(pkg.standard.price) : "",
-            title: pkg.standard?.title || "Standard Package",
-            description: pkg.standard?.description || "",
-            deliverables: Array.isArray(pkg.standard?.deliverables) ? pkg.standard.deliverables : [],
-          },
-          premium: {
-            price: pkg.premium?.price !== undefined ? String(pkg.premium.price) : "",
-            title: pkg.premium?.title || "Premium Package",
-            description: pkg.premium?.description || "",
-            deliverables: Array.isArray(pkg.premium?.deliverables) ? pkg.premium.deliverables : [],
-          },
-          luxury: {
-            price: pkg.luxury?.price !== undefined ? String(pkg.luxury.price) : "",
-            title: pkg.luxury?.title || "Luxury Package",
-            description: pkg.luxury?.description || "",
-            deliverables: Array.isArray(pkg.luxury?.deliverables) ? pkg.luxury.deliverables : [],
-          },
-        },
-        active: initialData.active !== undefined ? initialData.active : true,
-        featured: Boolean(initialData.featured),
-        rating: initialData.rating !== undefined ? String(initialData.rating) : "4.8",
-        reviewsCount: initialData.reviewsCount !== undefined ? String(initialData.reviewsCount) : "0",
-      });
-    } else {
-      setForm({
-        name: "",
-        address: "",
-        locality: "",
-        city: "Daudnagar",
-        state: "Bihar",
-        pincode: "",
-        contactPhone: "",
-        contactEmail: "",
-        about: "",
-        description: "",
-        photos: [],
-        albums: [],
-        videos: [],
-        photographyPackages: {
-          basic: {
-            price: "",
-            title: "Basic Package",
-            description: "1 Day Pre-Wedding or single ceremony coverage with digital photos.",
-            deliverables: [
+            price: initialData.photographyPackages?.basic?.price !== undefined ? String(initialData.photographyPackages.basic.price) : "25000",
+            title: initialData.photographyPackages?.basic?.title || "Basic Package",
+            description: initialData.photographyPackages?.basic?.description || "1 Day Pre-Wedding or single ceremony coverage with digital photos.",
+            deliverables: initialData.photographyPackages?.basic?.deliverables || [
               "1 Traditional / Candid Photographer",
               "All edited high-res digital photos",
               "Online album gallery access",
             ],
           },
           standard: {
-            price: "",
-            title: "Standard Package",
-            description: "Complete 1-day wedding day photography & traditional HD video coverage.",
-            deliverables: [
+            price: initialData.photographyPackages?.standard?.price !== undefined ? String(initialData.photographyPackages.standard.price) : "50000",
+            title: initialData.photographyPackages?.standard?.title || "Standard Package",
+            description: initialData.photographyPackages?.standard?.description || "Complete 1-day wedding day photography & traditional HD video coverage.",
+            deliverables: initialData.photographyPackages?.standard?.deliverables || [
               "1 Candid Photographer + 1 Traditional Videographer",
               "Full HD Wedding Video (45-60 mins)",
               "1 Premium Hardcover Photo Album (30 sheets)",
@@ -199,10 +229,10 @@ export default function AdminPhotographyFormModal({
             ],
           },
           premium: {
-            price: "",
-            title: "Premium Package",
-            description: "2-Day comprehensive wedding, sangeet & reception coverage with cinema style.",
-            deliverables: [
+            price: initialData.photographyPackages?.premium?.price !== undefined ? String(initialData.photographyPackages.premium.price) : "95000",
+            title: initialData.photographyPackages?.premium?.title || "Premium Package",
+            description: initialData.photographyPackages?.premium?.description || "2-Day comprehensive wedding, sangeet & reception coverage with cinema style.",
+            deliverables: initialData.photographyPackages?.premium?.deliverables || [
               "2 Candid Photographers + 2 Cinematic Videographers",
               "Cinematic Wedding Film & Teaser Trailer (3-5 mins)",
               "Drone aerial coverage of venue and baraat",
@@ -210,10 +240,10 @@ export default function AdminPhotographyFormModal({
             ],
           },
           luxury: {
-            price: "",
-            title: "Luxury Package",
-            description: "Ultra-luxury multi-day wedding celebration with dedicated celebrity crew.",
-            deliverables: [
+            price: initialData.photographyPackages?.luxury?.price !== undefined ? String(initialData.photographyPackages.luxury.price) : "175000",
+            title: initialData.photographyPackages?.luxury?.title || "Luxury Package",
+            description: initialData.photographyPackages?.luxury?.description || "Ultra-luxury multi-day wedding celebration with dedicated celebrity crew.",
+            deliverables: initialData.photographyPackages?.luxury?.deliverables || [
               "Master Director + 3 Candid Photographers + 3 Cinematographers",
               "4K Cinema Film + Drone Aerial Coverage",
               "Pre-Wedding & Post-Wedding Shoots included",
@@ -222,99 +252,82 @@ export default function AdminPhotographyFormModal({
             ],
           },
         },
-        active: true,
-        featured: false,
-        rating: "4.8",
-        reviewsCount: "0",
+        active: initialData.active !== undefined ? initialData.active : true,
+        featured: Boolean(initialData.featured),
+        rating: initialData.rating ? String(initialData.rating) : "4.8",
+        reviewsCount: initialData.reviewsCount ? String(initialData.reviewsCount) : "0",
       });
     }
-  }, [isOpen, initialData]);
+  }, [initialData]);
 
   if (!isOpen) return null;
 
-  // Handle Photo File Upload
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+  // Toggle Subcategory
+  const handleToggleSubcategory = (mainCatName, subcat) => {
+    setForm((prev) => {
+      const hasSub = prev.subcategories.includes(subcat);
+      const newSubs = hasSub
+        ? prev.subcategories.filter((s) => s !== subcat)
+        : [...prev.subcategories, subcat];
 
-    setUploadingImage(true);
-    setUploadProgress(`Uploading 1 of ${files.length}...`);
-    setError("");
-
-    try {
-      const uploadedUrls = [];
-      for (let i = 0; i < files.length; i++) {
-        setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
-        const file = files[i];
-        const url = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = async () => {
-            try {
-              const base64Data = reader.result;
-              const { data } = await api.post("/api/upload/direct", {
-                file: base64Data,
-                folder: "flipsaura/photography",
-              });
-              if (!data?.ok || !data?.data?.url) {
-                throw new Error(data?.error || `Upload failed for ${file.name}`);
-              }
-              resolve(data.data.url);
-            } catch (err) {
-              reject(err);
-            }
-          };
-          reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
-          reader.readAsDataURL(file);
-        });
-        uploadedUrls.push(url);
+      const newMains = new Set(prev.mainCategories);
+      if (!hasSub) {
+        newMains.add(mainCatName);
       }
-
-      setForm((prev) => ({
+      return {
         ...prev,
-        photos: [...prev.photos, ...uploadedUrls],
-      }));
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError(err.response?.data?.error || err.message || "Failed to upload one or more photos");
-    } finally {
-      setUploadingImage(false);
-      setUploadProgress("");
-      e.target.value = "";
-    }
+        subcategories: newSubs,
+        mainCategories: Array.from(newMains),
+      };
+    });
   };
 
-  const addDirectPhotoUrl = () => {
-    const raw = directPhotoUrl.trim();
-    if (!raw) return;
+  // Add Custom Option under Category
+  const handleAddCustomOption = (catName) => {
+    const val = (customOptionInputs[catName] || "").trim();
+    if (!val) return;
 
-    const urls = raw
-      .split(/[\s,\n]+/)
-      .map((u) => u.trim())
-      .filter((u) => u.startsWith("http://") || u.startsWith("https://") || u.startsWith("/"));
+    setForm((prev) => {
+      const map = { ...prev.customSubcategoriesMap };
+      const currentList = map[catName] || [];
+      if (!currentList.includes(val)) {
+        map[catName] = [...currentList, val];
+      }
+      return {
+        ...prev,
+        customSubcategoriesMap: map,
+        subcategories: [...new Set([...prev.subcategories, val])],
+        mainCategories: [...new Set([...prev.mainCategories, catName])],
+      };
+    });
 
-    if (urls.length === 0) {
-      setError("Please enter valid URL(s) starting with http://, https://, or /");
-      return;
-    }
-
-    setForm((prev) => ({
-      ...prev,
-      photos: [...prev.photos, ...urls.filter((u) => !prev.photos.includes(u))],
-    }));
-    setDirectPhotoUrl("");
+    setCustomOptionInputs((prev) => ({ ...prev, [catName]: "" }));
   };
 
-  const removePhoto = (idx) => {
-    setForm((prev) => ({
-      ...prev,
-      photos: prev.photos.filter((_, i) => i !== idx),
-    }));
+  // Add Entire New Custom Category
+  const handleAddNewCategory = () => {
+    const catName = customCategoryName.trim();
+    if (!catName) return;
+
+    setForm((prev) => {
+      const map = { ...prev.customSubcategoriesMap };
+      if (!map[catName]) {
+        map[catName] = [];
+      }
+      return {
+        ...prev,
+        customSubcategoriesMap: map,
+        mainCategories: [...new Set([...prev.mainCategories, catName])],
+      };
+    });
+
+    setCustomCategoryName("");
   };
 
-  // Deliverable Add/Remove for Packages
+  // Package Deliverables Handlers
   const handleAddDeliverable = (pkgKey) => {
-    const text = (newDeliverable[pkgKey] || "").trim();
-    if (!text) return;
+    const itemToAdd = newDeliverable[pkgKey]?.trim();
+    if (!itemToAdd) return;
 
     setForm((prev) => ({
       ...prev,
@@ -322,7 +335,7 @@ export default function AdminPhotographyFormModal({
         ...prev.photographyPackages,
         [pkgKey]: {
           ...prev.photographyPackages[pkgKey],
-          deliverables: [...prev.photographyPackages[pkgKey].deliverables, text],
+          deliverables: [...(prev.photographyPackages[pkgKey].deliverables || []), itemToAdd],
         },
       },
     }));
@@ -330,53 +343,121 @@ export default function AdminPhotographyFormModal({
     setNewDeliverable((prev) => ({ ...prev, [pkgKey]: "" }));
   };
 
-  const handleRemoveDeliverable = (pkgKey, dIdx) => {
+  const handleQuickAddChip = (pkgKey, chipText) => {
+    setForm((prev) => {
+      const currentList = prev.photographyPackages[pkgKey].deliverables || [];
+      if (currentList.includes(chipText)) return prev;
+      return {
+        ...prev,
+        photographyPackages: {
+          ...prev.photographyPackages,
+          [pkgKey]: {
+            ...prev.photographyPackages[pkgKey],
+            deliverables: [...currentList, chipText],
+          },
+        },
+      };
+    });
+  };
+
+  const handleRemoveDeliverable = (pkgKey, idx) => {
     setForm((prev) => ({
       ...prev,
       photographyPackages: {
         ...prev.photographyPackages,
         [pkgKey]: {
           ...prev.photographyPackages[pkgKey],
-          deliverables: prev.photographyPackages[pkgKey].deliverables.filter((_, i) => i !== dIdx),
+          deliverables: prev.photographyPackages[pkgKey].deliverables.filter((_, i) => i !== idx),
         },
       },
     }));
   };
 
-  // Albums Handlers
+  // Photos Handlers
+  const handleAddDirectPhoto = () => {
+    if (!directPhotoUrl.trim()) return;
+    setForm((prev) => ({
+      ...prev,
+      photos: [...prev.photos, directPhotoUrl.trim()],
+    }));
+    setDirectPhotoUrl("");
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    setUploadProgress(`Uploading ${files.length} photo(s)...`);
+    setError("");
+
+    try {
+      const uploadedUrls = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const res = await api.post("/api/upload", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (res.data?.ok && res.data.url) {
+          uploadedUrls.push(res.data.url);
+        } else if (res.data?.secure_url) {
+          uploadedUrls.push(res.data.secure_url);
+        }
+      }
+
+      if (uploadedUrls.length > 0) {
+        setForm((prev) => ({
+          ...prev,
+          photos: [...prev.photos, ...uploadedUrls],
+        }));
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      setError("Image upload failed. You can paste direct image URLs instead.");
+    } finally {
+      setUploadingImage(false);
+      setUploadProgress("");
+      e.target.value = "";
+    }
+  };
+
+  const handleRemovePhoto = (idx) => {
+    setForm((prev) => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== idx),
+    }));
+  };
+
+  // Album Handlers
   const handleAddAlbum = () => {
-    if (!newAlbum.title.trim() && !newAlbum.link.trim()) {
-      setError("Please provide an Album Title or Album Link");
+    if (!newAlbum.title.trim()) {
+      setError("Please enter an Album Title");
       return;
     }
 
-    const imgList = newAlbum.imagesText
-      ? newAlbum.imagesText
-          .split(/[\s,\n]+/)
-          .map((u) => u.trim())
-          .filter((u) => u.startsWith("http://") || u.startsWith("https://") || u.startsWith("/"))
+    const imgs = newAlbum.imagesText
+      ? newAlbum.imagesText.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
       : [];
-
-    const albumObj = {
-      title: newAlbum.title.trim() || "Wedding Album",
-      description: newAlbum.description.trim(),
-      coverImage: newAlbum.coverImage.trim() || imgList[0] || "",
-      images: imgList,
-      link: newAlbum.link.trim(),
-    };
 
     setForm((prev) => ({
       ...prev,
-      albums: [...prev.albums, albumObj],
+      albums: [
+        ...prev.albums,
+        {
+          title: newAlbum.title.trim(),
+          description: newAlbum.description.trim(),
+          coverImage: newAlbum.coverImage.trim() || imgs[0] || "",
+          images: imgs,
+          link: newAlbum.link.trim(),
+        },
+      ],
     }));
 
-    setNewAlbum({
-      title: "",
-      description: "",
-      coverImage: "",
-      imagesText: "",
-      link: "",
-    });
+    setNewAlbum({ title: "", description: "", coverImage: "", imagesText: "", link: "" });
     setError("");
   };
 
@@ -444,6 +525,9 @@ export default function AdminPhotographyFormModal({
         photos: form.photos,
         albums: form.albums,
         videos: form.videos,
+        mainCategories: form.mainCategories,
+        subcategories: form.subcategories,
+        customSubcategoriesMap: form.customSubcategoriesMap,
         photographyPackages: {
           basic: {
             price: Number(form.photographyPackages.basic.price) || 0,
@@ -477,10 +561,11 @@ export default function AdminPhotographyFormModal({
       };
 
       let res;
+      const endpoint = isVendor ? `/api/vendor/photography` : `/api/admin/photography`;
       if (initialData?._id) {
-        res = await api.put(`/api/admin/photography/${initialData._id}`, payload);
+        res = await api.put(`${endpoint}/${initialData._id}`, payload);
       } else {
-        res = await api.post("/api/admin/photography", payload);
+        res = await api.post(endpoint, payload);
       }
 
       if (res.data?.ok) {
@@ -502,11 +587,12 @@ export default function AdminPhotographyFormModal({
 
   const tabs = [
     { id: "basic", label: "Basic & Contact", icon: "📋" },
-    { id: "about", label: "About & Bio", icon: "📝" },
+    { id: "options", label: `Services & Options (${form.subcategories.length})`, icon: "✨" },
     { id: "packages", label: "Package Pricing (4)", icon: "💰" },
     { id: "photos", label: `Photos (${form.photos.length})`, icon: "📸" },
     { id: "albums", label: `Albums (${form.albums.length})`, icon: "📖" },
     { id: "videos", label: `Videos (${form.videos.length})`, icon: "🎥" },
+    { id: "about", label: "About & Bio", icon: "📝" },
   ];
 
   return (
@@ -554,32 +640,33 @@ export default function AdminPhotographyFormModal({
           ))}
         </div>
 
-        {/* Alerts */}
-        {error && (
-          <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-medium flex items-center justify-between">
-            <span>⚠️ {error}</span>
-            <button onClick={() => setError("")} className="text-rose-500 font-bold ml-2">✕</button>
-          </div>
-        )}
-        {successMsg && (
-          <div className="mx-6 mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-semibold">
-            ✓ {successMsg}
-          </div>
-        )}
-
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* TAB 1: BASIC & CONTACT */}
+          {error && (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2">
+              <span>✓</span>
+              <span>{successMsg}</span>
+            </div>
+          )}
+
+          {/* TAB 1: BASIC INFORMATION */}
           {activeTab === "basic" && (
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
-                  Photographer / Studio Name *
+                  Studio / Photographer Name *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Royal Wedding Cinema & Photography"
+                  placeholder="e.g. Royal Shutter Photography & Films"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full px-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-medium"
@@ -589,24 +676,27 @@ export default function AdminPhotographyFormModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
-                    Contact Phone Number *
+                    Contact Mobile Number *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. +91 98765 43210"
+                    placeholder="e.g. 9876543210"
                     value={form.contactPhone}
                     onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
                   />
+                  <p className="text-[11px] text-muted mt-1">
+                    Vendor can log in directly with this mobile number to manage their services.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
-                    Contact Email (Optional)
+                    Contact Email Address
                   </label>
                   <input
                     type="email"
-                    placeholder="e.g. contact@royalfilms.com"
+                    placeholder="e.g. studio@flipsaura.com"
                     value={form.contactEmail}
                     onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
@@ -616,31 +706,30 @@ export default function AdminPhotographyFormModal({
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
-                  Complete Studio / Office Address *
+                  Complete Studio Address
                 </label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="e.g. Near Main Market, Old GT Road, Daudnagar, Aurangabad"
+                <input
+                  type="text"
+                  placeholder="e.g. Cinema Road, Near Town Hall, Daudnagar"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   className="w-full px-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-ink mb-1">Locality / Area</label>
                   <input
                     type="text"
-                    placeholder="e.g. Dani Bigha"
+                    placeholder="e.g. Rapid Colony"
                     value={form.locality}
                     onChange={(e) => setForm({ ...form, locality: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-ink mb-1">City / District *</label>
+                  <label className="block text-xs font-semibold text-ink mb-1">City *</label>
                   <input
                     type="text"
                     required
@@ -702,68 +791,176 @@ export default function AdminPhotographyFormModal({
             </div>
           )}
 
-          {/* TAB 2: ABOUT SECTION */}
-          {activeTab === "about" && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
-                  About Section (Short Summary / Bio) *
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="e.g. Award-winning wedding photography studio specializing in candid bridal portraits, cinematic sangeet teasers, and royal pre-wedding shoots with 7+ years of experience."
-                  value={form.about}
-                  onChange={(e) => setForm({ ...form, about: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm leading-relaxed"
-                />
+          {/* TAB 2: OPTIONS & SERVICES CATALOGUE */}
+          {activeTab === "options" && (
+            <div className="space-y-6">
+              <div className="p-4 rounded-xl bg-brand-50 border border-brand-200 text-brand-900 text-xs">
+                <b>💡 Photography Services, Equipment & Add-on Options:</b> Select the coverage styles, cinema equipment, and album deliverables provided by this studio. You can also add custom categories and custom options below.
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
-                  Detailed Service Description
-                </label>
-                <textarea
-                  rows={6}
-                  placeholder="Describe photography philosophy, team size, cameras and cinema lenses used (e.g. Sony FX3 / A7IV, G-Master lenses, DJI Ronin gimbals, Mavic 3 Pro drones), editing turnaround time, album delivery timeline, and travel availability across Bihar & India."
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm leading-relaxed"
-                />
-              </div>
+              {/* Standard Catalogue Sections */}
+              {DEFAULT_PHOTOGRAPHY_CATALOGUE.map((cat) => {
+                const customItemsForCat = form.customSubcategoriesMap[cat.name] || [];
+                const allSubcats = [...cat.subcategories, ...customItemsForCat];
+                const selectedCount = allSubcats.filter((s) => form.subcategories.includes(s)).length;
 
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-brand-100">
-                <div>
-                  <label className="block text-xs font-semibold text-ink mb-1">Customer Rating (0-5)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={form.rating}
-                    onChange={(e) => setForm({ ...form, rating: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-ink mb-1">Reviews Count</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.reviewsCount}
-                    onChange={(e) => setForm({ ...form, reviewsCount: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
-                  />
-                </div>
+                return (
+                  <div key={cat.id} className="p-4 rounded-2xl border border-line bg-white shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{cat.icon}</span>
+                        <div>
+                          <h4 className="font-bold text-sm text-ink">{cat.name}</h4>
+                          <p className="text-xs text-muted">{cat.description}</p>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-brand-50 text-brand-800 border border-brand-200">
+                        {selectedCount} selected
+                      </span>
+                    </div>
+
+                    {/* Chips grid */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {allSubcats.map((subcat) => {
+                        const isSelected = form.subcategories.includes(subcat);
+                        return (
+                          <button
+                            key={subcat}
+                            type="button"
+                            onClick={() => handleToggleSubcategory(cat.name, subcat)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                              isSelected
+                                ? "bg-brand-600 text-white shadow-xs font-semibold"
+                                : "bg-surface hover:bg-brand-50 text-ink/80 border border-line"
+                            }`}
+                          >
+                            <span>{isSelected ? "✓" : "+"}</span>
+                            <span>{subcat}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Custom option input for this category */}
+                    <div className="pt-2 flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder={`+ Add custom option to ${cat.name}...`}
+                        value={customOptionInputs[cat.name] || ""}
+                        onChange={(e) =>
+                          setCustomOptionInputs({ ...customOptionInputs, [cat.name]: e.target.value })
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddCustomOption(cat.name);
+                          }
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-line text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddCustomOption(cat.name)}
+                        className="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
+                      >
+                        Add Option
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Dynamic User-Added Categories */}
+              {Object.keys(form.customSubcategoriesMap)
+                .filter((catName) => !DEFAULT_PHOTOGRAPHY_CATALOGUE.some((c) => c.name === catName))
+                .map((customCatName) => {
+                  const items = form.customSubcategoriesMap[customCatName] || [];
+                  return (
+                    <div key={customCatName} className="p-4 rounded-2xl border border-brand-300 bg-brand-50/30 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">🌟</span>
+                          <div>
+                            <h4 className="font-bold text-sm text-ink">{customCatName}</h4>
+                            <span className="text-[11px] text-brand-800 font-semibold">Custom Category</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {items.map((subcat) => {
+                          const isSelected = form.subcategories.includes(subcat);
+                          return (
+                            <button
+                              key={subcat}
+                              type="button"
+                              onClick={() => handleToggleSubcategory(customCatName, subcat)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                                isSelected
+                                  ? "bg-brand-600 text-white shadow-xs font-semibold"
+                                  : "bg-white hover:bg-brand-50 text-ink/80 border border-line"
+                              }`}
+                            >
+                              <span>{isSelected ? "✓" : "+"}</span>
+                              <span>{subcat}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="pt-2 flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder={`+ Add option to ${customCatName}...`}
+                          value={customOptionInputs[customCatName] || ""}
+                          onChange={(e) =>
+                            setCustomOptionInputs({ ...customOptionInputs, [customCatName]: e.target.value })
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddCustomOption(customCatName);
+                            }
+                          }}
+                          className="flex-1 px-3 py-1.5 rounded-lg border border-line text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAddCustomOption(customCatName)}
+                          className="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
+                        >
+                          Add Option
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {/* Add Brand New Category Button */}
+              <div className="p-4 rounded-xl border border-dashed border-brand-300 bg-brand-50/20 flex flex-col sm:flex-row items-center gap-3">
+                <input
+                  type="text"
+                  placeholder="+ Create completely new custom category (e.g. Specialty Drones & VFX)..."
+                  value={customCategoryName}
+                  onChange={(e) => setCustomCategoryName(e.target.value)}
+                  className="flex-1 w-full px-3.5 py-2 rounded-xl border border-line text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddNewCategory}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs shadow-2xs whitespace-nowrap"
+                >
+                  + Add Custom Category
+                </button>
               </div>
             </div>
           )}
 
-          {/* TAB 3: PACKAGE PRICING (BASIC, STANDARD, PREMIUM, LUXURY) */}
+          {/* TAB 3: PACKAGE PRICING */}
           {activeTab === "packages" && (
             <div className="space-y-6">
               <div className="p-3 bg-brand-50 rounded-xl border border-brand-100 text-xs text-brand-800">
-                💡 <b>FlipsAura Tiered Packages:</b> Configure pricing and deliverables for <b>Basic</b>, <b>Standard</b>, <b>Premium</b>, and <b>Luxury</b> tiers. Customers can compare deliverables and book directly.
+                💡 <b>FlipsAura Tiered Packages:</b> Configure pricing and deliverables for <b>Basic</b>, <b>Standard</b>, <b>Premium</b>, and <b>Luxury</b> tiers. Use quick-add chips or add custom deliverables to each package.
               </div>
 
               {["basic", "standard", "premium", "luxury"].map((pkgKey) => {
@@ -774,6 +971,15 @@ export default function AdminPhotographyFormModal({
                   premium: "bg-purple-50 text-purple-700 border-purple-200",
                   luxury: "bg-amber-50 text-amber-800 border-amber-200",
                 }[pkgKey];
+
+                const suggestedDeliverables =
+                  pkgKey === "basic"
+                    ? ["1 Traditional Photographer", "1 Candid Photographer", "All Edited High-Res Photos", "Online Album Access", "Pre-Wedding Shoot"]
+                    : pkgKey === "standard"
+                    ? ["1 Candid + 1 Traditional Videographer", "Full HD Wedding Video (60m)", "1 Hardcover Photo Album (30 sheets)", "Raw Footage on Drive", "Teaser Trailer (3m)"]
+                    : pkgKey === "premium"
+                    ? ["2 Candid + 2 Cinema Videographers", "Drone 4K Aerial Coverage", "Cinematic Wedding Film & Teaser", "2 Luxury Flush-Mount Albums", "Instagram Reel Teaser"]
+                    : ["Master Director + 3 Candid + 3 Cinema Crew", "4K Cinema Film + Drone Shoots", "Pre-Wedding & Post-Wedding Shoots", "3 Handcrafted Royal Leather Albums + Parent Albums", "Same-Day Edit / Next-Day Teaser"];
 
                 return (
                   <div key={pkgKey} className="p-4 sm:p-5 rounded-xl border border-brand-100 bg-white shadow-xs space-y-3">
@@ -836,6 +1042,33 @@ export default function AdminPhotographyFormModal({
                       />
                     </div>
 
+                    {/* Quick Add Chips */}
+                    <div>
+                      <span className="text-[11px] font-bold text-muted uppercase tracking-wider block mb-1.5">
+                        ⚡ Quick Add Deliverable Option:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {suggestedDeliverables.map((chip) => {
+                          const alreadyAdded = (pkg.deliverables || []).includes(chip);
+                          return (
+                            <button
+                              key={chip}
+                              type="button"
+                              onClick={() => handleQuickAddChip(pkgKey, chip)}
+                              className={`text-[11px] px-2.5 py-1 rounded-lg border transition flex items-center gap-1 ${
+                                alreadyAdded
+                                  ? "bg-brand-50 text-brand-800 border-brand-300 font-semibold"
+                                  : "bg-surface hover:bg-brand-50 text-ink/70 border-line"
+                              }`}
+                            >
+                              <span>{alreadyAdded ? "✓" : "+"}</span>
+                              <span>{chip}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     {/* Deliverables List */}
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-ink mb-1.5">
@@ -852,7 +1085,7 @@ export default function AdminPhotographyFormModal({
                             <button
                               type="button"
                               onClick={() => handleRemoveDeliverable(pkgKey, dIdx)}
-                              className="text-muted hover:text-rose-600 ml-1 font-bold"
+                              className="text-muted hover:text-rose-600 font-bold ml-1 text-xs"
                             >
                               ✕
                             </button>
@@ -860,12 +1093,15 @@ export default function AdminPhotographyFormModal({
                         ))}
                       </div>
 
+                      {/* Add Custom Deliverable input */}
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Add new deliverable (e.g. Drone Aerial Shoot, 4K Cinema Film)..."
+                          placeholder="Type custom deliverable & press Add..."
                           value={newDeliverable[pkgKey]}
-                          onChange={(e) => setNewDeliverable({ ...newDeliverable, [pkgKey]: e.target.value })}
+                          onChange={(e) =>
+                            setNewDeliverable((prev) => ({ ...prev, [pkgKey]: e.target.value }))
+                          }
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
@@ -877,7 +1113,7 @@ export default function AdminPhotographyFormModal({
                         <button
                           type="button"
                           onClick={() => handleAddDeliverable(pkgKey)}
-                          className="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold text-xs rounded-lg border border-brand-200 cursor-pointer"
+                          className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-700 cursor-pointer shadow-xs"
                         >
                           + Add
                         </button>
@@ -889,90 +1125,71 @@ export default function AdminPhotographyFormModal({
             </div>
           )}
 
-          {/* TAB 4: PHOTOS (GALLERY & PORTFOLIO) */}
+          {/* TAB 4: PHOTOS */}
           {activeTab === "photos" && (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between pb-3 border-b border-brand-100">
-                <div>
-                  <h3 className="font-serif font-bold text-ink text-sm sm:text-base">
-                    Portfolio & Work Showcase Photos
-                  </h3>
-                  <p className="text-xs text-muted">
-                    Upload high-resolution photographs showcasing candid, bridal portraits, and wedding events.
-                  </p>
-                </div>
+              <div className="p-3 bg-brand-50 rounded-xl border border-brand-100 text-xs text-brand-800">
+                📸 <b>Studio Photos & Portfolio Showcase:</b> Upload multiple high-res photos or paste direct image links.
+              </div>
 
-                <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 cursor-pointer transition-colors shadow-xs">
-                  <span>📸 Upload Photos</span>
+              {/* Upload Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-brand-50/50 rounded-xl border border-brand-100">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-ink">Upload Image Files</label>
                   <input
                     type="file"
                     multiple
                     accept="image/*"
                     onChange={handleFileUpload}
-                    className="hidden"
                     disabled={uploadingImage}
+                    className="block w-full text-xs text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer"
                   />
-                </label>
-              </div>
-
-              {uploadingImage && (
-                <div className="p-3 bg-brand-50 border border-brand-200 rounded-xl text-xs text-brand-700 flex items-center gap-2 font-medium">
-                  <div className="w-4 h-4 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
-                  <span>{uploadProgress || "Uploading photos to Cloudinary..."}</span>
+                  {uploadingImage && (
+                    <p className="text-xs text-brand-600 font-medium animate-pulse">{uploadProgress}</p>
+                  )}
                 </div>
-              )}
 
-              {/* Direct URL input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Paste direct image URLs (comma/space separated or http/https)..."
-                  value={directPhotoUrl}
-                  onChange={(e) => setDirectPhotoUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addDirectPhotoUrl();
-                    }
-                  }}
-                  className="flex-1 px-3 py-2 rounded-xl border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
-                />
-                <button
-                  type="button"
-                  onClick={addDirectPhotoUrl}
-                  className="px-4 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold text-xs rounded-xl border border-brand-200 cursor-pointer"
-                >
-                  + Add URL
-                </button>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-ink">Or Paste Direct Image URL</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://example.com/photo.jpg"
+                      value={directPhotoUrl}
+                      onChange={(e) => setDirectPhotoUrl(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500 bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddDirectPhoto}
+                      className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-700 cursor-pointer shrink-0"
+                    >
+                      Add URL
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Photos Grid */}
               {form.photos.length === 0 ? (
-                <div className="py-12 border-2 border-dashed border-brand-200 rounded-2xl text-center text-muted">
-                  <span className="text-3xl block mb-2">📸</span>
-                  <p className="text-xs sm:text-sm font-medium">No photos added yet</p>
-                  <p className="text-xs text-muted mt-1">Upload files or paste direct image URLs above</p>
+                <div className="py-8 border border-dashed border-brand-200 rounded-xl text-center text-muted text-xs">
+                  No photos added yet. Upload files or paste image URLs above.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {form.photos.map((src, idx) => (
-                    <div
-                      key={idx}
-                      className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-brand-100 bg-brand-50 shadow-xs"
-                    >
-                      <img src={src} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                      {idx === 0 && (
-                        <span className="absolute top-2 left-2 bg-brand-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
-                          Cover
-                        </span>
-                      )}
+                    <div key={idx} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-brand-100 bg-brand-50 group">
+                      <img src={src} alt={`Studio Photo ${idx + 1}`} className="w-full h-full object-cover" />
                       <button
                         type="button"
-                        onClick={() => removePhoto(idx)}
-                        className="absolute top-2 right-2 w-7 h-7 bg-white/90 hover:bg-rose-600 hover:text-white rounded-full text-ink flex items-center justify-center text-xs font-bold shadow transition-all cursor-pointer"
+                        onClick={() => handleRemovePhoto(idx)}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xs"
                       >
                         ✕
                       </button>
+                      <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px]">
+                        #{idx + 1}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -982,32 +1199,30 @@ export default function AdminPhotographyFormModal({
 
           {/* TAB 5: ALBUMS */}
           {activeTab === "albums" && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="p-3 bg-brand-50 rounded-xl border border-brand-100 text-xs text-brand-800">
-                📖 <b>Sample Photo Albums:</b> Create sample albums (e.g. <i>Pre-Wedding Shoot</i>, <i>Grand Wedding Day</i>, <i>Sangeet & Haldi</i>) with photo collections or external portfolio / Google Drive links.
+                📖 <b>Previous Work Albums:</b> Add wedding stories, couple names, cover photos, and external gallery links.
               </div>
 
-              {/* Add New Album Form */}
-              <div className="p-4 rounded-xl border border-brand-200 bg-brand-50/30 space-y-3">
-                <h4 className="font-serif font-bold text-xs uppercase tracking-wider text-ink">
-                  + Add New Album
-                </h4>
+              {/* New Album Form */}
+              <div className="p-4 bg-brand-50/50 rounded-xl border border-brand-100 space-y-3">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-ink">+ Add New Album</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-ink mb-1">Album Title *</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">Album Title *</label>
                     <input
                       type="text"
-                      placeholder="e.g. Royal Jaipur Pre-Wedding Shoot"
+                      placeholder="e.g. Rahul & Priya — Royal Heritage Sangeet"
                       value={newAlbum.title}
                       onChange={(e) => setNewAlbum({ ...newAlbum, title: e.target.value })}
                       className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-ink mb-1">Cover Image URL</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">Cover Image URL</label>
                     <input
-                      type="text"
-                      placeholder="e.g. https://.../album_cover.jpg"
+                      type="url"
+                      placeholder="https://example.com/cover.jpg"
                       value={newAlbum.coverImage}
                       onChange={(e) => setNewAlbum({ ...newAlbum, coverImage: e.target.value })}
                       className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
@@ -1015,40 +1230,40 @@ export default function AdminPhotographyFormModal({
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-ink mb-1">
-                    Album Photos (comma or space separated image URLs)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://.../img1.jpg, https://.../img2.jpg"
-                    value={newAlbum.imagesText}
-                    onChange={(e) => setNewAlbum({ ...newAlbum, imagesText: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
-                  />
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-ink mb-1">External Album / Drive Link</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">Short Description</label>
                     <input
                       type="text"
-                      placeholder="e.g. https://drive.google.com/... or portfolio link"
-                      value={newAlbum.link}
-                      onChange={(e) => setNewAlbum({ ...newAlbum, link: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-ink mb-1">Short Description</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 50 curated shots with sunset golden hour"
+                      placeholder="e.g. 2-Day Destination wedding in Rajgir"
                       value={newAlbum.description}
                       onChange={(e) => setNewAlbum({ ...newAlbum, description: e.target.value })}
                       className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-ink mb-1">External Gallery Link</label>
+                    <input
+                      type="url"
+                      placeholder="e.g. Google Drive, WedMeGood, or Web Link"
+                      value={newAlbum.link}
+                      onChange={(e) => setNewAlbum({ ...newAlbum, link: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-ink mb-1">
+                    Album Photo URLs (Comma or newline separated)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="https://example.com/p1.jpg, https://example.com/p2.jpg..."
+                    value={newAlbum.imagesText}
+                    onChange={(e) => setNewAlbum({ ...newAlbum, imagesText: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
+                  />
                 </div>
 
                 <div className="flex justify-end pt-1">
@@ -1057,7 +1272,7 @@ export default function AdminPhotographyFormModal({
                     onClick={handleAddAlbum}
                     className="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 cursor-pointer shadow-xs"
                   >
-                    + Add Album to Listing
+                    + Add Album to Portfolio
                   </button>
                 </div>
               </div>
@@ -1065,49 +1280,39 @@ export default function AdminPhotographyFormModal({
               {/* Albums List */}
               {form.albums.length === 0 ? (
                 <div className="py-8 border border-dashed border-brand-200 rounded-xl text-center text-muted text-xs">
-                  No custom albums added yet. Add sample pre-wedding or wedding albums above.
+                  No sample albums added yet. Use the form above to add an album.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {form.albums.map((alb, aIdx) => (
                     <div
                       key={aIdx}
-                      className="p-3 rounded-xl border border-brand-100 bg-white shadow-xs flex gap-3 relative group"
+                      className="p-3.5 rounded-xl border border-brand-100 bg-white shadow-xs flex items-start justify-between gap-3"
                     >
-                      {alb.coverImage ? (
-                        <img
-                          src={alb.coverImage}
-                          alt={alb.title}
-                          className="w-20 h-20 rounded-lg object-cover shrink-0 border border-brand-100"
-                        />
-                      ) : (
-                        <div className="w-20 h-20 rounded-lg bg-brand-50 flex items-center justify-center text-xl shrink-0 border border-brand-100">
-                          📖
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0 pr-6">
-                        <h4 className="font-serif font-bold text-xs text-ink truncate">{alb.title}</h4>
-                        {alb.description && <p className="text-[11px] text-muted line-clamp-1">{alb.description}</p>}
-                        {alb.images?.length > 0 && (
-                          <span className="text-[10px] text-brand-700 font-semibold block mt-1">
-                            📸 {alb.images.length} photos inside
+                      <div className="flex items-start gap-3 min-w-0">
+                        {alb.coverImage ? (
+                          <img
+                            src={alb.coverImage}
+                            alt={alb.title}
+                            className="w-16 h-16 rounded-lg object-cover shrink-0 border border-brand-100"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xl shrink-0">
+                            📖
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-xs sm:text-sm text-ink truncate">{alb.title}</h4>
+                          {alb.description && <p className="text-[11px] text-muted truncate">{alb.description}</p>}
+                          <span className="text-[10px] text-brand-600 font-semibold block mt-1">
+                            {alb.images?.length || 0} Photos Included
                           </span>
-                        )}
-                        {alb.link && (
-                          <a
-                            href={alb.link}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[10px] text-indigo-600 hover:underline truncate block mt-0.5"
-                          >
-                            🔗 View External Link
-                          </a>
-                        )}
+                        </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveAlbum(aIdx)}
-                        className="absolute top-2 right-2 text-muted hover:text-rose-600 font-bold text-xs"
+                        className="text-muted hover:text-rose-600 font-bold text-xs p-1"
                       >
                         ✕
                       </button>
@@ -1118,34 +1323,32 @@ export default function AdminPhotographyFormModal({
             </div>
           )}
 
-          {/* TAB 6: VIDEOS (SHOWCASE / CINEMATOGRAPHY) */}
+          {/* TAB 6: VIDEOS */}
           {activeTab === "videos" && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="p-3 bg-brand-50 rounded-xl border border-brand-100 text-xs text-brand-800">
-                🎥 <b>Showcase Videos & Teasers:</b> Add YouTube, Vimeo, Google Drive, or MP4 video links to showcase wedding films and teasers.
+                🎥 <b>Showcase Videos & Wedding Films:</b> Add YouTube trailers, Instagram reels, or cloud video links.
               </div>
 
-              {/* Add New Video Form */}
-              <div className="p-4 rounded-xl border border-brand-200 bg-brand-50/30 space-y-3">
-                <h4 className="font-serif font-bold text-xs uppercase tracking-wider text-ink">
-                  + Add Showcase Video
-                </h4>
+              {/* Add Video Form */}
+              <div className="p-4 bg-brand-50/50 rounded-xl border border-brand-100 space-y-3">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-ink">+ Add Showcase Video</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-ink mb-1">Video Title</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">Video Title</label>
                     <input
                       type="text"
-                      placeholder="e.g. Royal Wedding Cinema Teaser (4K)"
+                      placeholder="e.g. Cinematic Wedding Teaser 4K"
                       value={newVideo.title}
                       onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })}
                       className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-ink mb-1">Video URL *</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">Video URL *</label>
                     <input
-                      type="text"
-                      placeholder="e.g. https://www.youtube.com/watch?v=... or .mp4 link"
+                      type="url"
+                      placeholder="https://youtube.com/watch?v=... or MP4 link"
                       value={newVideo.url}
                       onChange={(e) => setNewVideo({ ...newVideo, url: e.target.value })}
                       className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
@@ -1206,6 +1409,63 @@ export default function AdminPhotographyFormModal({
             </div>
           )}
 
+          {/* TAB 7: ABOUT SECTION */}
+          {activeTab === "about" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
+                  About Section (Short Summary / Bio) *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="e.g. Award-winning wedding photography studio specializing in candid bridal portraits, cinematic sangeet teasers, and royal pre-wedding shoots with 7+ years of experience."
+                  value={form.about}
+                  onChange={(e) => setForm({ ...form, about: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm leading-relaxed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
+                  Detailed Service Description
+                </label>
+                <textarea
+                  rows={6}
+                  placeholder="Describe photography philosophy, team size, cameras and cinema lenses used (e.g. Sony FX3 / A7IV, G-Master lenses, DJI Ronin gimbals, Mavic 3 Pro drones), editing turnaround time, album delivery timeline, and travel availability across Bihar & India."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm leading-relaxed"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-brand-100">
+                <div>
+                  <label className="block text-xs font-semibold text-ink mb-1">Customer Rating (0-5)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    value={form.rating}
+                    onChange={(e) => setForm({ ...form, rating: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-ink mb-1">Reviews Count</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.reviewsCount}
+                    onChange={(e) => setForm({ ...form, reviewsCount: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Footer Action Bar */}
           <div className="pt-4 border-t border-brand-100 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
@@ -1221,7 +1481,7 @@ export default function AdminPhotographyFormModal({
                   ← Previous Tab
                 </button>
               )}
-              {activeTab !== "videos" && (
+              {activeTab !== "about" && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1257,4 +1517,3 @@ export default function AdminPhotographyFormModal({
     </div>
   );
 }
-

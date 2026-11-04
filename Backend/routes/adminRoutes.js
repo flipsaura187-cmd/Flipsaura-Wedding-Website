@@ -1,4 +1,19 @@
 import express from "express";
+import {
+  getAdminMehandis,
+  getAdminMehandiDetail,
+  createAdminMehandi,
+  updateAdminMehandi,
+  deleteAdminMehandi,
+  toggleAdminMehandiStatus,
+} from "../controllers/adminMehandiController.js";
+import {
+  getAdminHomeSetups,
+  getAdminHomeSetupDetail,
+  createAdminHomeSetup,
+  updateAdminHomeSetup,
+  deleteAdminHomeSetup,
+} from "../controllers/adminHomeSetupController.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import {
   getAdminStats,
@@ -74,5 +89,21 @@ router.get("/photography/:id", ...adminOnly, getAdminPhotographyDetail);
 router.post("/photography", ...adminOnly, createAdminPhotography);
 router.put("/photography/:id", ...adminOnly, updateAdminPhotography);
 router.delete("/photography/:id", ...adminOnly, deleteAdminPhotography);
+
+
+// Mehandi Management Routes
+router.get("/mehandi", ...adminOnly, getAdminMehandis);
+router.get("/mehandi/:id", ...adminOnly, getAdminMehandiDetail);
+router.post("/mehandi", ...adminOnly, createAdminMehandi);
+router.put("/mehandi/:id", ...adminOnly, updateAdminMehandi);
+router.delete("/mehandi/:id", ...adminOnly, deleteAdminMehandi);
+router.patch("/mehandi/:id/toggle", ...adminOnly, toggleAdminMehandiStatus);
+
+// Home Setup & Event Services Routes
+router.get("/home-setup", ...adminOnly, getAdminHomeSetups);
+router.get("/home-setup/:id", ...adminOnly, getAdminHomeSetupDetail);
+router.post("/home-setup", ...adminOnly, createAdminHomeSetup);
+router.put("/home-setup/:id", ...adminOnly, updateAdminHomeSetup);
+router.delete("/home-setup/:id", ...adminOnly, deleteAdminHomeSetup);
 
 export default router;

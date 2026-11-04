@@ -4,6 +4,7 @@ import Category from "../models/Category.js";
 import User from "../models/User.js";
 import Room from "../models/Room.js";
 import { getCurrentUser } from "../middleware/auth.js";
+import { autoLinkAdminServicesToVendor } from "./authController.js";
 
 function escapeRegex(str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -168,10 +169,31 @@ export async function getItems(req, res) {
 
   if (req.query.isVendor) {
     const user = await getCurrentUser(req);
-    if (!user || user.role !== "vendor") {
-      return res.status(!user ? 401 : 403).json({ ok: false, error: !user ? "Unauthorized" : "Forbidden" });
+    if (!user) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
-    q.vendor = user.id;
+
+    const cleanPhone = (user.phone || "").replace(/\D/g, "").slice(-10);
+
+    // If user has matching items by phone, auto-link & promote to vendor if needed
+    if (cleanPhone.length >= 10) {
+      const fullUser = await User.findById(user.id);
+      if (fullUser) {
+        await autoLinkAdminServicesToVendor(fullUser);
+      }
+      q.$or = [
+        { vendor: user.id },
+        { contactPhone: new RegExp(cleanPhone + "$") },
+      ];
+    } else {
+      q.vendor = user.id;
+    }
+
+    if (user.role !== "vendor" && user.role !== "admin" && (!cleanPhone || cleanPhone.length < 10)) {
+      return res.status(403).json({ ok: false, error: "Forbidden - Vendor account required" });
+    }
+
+    delete q.active; // Allow vendor to see both active and draft listings
   }
 
   if (req.query.category) {
@@ -385,7 +407,12 @@ export async function getItems(req, res) {
   };
 
   const [items, total] = await Promise.all([
-    Item.find(q).sort(sortMap[req.query.sort] || sortMap.newest).skip(skip).limit(limit).lean(),
+    Item.find(q)
+      .populate("category", "name slug icon")
+      .sort(sortMap[req.query.sort] || sortMap.newest)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     Item.countDocuments(q),
   ]);
 
@@ -599,9 +626,12 @@ export async function createItem(req, res) {
 
   if (req.user.role === "vendor") {
     const dbUser = await User.findById(req.user.id).lean();
+    const cleanPhone = (dbUser?.phone || "").replace(/\D/g, "").slice(-10);
+    const hasLinkedItems = cleanPhone.length >= 10 ? await Item.exists({ contactPhone: new RegExp(cleanPhone + "$") }) : false;
     const isApproved = Boolean(
-      dbUser?.vendorProfile?.approved &&
-      dbUser?.vendorProfile?.verificationStatus === "approved"
+      (dbUser?.vendorProfile?.approved &&
+      dbUser?.vendorProfile?.verificationStatus === "approved") ||
+      hasLinkedItems
     );
     if (!isApproved) {
       return res.status(403).json({
@@ -739,9 +769,12 @@ export async function updateItem(req, res) {
 
   if (req.user.role === "vendor") {
     const dbUser = await User.findById(req.user.id).lean();
+    const cleanPhone = (dbUser?.phone || "").replace(/\D/g, "").slice(-10);
+    const hasLinkedItems = cleanPhone.length >= 10 ? await Item.exists({ contactPhone: new RegExp(cleanPhone + "$") }) : false;
     const isApproved = Boolean(
-      dbUser?.vendorProfile?.approved &&
-      dbUser?.vendorProfile?.verificationStatus === "approved"
+      (dbUser?.vendorProfile?.approved &&
+      dbUser?.vendorProfile?.verificationStatus === "approved") ||
+      hasLinkedItems
     );
     if (!isApproved) {
       return res.status(403).json({
@@ -754,7 +787,10 @@ export async function updateItem(req, res) {
   const item = await Item.findById(req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: "Not found" });
 
-  if (req.user.role !== "admin" && String(item.vendor) !== req.user.id) {
+  const userPhone = (req.user.phone || "").replace(/\D/g, "").slice(-10);
+  const itemPhone = (item.contactPhone || "").replace(/\D/g, "").slice(-10);
+  const isOwner = req.user.role === "admin" || String(item.vendor) === req.user.id || (userPhone.length >= 10 && itemPhone === userPhone);
+  if (!isOwner) {
     return res.status(403).json({ ok: false, error: "Forbidden" });
   }
 
@@ -801,9 +837,12 @@ export async function deleteItem(req, res) {
 
   if (req.user.role === "vendor") {
     const dbUser = await User.findById(req.user.id).lean();
+    const cleanPhone = (dbUser?.phone || "").replace(/\D/g, "").slice(-10);
+    const hasLinkedItems = cleanPhone.length >= 10 ? await Item.exists({ contactPhone: new RegExp(cleanPhone + "$") }) : false;
     const isApproved = Boolean(
-      dbUser?.vendorProfile?.approved &&
-      dbUser?.vendorProfile?.verificationStatus === "approved"
+      (dbUser?.vendorProfile?.approved &&
+      dbUser?.vendorProfile?.verificationStatus === "approved") ||
+      hasLinkedItems
     );
     if (!isApproved) {
       return res.status(403).json({
@@ -816,7 +855,10 @@ export async function deleteItem(req, res) {
   const item = await Item.findById(req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: "Not found" });
 
-  if (req.user.role !== "admin" && String(item.vendor) !== req.user.id) {
+  const userPhone = (req.user.phone || "").replace(/\D/g, "").slice(-10);
+  const itemPhone = (item.contactPhone || "").replace(/\D/g, "").slice(-10);
+  const isOwner = req.user.role === "admin" || String(item.vendor) === req.user.id || (userPhone.length >= 10 && itemPhone === userPhone);
+  if (!isOwner) {
     return res.status(403).json({ ok: false, error: "Forbidden" });
   }
 

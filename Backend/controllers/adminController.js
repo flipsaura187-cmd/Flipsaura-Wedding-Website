@@ -7,6 +7,7 @@ import Blog from "../models/Blog.js";
 import Review from "../models/Review.js";
 import { calculateVendorCompletion } from "../lib/vendorVerification.js";
 import { syncVendorServicesToItems } from "../lib/vendorSync.js";
+import { autoLinkAdminServicesToVendor } from "./authController.js";
 
 export async function getAdminStats(req, res) {
   await dbConnect();
@@ -197,17 +198,35 @@ export async function getAdminBlogs(req, res) {
 export async function getVendorStats(req, res) {
   await dbConnect();
 
-  const user = await User.findById(req.user.id).lean();
+  let user = await User.findById(req.user.id);
+  if (user && user.phone) {
+    await autoLinkAdminServicesToVendor(user);
+    user = await User.findById(req.user.id).lean();
+  } else if (user) {
+    user = user.toObject();
+  }
+
+  const cleanPhone = (user?.phone || "").replace(/\D/g, "").slice(-10);
+  const itemFilter = cleanPhone.length >= 10
+    ? { $or: [{ vendor: req.user.id }, { contactPhone: new RegExp(cleanPhone + "$") }] }
+    : { vendor: req.user.id };
+
   const completion = user ? calculateVendorCompletion(user) : null;
 
   const [items, bookings, revenueAgg] = await Promise.all([
-    Item.countDocuments({ vendor: req.user.id }),
+    Item.countDocuments(itemFilter),
     Booking.countDocuments({ vendor: req.user.id }),
     Booking.aggregate([
       { $match: { vendor: req.user.id } },
       { $group: { _id: null, total: { $sum: "$amount" } } },
     ]),
   ]);
+
+  const hasPhoneServices = cleanPhone.length >= 10 && items > 0;
+  const isApproved = Boolean(
+    (user?.vendorProfile?.approved && user?.vendorProfile?.verificationStatus === "approved") ||
+    hasPhoneServices
+  );
 
   res.json({
     ok: true,
@@ -216,9 +235,9 @@ export async function getVendorStats(req, res) {
         items,
         bookings,
         revenue: revenueAgg[0]?.total || 0,
-        isApproved: Boolean(user?.vendorProfile?.approved && user?.vendorProfile?.verificationStatus === "approved"),
-        verificationStatus: user?.vendorProfile?.verificationStatus || "profile_incomplete",
-        completionPercentage: completion?.percentage || 0,
+        isApproved,
+        verificationStatus: isApproved ? "approved" : (user?.vendorProfile?.verificationStatus || "profile_incomplete"),
+        completionPercentage: isApproved ? 100 : (completion?.percentage || 0),
         rejectionReason: user?.vendorProfile?.rejectionReason || "",
       },
     },

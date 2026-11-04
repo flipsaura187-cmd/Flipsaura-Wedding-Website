@@ -5,6 +5,7 @@ import Item from "../models/Item.js";
 import Room from "../models/Room.js";
 import { calculateVendorCompletion } from "../lib/vendorVerification.js";
 import { syncVendorServicesToItems } from "../lib/vendorSync.js";
+import { autoLinkAdminServicesToVendor } from "./authController.js";
 
 /**
  * Get the logged-in vendor's full profile, KYC documents, bank details, portfolio, and completion metrics.
@@ -21,6 +22,11 @@ export async function getVendorProfile(req, res) {
     return res.status(404).json({ ok: false, error: "User not found" });
   }
 
+  if (user.phone) {
+    await autoLinkAdminServicesToVendor(user);
+  }
+
+  const cleanPhone = (user.phone || "").replace(/\D/g, "").slice(-10);
   const completion = calculateVendorCompletion(user);
 
   const hotelCategories = await Category.find({
@@ -36,10 +42,17 @@ export async function getVendorProfile(req, res) {
         (s.categoryName || "").toLowerCase().includes("hotel")
     ) ||
     (await Item.exists({
-      vendor: user._id,
       $or: [
-        { category: { $in: Array.from(hotelCatIds) } },
-        { title: /hotel|resort|lodge|inn\b/i },
+        { vendor: user._id },
+        ...(cleanPhone.length >= 10 ? [{ contactPhone: new RegExp(cleanPhone + "$") }] : []),
+      ],
+      $and: [
+        {
+          $or: [
+            { category: { $in: Array.from(hotelCatIds) } },
+            { title: /hotel|resort|lodge|inn\b/i },
+          ],
+        },
       ],
     }))
   );
@@ -601,12 +614,30 @@ export async function submitForVerification(req, res) {
  */
 export async function getVendorStatus(req, res) {
   await dbConnect();
-  const user = await User.findById(req.user.id).lean();
+  let user = await User.findById(req.user.id);
   if (!user) {
     return res.status(404).json({ ok: false, error: "User not found" });
   }
 
+  if (user.phone) {
+    await autoLinkAdminServicesToVendor(user);
+    user = await User.findById(req.user.id).lean();
+  } else {
+    user = user.toObject();
+  }
+
+  const cleanPhone = (user.phone || "").replace(/\D/g, "").slice(-10);
+  const hasPhoneItems = cleanPhone.length >= 10
+    ? await Item.exists({ contactPhone: new RegExp(cleanPhone + "$") })
+    : false;
+
   const completion = calculateVendorCompletion(user);
+
+  const isApproved = Boolean(
+    completion.isApproved ||
+    (user.vendorProfile?.approved && user.vendorProfile?.verificationStatus === "approved") ||
+    hasPhoneItems
+  );
 
   // Check if vendor has hotel category in profile or has any hotel item
   const hotelCategories = await Category.find({
@@ -622,10 +653,17 @@ export async function getVendorStatus(req, res) {
         (s.categoryName || "").toLowerCase().includes("hotel")
     ) ||
     (await Item.exists({
-      vendor: user._id,
       $or: [
-        { category: { $in: Array.from(hotelCatIds) } },
-        { title: /hotel|resort|lodge|inn\b/i },
+        { vendor: user._id },
+        ...(cleanPhone.length >= 10 ? [{ contactPhone: new RegExp(cleanPhone + "$") }] : []),
+      ],
+      $and: [
+        {
+          $or: [
+            { category: { $in: Array.from(hotelCatIds) } },
+            { title: /hotel|resort|lodge|inn\b/i },
+          ],
+        },
       ],
     }))
   );
@@ -633,12 +671,12 @@ export async function getVendorStatus(req, res) {
   res.json({
     ok: true,
     data: {
-      isApproved: completion.isApproved,
-      verificationStatus: completion.verificationStatus,
-      percentage: completion.percentage,
+      isApproved,
+      verificationStatus: isApproved ? "approved" : completion.verificationStatus,
+      percentage: isApproved ? 100 : completion.percentage,
       rejectionReason: completion.rejectionReason,
       canSubmit: completion.canSubmitForVerification,
-      missingFields: completion.missingFields,
+      missingFields: isApproved ? [] : completion.missingFields,
       hasHotelService,
     },
   });

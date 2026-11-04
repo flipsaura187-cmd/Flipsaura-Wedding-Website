@@ -238,11 +238,21 @@ export async function createAdminVenue(req, res) {
 
     // 2. Resolve or create vendor user
     let vendor = null;
-    if (vendorId) {
+    if (req.user && (req.user.role === "vendor" || req.user.role === "user")) {
+      vendor = await User.findById(req.user.id);
+    } else if (vendorId) {
       vendor = await User.findById(vendorId);
     }
 
-    if (!vendor) {
+    if (vendor && req.user && (req.user.role === "vendor" || req.user.role === "user")) {
+      vendor.role = "vendor";
+      if (!vendor.vendorProfile) vendor.vendorProfile = {};
+      vendor.vendorProfile.approved = true;
+      vendor.vendorProfile.verificationStatus = "approved";
+      if (!vendor.vendorProfile.businessName) vendor.vendorProfile.businessName = title.trim();
+      vendor.markModified("vendorProfile");
+      await vendor.save();
+    } else if (!vendor) {
       const safeEmail =
         contactEmail && contactEmail.trim()
           ? contactEmail.trim().toLowerCase()
@@ -409,6 +419,15 @@ export async function updateAdminVenue(req, res) {
     const venue = await Item.findById(id);
     if (!venue) {
       return res.status(404).json({ ok: false, error: "Venue not found" });
+    }
+
+    if (req.user && req.user.role !== "admin") {
+      const userPhone = (req.user.phone || "").replace(/\D/g, "").slice(-10);
+      const venuePhone = (venue.contactPhone || "").replace(/\D/g, "").slice(-10);
+      const isOwner = String(venue.vendor) === req.user.id || (userPhone.length >= 10 && venuePhone === userPhone);
+      if (!isOwner) {
+        return res.status(403).json({ ok: false, error: "Forbidden: You can only edit your own listings" });
+      }
     }
 
     const {
@@ -589,6 +608,15 @@ export async function deleteAdminVenue(req, res) {
     const venue = await Item.findById(id);
     if (!venue) {
       return res.status(404).json({ ok: false, error: "Venue not found" });
+    }
+
+    if (req.user && req.user.role !== "admin") {
+      const userPhone = (req.user.phone || "").replace(/\D/g, "").slice(-10);
+      const venuePhone = (venue.contactPhone || "").replace(/\D/g, "").slice(-10);
+      const isOwner = String(venue.vendor) === req.user.id || (userPhone.length >= 10 && venuePhone === userPhone);
+      if (!isOwner) {
+        return res.status(403).json({ ok: false, error: "Forbidden: You can only delete your own listings" });
+      }
     }
 
     await venue.deleteOne();

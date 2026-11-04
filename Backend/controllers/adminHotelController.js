@@ -218,11 +218,21 @@ export async function createAdminHotel(req, res) {
 
     // 2. Resolve or create vendor account
     let vendor = null;
-    if (vendorId) {
+    if (req.user && (req.user.role === "vendor" || req.user.role === "user")) {
+      vendor = await User.findById(req.user.id);
+    } else if (vendorId) {
       vendor = await User.findById(vendorId);
     }
 
-    if (!vendor) {
+    if (vendor && req.user && (req.user.role === "vendor" || req.user.role === "user")) {
+      vendor.role = "vendor";
+      if (!vendor.vendorProfile) vendor.vendorProfile = {};
+      vendor.vendorProfile.approved = true;
+      vendor.vendorProfile.verificationStatus = "approved";
+      if (!vendor.vendorProfile.businessName) vendor.vendorProfile.businessName = title.trim();
+      vendor.markModified("vendorProfile");
+      await vendor.save();
+    } else if (!vendor) {
       // Auto-create or find vendor by email or phone
       const safeEmail =
         contactEmail && contactEmail.trim()
@@ -392,6 +402,15 @@ export async function updateAdminHotel(req, res) {
       return res.status(404).json({ ok: false, error: "Hotel not found" });
     }
 
+    if (req.user && req.user.role !== "admin") {
+      const userPhone = (req.user.phone || "").replace(/\D/g, "").slice(-10);
+      const hotelPhone = (hotel.contactPhone || "").replace(/\D/g, "").slice(-10);
+      const isOwner = String(hotel.vendor) === req.user.id || (userPhone.length >= 10 && hotelPhone === userPhone);
+      if (!isOwner) {
+        return res.status(403).json({ ok: false, error: "Forbidden: You can only edit your own listings" });
+      }
+    }
+
     const {
       title,
       ownerName,
@@ -500,6 +519,15 @@ export async function deleteAdminHotel(req, res) {
     const hotel = await Item.findById(id);
     if (!hotel) {
       return res.status(404).json({ ok: false, error: "Hotel not found" });
+    }
+
+    if (req.user && req.user.role !== "admin") {
+      const userPhone = (req.user.phone || "").replace(/\D/g, "").slice(-10);
+      const hotelPhone = (hotel.contactPhone || "").replace(/\D/g, "").slice(-10);
+      const isOwner = String(hotel.vendor) === req.user.id || (userPhone.length >= 10 && hotelPhone === userPhone);
+      if (!isOwner) {
+        return res.status(403).json({ ok: false, error: "Forbidden: You can only delete your own listings" });
+      }
     }
 
     // Delete all rooms under this hotel

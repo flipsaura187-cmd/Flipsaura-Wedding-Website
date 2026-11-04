@@ -186,6 +186,9 @@ export async function createAdminPhotography(req, res) {
       description,
       packages,
       photographyPackages,
+      mainCategories = [],
+      subcategories = [],
+      customSubcategoriesMap = {},
       active = true,
       featured = false,
       rating = 4.8,
@@ -198,38 +201,53 @@ export async function createAdminPhotography(req, res) {
     }
 
     // 1. Resolve or create vendor user
-    const safeEmail =
-      contactEmail && contactEmail.trim()
-        ? contactEmail.trim().toLowerCase()
-        : `photo.${slugify(listingName)}.${Date.now().toString().slice(-4)}@flipsaura.local`;
+    let vendor = null;
+    if (req.user && (req.user.role === "vendor" || req.user.role === "user")) {
+      vendor = await User.findById(req.user.id);
+    }
 
-    let vendor = await User.findOne({ email: safeEmail });
-    if (!vendor) {
-      const defaultHash = await User.hashPassword("Flipsaura@Photo2026");
-      vendor = await User.create({
-        name: listingName,
-        email: safeEmail,
-        phone: contactPhone?.trim() || "",
-        passwordHash: defaultHash,
-        role: "vendor",
-        vendorProfile: {
-          businessName: listingName,
-          ownerName: listingName,
-          vendorType: "Business",
-          address: address?.trim() || "",
-          city: city?.trim() || "",
-          state: state?.trim() || "",
-          pincode: pincode?.trim() || "",
-          about: about?.trim() || description?.trim() || "",
-          serviceDescription: description?.trim() || about?.trim() || "",
-          serviceLocation: city?.trim() || "",
-          categories: [photoCat._id],
-          verificationStatus: "approved",
-          approved: true,
-          reviewedAt: new Date(),
-          source: "admin_manual",
-        },
-      });
+    if (vendor && req.user && (req.user.role === "vendor" || req.user.role === "user")) {
+      vendor.role = "vendor";
+      if (!vendor.vendorProfile) vendor.vendorProfile = {};
+      vendor.vendorProfile.approved = true;
+      vendor.vendorProfile.verificationStatus = "approved";
+      if (!vendor.vendorProfile.businessName) vendor.vendorProfile.businessName = listingName;
+      vendor.markModified("vendorProfile");
+      await vendor.save();
+    } else {
+      const safeEmail =
+        contactEmail && contactEmail.trim()
+          ? contactEmail.trim().toLowerCase()
+          : `photo.${slugify(listingName)}.${Date.now().toString().slice(-4)}@flipsaura.local`;
+
+      vendor = await User.findOne({ email: safeEmail });
+      if (!vendor) {
+        const defaultHash = await User.hashPassword("Flipsaura@Photo2026");
+        vendor = await User.create({
+          name: listingName,
+          email: safeEmail,
+          phone: contactPhone?.trim() || "",
+          passwordHash: defaultHash,
+          role: "vendor",
+          vendorProfile: {
+            businessName: listingName,
+            ownerName: listingName,
+            vendorType: "Business",
+            address: address?.trim() || "",
+            city: city?.trim() || "",
+            state: state?.trim() || "",
+            pincode: pincode?.trim() || "",
+            about: about?.trim() || description?.trim() || "",
+            serviceDescription: description?.trim() || about?.trim() || "",
+            serviceLocation: city?.trim() || "",
+            categories: [photoCat._id],
+            verificationStatus: "approved",
+            approved: true,
+            reviewedAt: new Date(),
+            source: "admin_manual",
+          },
+        });
+      }
     }
 
     // 2. Format photos / images
@@ -355,6 +373,9 @@ export async function createAdminPhotography(req, res) {
       albums: formattedAlbums,
       videos: formattedVideos,
       photographyPackages: formattedPackages,
+      mainCategories: Array.isArray(mainCategories) ? mainCategories : [],
+      subcategories: Array.isArray(subcategories) ? subcategories : [],
+      customSubcategoriesMap: customSubcategoriesMap || {},
       rating: Math.min(5, Math.max(0, Number(rating) || 4.8)),
       reviewsCount: Math.max(0, Number(reviewsCount) || 0),
       active: active !== undefined ? Boolean(active) : true,
@@ -389,6 +410,15 @@ export async function updateAdminPhotography(req, res) {
     const existing = await Item.findById(id);
     if (!existing) {
       return res.status(404).json({ ok: false, error: "Photography listing not found" });
+    }
+
+    if (req.user && req.user.role !== "admin") {
+      const userPhone = (req.user.phone || "").replace(/\D/g, "").slice(-10);
+      const photoPhone = (existing.contactPhone || "").replace(/\D/g, "").slice(-10);
+      const isOwner = String(existing.vendor) === req.user.id || (userPhone.length >= 10 && photoPhone === userPhone);
+      if (!isOwner) {
+        return res.status(403).json({ ok: false, error: "Forbidden: You can only edit your own listings" });
+      }
     }
 
     const {
@@ -520,6 +550,9 @@ export async function updateAdminPhotography(req, res) {
     if (featured !== undefined) existing.featured = Boolean(featured);
     if (rating !== undefined) existing.rating = Math.min(5, Math.max(0, Number(rating) || 0));
     if (reviewsCount !== undefined) existing.reviewsCount = Math.max(0, Number(reviewsCount) || 0);
+    if (req.body.mainCategories !== undefined) existing.mainCategories = req.body.mainCategories;
+    if (req.body.subcategories !== undefined) existing.subcategories = req.body.subcategories;
+    if (req.body.customSubcategoriesMap !== undefined) existing.customSubcategoriesMap = req.body.customSubcategoriesMap;
 
     await existing.save();
 
@@ -547,11 +580,21 @@ export async function deleteAdminPhotography(req, res) {
     await dbConnect();
     const { id } = req.params;
 
-    const item = await Item.findByIdAndDelete(id);
+    const item = await Item.findById(id);
     if (!item) {
       return res.status(404).json({ ok: false, error: "Photography listing not found" });
     }
 
+    if (req.user && req.user.role !== "admin") {
+      const userPhone = (req.user.phone || "").replace(/\D/g, "").slice(-10);
+      const photoPhone = (item.contactPhone || "").replace(/\D/g, "").slice(-10);
+      const isOwner = String(item.vendor) === req.user.id || (userPhone.length >= 10 && photoPhone === userPhone);
+      if (!isOwner) {
+        return res.status(403).json({ ok: false, error: "Forbidden: You can only delete your own listings" });
+      }
+    }
+
+    await item.deleteOne();
     res.json({ ok: true, message: "Photography listing removed successfully" });
   } catch (error) {
     console.error("[deleteAdminPhotography Error]:", error);

@@ -1,6 +1,8 @@
 import express from "express";
 import {
   login,
+  sendLoginOtp,
+  verifyLoginOtp,
   register,
   logout,
   me,
@@ -14,6 +16,8 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/login-otp/send", sendLoginOtp);
+router.post("/login-otp/verify", verifyLoginOtp);
 router.post("/logout", logout);
 router.get("/me", me);
 router.post("/verify-otp", verifyOtp);

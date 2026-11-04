@@ -44,6 +44,7 @@ export default function AdminHotelFormModal({
   onClose,
   onSaved,
   initialData = null,
+  isVendor = false,
 }) {
   const isEdit = Boolean(initialData?._id);
 
@@ -288,10 +289,11 @@ export default function AdminHotelFormModal({
       };
 
       let res;
+      const endpoint = isVendor ? `/api/vendor/hotels` : `/api/admin/hotels`;
       if (isEdit) {
-        res = await api.put(`/api/admin/hotels/${initialData._id}`, payload);
+        res = await api.put(`${endpoint}/${initialData._id}`, payload);
       } else {
-        res = await api.post("/api/admin/hotels", payload);
+        res = await api.post(endpoint, payload);
       }
 
       if (!res.data?.ok) {

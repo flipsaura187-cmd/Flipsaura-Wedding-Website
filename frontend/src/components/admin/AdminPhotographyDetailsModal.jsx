@@ -80,6 +80,25 @@ export default function AdminPhotographyDetailsModal({
             </div>
           </div>
 
+                    {/* Services, Equipment & Options */}
+          {item.subcategories?.length > 0 && (
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-ink mb-1.5 flex items-center gap-1.5">
+                <span>✨</span> Services, Equipment & Options ({item.subcategories.length})
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {item.subcategories.map((sub, sIdx) => (
+                  <span
+                    key={sIdx}
+                    className="px-2.5 py-1 rounded-lg text-xs font-medium bg-brand-50 text-brand-800 border border-brand-200"
+                  >
+                    ✓ {sub}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Address */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-ink mb-1">

@@ -19,6 +19,12 @@ export function verifyToken(token) {
 }
 
 export async function getCurrentUser(req) {
+  if (req.user && (req.user.id || req.user._id)) {
+    return {
+      ...req.user,
+      id: String(req.user.id || req.user._id),
+    };
+  }
   let token = req.cookies?.[COOKIE_NAME];
   if (!token && req.headers?.authorization?.startsWith("Bearer ")) {
     token = req.headers.authorization.substring(7).trim();

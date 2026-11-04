@@ -110,6 +110,7 @@ export default function AdminVenueFormModal({
   onClose,
   onSaved,
   initialData = null,
+  isVendor = false,
 }) {
   const isEdit = Boolean(initialData?._id);
 
@@ -610,10 +611,11 @@ export default function AdminVenueFormModal({
       };
 
       let res;
+      const endpoint = isVendor ? `/api/vendor/venues` : `/api/admin/venues`;
       if (isEdit) {
-        res = await api.put(`/api/admin/venues/${initialData._id}`, payload);
+        res = await api.put(`${endpoint}/${initialData._id}`, payload);
       } else {
-        res = await api.post("/api/admin/venues", payload);
+        res = await api.post(endpoint, payload);
       }
 
       if (res.data?.ok) {

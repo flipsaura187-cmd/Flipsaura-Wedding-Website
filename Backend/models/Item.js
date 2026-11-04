@@ -25,9 +25,37 @@ const ItemSchema = new mongoose.Schema(
     pincode: { type: String, trim: true },
     contactPhone: String,
     contactEmail: String,
+    contactPerson: String,
     capacity: Number,
     // Photography-specific fields
     photographyPackages: {
+      basic: {
+        price: { type: Number, default: 0, min: 0 },
+        title: { type: String, default: "Basic Package" },
+        description: { type: String, default: "" },
+        deliverables: [{ type: String, trim: true }],
+      },
+      standard: {
+        price: { type: Number, default: 0, min: 0 },
+        title: { type: String, default: "Standard Package" },
+        description: { type: String, default: "" },
+        deliverables: [{ type: String, trim: true }],
+      },
+      premium: {
+        price: { type: Number, default: 0, min: 0 },
+        title: { type: String, default: "Premium Package" },
+        description: { type: String, default: "" },
+        deliverables: [{ type: String, trim: true }],
+      },
+      luxury: {
+        price: { type: Number, default: 0, min: 0 },
+        title: { type: String, default: "Luxury Package" },
+        description: { type: String, default: "" },
+        deliverables: [{ type: String, trim: true }],
+      },
+    },
+    // Mehandi-specific fields
+    mehandiPackages: {
       basic: {
         price: { type: Number, default: 0, min: 0 },
         title: { type: String, default: "Basic Package" },

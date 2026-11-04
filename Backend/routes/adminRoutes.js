@@ -4,6 +4,7 @@ import {
   getAdminStats,
   getUsers,
   updateUser,
+  deleteUser,
   getAdminBlogs,
   getAdminVendors,
   getAdminVendorDetail,
@@ -43,6 +44,7 @@ const adminOnly = [requireAuth, requireRole("admin")];
 router.get("/stats", ...adminOnly, getAdminStats);
 router.get("/users", ...adminOnly, getUsers);
 router.put("/users", ...adminOnly, updateUser);
+router.delete("/users/:id", ...adminOnly, deleteUser);
 router.get("/blogs", ...adminOnly, getAdminBlogs);
 
 // Vendor Management Routes

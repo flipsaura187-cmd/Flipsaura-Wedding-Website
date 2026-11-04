@@ -32,20 +32,34 @@ export default function AdminDashboard() {
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">Admin Dashboard</h1>
           <p className="text-sm text-muted mt-0.5">Real-time marketplace activity & metrics overview</p>
         </div>
-        <Link
-          href="/admin/vendors"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition"
-        >
-          Manage Vendors →
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/users"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-brand-200 bg-white hover:bg-brand-50 text-ink font-semibold text-sm shadow-xs transition"
+          >
+            👥 User Directory →
+          </Link>
+          <Link
+            href="/admin/vendors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition"
+          >
+            Manage Vendors →
+          </Link>
+        </div>
       </div>
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4">
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm flex flex-col justify-between">
-          <span className="text-xs text-muted font-medium uppercase tracking-wider">Total Users</span>
+        <Link
+          href="/admin/users"
+          className="bg-white hover:bg-brand-50/40 rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm flex flex-col justify-between transition group"
+        >
+          <span className="text-xs text-muted font-medium uppercase tracking-wider group-hover:text-brand-600 flex items-center justify-between">
+            <span>Total Users</span>
+            <span className="text-[10px] text-brand-600 font-bold opacity-0 group-hover:opacity-100 transition">View →</span>
+          </span>
           <b className="text-2xl sm:text-3xl font-extrabold text-ink mt-2 font-sans">{stats.users}</b>
-        </div>
+        </Link>
 
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm flex flex-col justify-between">
           <span className="text-xs text-muted font-medium uppercase tracking-wider">Vendors</span>

@@ -44,56 +44,148 @@ export async function getAdminStats(req, res) {
 }
 
 export async function getUsers(req, res) {
-  await dbConnect();
-  const users = await User.find({}, { passwordHash: 0 }).sort({ createdAt: -1 }).lean();
-  res.json({ ok: true, data: { users } });
+  try {
+    await dbConnect();
+    const { search, role, phoneVerified } = req.query;
+
+    const query = {};
+
+    if (role && role !== "all") {
+      if (role === "customer" || role === "user") {
+        query.role = { $in: ["user", "customer"] };
+      } else {
+        query.role = role.toLowerCase().trim();
+      }
+    }
+
+    if (phoneVerified !== undefined && phoneVerified !== "all") {
+      query.isPhoneVerified = phoneVerified === "true" || phoneVerified === true;
+    }
+
+    if (search && search.trim()) {
+      const sRegex = new RegExp(search.trim(), "i");
+      query.$or = [
+        { name: sRegex },
+        { email: sRegex },
+        { phone: sRegex },
+        { "vendorProfile.businessName": sRegex },
+        { "vendorProfile.ownerName": sRegex },
+        { "vendorProfile.city": sRegex },
+      ];
+    }
+
+    const [users, totalUsers, customerCount, vendorCount, adminCount, verifiedCount] = await Promise.all([
+      User.find(query, { passwordHash: 0, phoneOtp: 0, resetPasswordToken: 0 })
+        .sort({ createdAt: -1 })
+        .lean(),
+      User.countDocuments(),
+      User.countDocuments({ role: { $in: ["user", "customer"] } }),
+      User.countDocuments({ role: "vendor" }),
+      User.countDocuments({ role: "admin" }),
+      User.countDocuments({ isPhoneVerified: true }),
+    ]);
+
+    res.json({
+      ok: true,
+      data: {
+        users,
+        total: users.length,
+        stats: {
+          total: totalUsers,
+          customers: customerCount,
+          vendors: vendorCount,
+          admins: adminCount,
+          phoneVerified: verifiedCount,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("[getUsers Error]:", error);
+    res.status(500).json({ ok: false, error: "Failed to fetch users directory" });
+  }
 }
 
 export async function updateUser(req, res) {
-  const { id, role, approved } = req.body;
-  await dbConnect();
+  try {
+    const { id, role, approved, isPhoneVerified, name, phone } = req.body;
+    await dbConnect();
 
-  const user = await User.findById(id);
-  if (!user) return res.status(404).json({ ok: false, error: "Not found" });
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ ok: false, error: "User not found" });
 
-  if (role) user.role = role;
-  if (typeof approved === "boolean" && user.role === "vendor") {
-    if (!user.vendorProfile) user.vendorProfile = {};
-    user.vendorProfile.approved = approved;
-    user.vendorProfile.verificationStatus = approved ? "approved" : "under_review";
-    user.vendorProfile.reviewedAt = new Date();
-    if (approved) {
-      user.vendorProfile.rejectionReason = "";
-      if (Array.isArray(user.vendorProfile.documents)) {
-        user.vendorProfile.documents.forEach((d) => {
-          if (d.status !== "rejected") {
-            d.status = "verified";
-            d.verifiedAt = new Date();
+    if (name && typeof name === "string") user.name = name.trim();
+    if (phone && typeof phone === "string") user.phone = phone.trim();
+    if (role && typeof role === "string") user.role = role.toLowerCase().trim();
+    if (typeof isPhoneVerified === "boolean") user.isPhoneVerified = isPhoneVerified;
+
+    if (typeof approved === "boolean" && user.role === "vendor") {
+      if (!user.vendorProfile) user.vendorProfile = {};
+      user.vendorProfile.approved = approved;
+      user.vendorProfile.verificationStatus = approved ? "approved" : "under_review";
+      user.vendorProfile.reviewedAt = new Date();
+      if (approved) {
+        user.vendorProfile.rejectionReason = "";
+        if (Array.isArray(user.vendorProfile.documents)) {
+          user.vendorProfile.documents.forEach((d) => {
+            if (d.status !== "rejected") {
+              d.status = "verified";
+              d.verifiedAt = new Date();
+            }
+          });
+        }
+        if (user.vendorProfile.bankDetails) {
+          if (user.vendorProfile.bankDetails.status !== "rejected") {
+            user.vendorProfile.bankDetails.status = "verified";
+            user.vendorProfile.bankDetails.verifiedAt = new Date();
           }
-        });
-      }
-      if (user.vendorProfile.bankDetails) {
-        if (user.vendorProfile.bankDetails.status !== "rejected") {
-          user.vendorProfile.bankDetails.status = "verified";
-          user.vendorProfile.bankDetails.verifiedAt = new Date();
         }
       }
+      user.markModified("vendorProfile");
     }
-    user.markModified("vendorProfile");
-  }
 
-  await user.save();
-  res.json({
-    ok: true,
-    data: {
-      user: {
-        id: String(user._id),
-        role: user.role,
-        approved: user.vendorProfile?.approved,
-        verificationStatus: user.vendorProfile?.verificationStatus,
+    await user.save();
+    res.json({
+      ok: true,
+      message: "User updated successfully",
+      data: {
+        user: {
+          id: String(user._id),
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          isPhoneVerified: user.isPhoneVerified,
+          approved: user.vendorProfile?.approved,
+          verificationStatus: user.vendorProfile?.verificationStatus,
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("[updateUser Error]:", error);
+    res.status(500).json({ ok: false, error: error.message || "Failed to update user" });
+  }
+}
+
+export async function deleteUser(req, res) {
+  try {
+    const { id } = req.params;
+    await dbConnect();
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ ok: false, error: "User not found" });
+
+    // Protect primary platform administrator from accidental deletion
+    const adminEmail = String(process.env.ADMIN_EMAIL || "flipsaura187@gmail.com").toLowerCase().trim();
+    if (user.email.toLowerCase().trim() === adminEmail) {
+      return res.status(403).json({ ok: false, error: "Primary system administrator cannot be deleted" });
+    }
+
+    await User.findByIdAndDelete(id);
+    res.json({ ok: true, message: `User "${user.name || user.email}" removed successfully` });
+  } catch (error) {
+    console.error("[deleteUser Error]:", error);
+    res.status(500).json({ ok: false, error: error.message || "Failed to delete user" });
+  }
 }
 
 export async function getAdminBlogs(req, res) {

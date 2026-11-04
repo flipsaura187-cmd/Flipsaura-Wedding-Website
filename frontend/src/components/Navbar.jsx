@@ -22,11 +22,13 @@ export default function Navbar() {
       ]
     : [
         { href: "/", label: "Home" },
-        { href: "/categories/hotels", label: "🏨 Hotels" },
-        { href: "/categories/venues", label: "Venue/Resorts" },
-        { href: "/categories/photographer-videographer", label: "📷 Photography" },
+        { href: "/categories/hotels", label: "Hotels" },
+        { href: "/categories/venues", label: "Venues" },
+        { href: "/categories/photographer-videographer", label: "Photography" },
+        { href: "/categories/mehndi-services", label: "Mehndi" },
         { href: "/categories/home-setup-pandal-tent-dj", label: "Home Setup" },
         { href: "/categories/planning-decor", label: "Planning & Decor" },
+        { href: "/categories/catering-services", label: "Food & Catering" },
         { href: "/events", label: "Events" },
         { href: "/blogs", label: "Blogs" },
       ];

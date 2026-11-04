@@ -242,7 +242,7 @@ export default function ProductPage() {
 
   return (
     <>
-      <main className="py-8 md:py-12 bg-white w-full">
+      <main className="py-8 md:py-12 bg-white w-full pb-24 lg:pb-12">
         <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-xs md:text-sm text-muted mb-8 flex-wrap">
@@ -757,6 +757,56 @@ export default function ProductPage() {
           </section>
         </div>
       </main>
+
+      {/* Mobile Sticky Booking Bar (Visible on < 1024px screens) */}
+      {!isHotel && (
+        <aside
+          aria-label="Mobile booking action bar"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-brand-200 px-4 py-2.5 shadow-2xl shadow-brand-900/20 flex items-center justify-between gap-3 animate-in slide-in-from-bottom duration-300"
+        >
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] text-muted font-medium block truncate">
+              {selectedPackage ? `Plan: ${selectedPackage.title || `${selectedPackage.label} Package`}` : "Starting Tariff"}
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-bold text-brand-700">
+                {effectivePrice > 0 ? `₹${effectivePrice.toLocaleString("en-IN")}` : "On Request"}
+              </span>
+              {selectedPackage && (
+                <span className="text-[10px] text-brand-700 font-bold bg-brand-50 px-1.5 py-0.2 rounded border border-brand-200">
+                  {selectedPackage.label}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {item.contactPhone && (
+              <a
+                href={`https://wa.me/${item.contactPhone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                  selectedPackage
+                    ? `Hello, I saw ${item.title} on FlipsAura and would like to book the ${selectedPackage.title || `${selectedPackage.label} Package`} (₹${effectivePrice.toLocaleString("en-IN")}).`
+                    : `Hello, I saw ${item.title} on FlipsAura and would like to inquire about wedding availability and booking.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center text-lg active:scale-95 transition-transform"
+                title="Chat on WhatsApp"
+              >
+                💬
+              </a>
+            )}
+
+            <button
+              type="button"
+              onClick={handleBookingClick}
+              className="py-2.5 px-4 rounded-xl text-white font-bold text-xs sm:text-sm bg-gradient-to-r from-brand-600 to-brand-700 shadow-md shadow-brand-500/25 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+            >
+              {user ? "Book Now →" : "Login & Book"}
+            </button>
+          </div>
+        </aside>
+      )}
 
       {/* Lightbox Modal */}
       {showLightbox && (

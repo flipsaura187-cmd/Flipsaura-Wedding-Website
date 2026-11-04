@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import api from "@/api/axios";
+import { uploadFile } from "@/lib/uploadHelper";
 
 // Default Photography Catalogue Options
 const DEFAULT_PHOTOGRAPHY_CATALOGUE = [
@@ -175,6 +176,9 @@ export default function AdminPhotographyFormModal({
     imagesText: "",
     link: "",
   });
+  const [uploadingAlbumCover, setUploadingAlbumCover] = useState(false);
+  const [uploadingAlbumPhotos, setUploadingAlbumPhotos] = useState(false);
+  const [albumPhotosList, setAlbumPhotosList] = useState([]);
 
   // New video draft state
   const [newVideo, setNewVideo] = useState({
@@ -384,28 +388,21 @@ export default function AdminPhotographyFormModal({
   };
 
   const handleFileUpload = async (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
     setUploadingImage(true);
-    setUploadProgress(`Uploading ${files.length} photo(s)...`);
+    setUploadProgress(`Uploading 1 of ${files.length}...`);
     setError("");
 
     try {
       const uploadedUrls = [];
       for (let i = 0; i < files.length; i++) {
+        setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
         const file = files[i];
-        const fd = new FormData();
-        fd.append("file", file);
-
-        const res = await api.post("/api/upload", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
-        if (res.data?.ok && res.data.url) {
-          uploadedUrls.push(res.data.url);
-        } else if (res.data?.secure_url) {
-          uploadedUrls.push(res.data.secure_url);
+        const url = await uploadFile(file, "flipsaura/photography");
+        if (url) {
+          uploadedUrls.push(url);
         }
       }
 
@@ -432,16 +429,69 @@ export default function AdminPhotographyFormModal({
     }));
   };
 
-  // Album Handlers
+  // Album Handlers & Uploads
+  const handleAlbumCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAlbumCover(true);
+    setError("");
+    try {
+      const url = await uploadFile(file, "flipsaura/albums");
+      if (url) {
+        setNewAlbum((prev) => ({ ...prev, coverImage: url }));
+      }
+    } catch (err) {
+      console.error("Album cover upload error:", err);
+      setError("Failed to upload album cover image.");
+    } finally {
+      setUploadingAlbumCover(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleAlbumPhotosUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setUploadingAlbumPhotos(true);
+    setError("");
+    try {
+      const uploaded = [];
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadFile(files[i], "flipsaura/albums");
+        if (url) uploaded.push(url);
+      }
+      if (uploaded.length > 0) {
+        setAlbumPhotosList((prev) => [...prev, ...uploaded]);
+        setNewAlbum((prev) => ({
+          ...prev,
+          coverImage: prev.coverImage || uploaded[0] || "",
+        }));
+      }
+    } catch (err) {
+      console.error("Album photos upload error:", err);
+      setError("Failed to upload album photos.");
+    } finally {
+      setUploadingAlbumPhotos(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveAlbumDraftPhoto = (idx) => {
+    setAlbumPhotosList((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const handleAddAlbum = () => {
     if (!newAlbum.title.trim()) {
       setError("Please enter an Album Title");
       return;
     }
 
-    const imgs = newAlbum.imagesText
+    const imgsFromText = newAlbum.imagesText
       ? newAlbum.imagesText.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
       : [];
+    const allImgs = Array.from(new Set([...albumPhotosList, ...imgsFromText]));
 
     setForm((prev) => ({
       ...prev,
@@ -450,14 +500,15 @@ export default function AdminPhotographyFormModal({
         {
           title: newAlbum.title.trim(),
           description: newAlbum.description.trim(),
-          coverImage: newAlbum.coverImage.trim() || imgs[0] || "",
-          images: imgs,
+          coverImage: newAlbum.coverImage.trim() || allImgs[0] || "",
+          images: allImgs,
           link: newAlbum.link.trim(),
         },
       ],
     }));
 
     setNewAlbum({ title: "", description: "", coverImage: "", imagesText: "", link: "" });
+    setAlbumPhotosList([]);
     setError("");
   };
 
@@ -596,42 +647,42 @@ export default function AdminPhotographyFormModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto">
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl border border-brand-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-brand-50 to-white border-b border-brand-100 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center text-xl shadow-sm">
+        <div className="px-4 py-3.5 sm:px-6 sm:py-4 bg-gradient-to-r from-brand-50 to-white border-b border-brand-100 flex items-start sm:items-center justify-between shrink-0 gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+            <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
               📷
             </span>
-            <div>
-              <h2 className="font-serif font-bold text-xl text-ink">
+            <div className="min-w-0 flex-1">
+              <h2 className="font-serif font-bold text-base sm:text-xl text-ink truncate">
                 {initialData ? "Edit Photography Listing" : "Add Photography Listing"}
               </h2>
-              <p className="text-xs text-muted">
-                Admin catalogue management for wedding photographers & studios
+              <p className="text-[11px] sm:text-xs text-muted truncate">
+                Catalogue management for wedding photographers & studios
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-white border border-brand-200 text-muted hover:text-ink flex items-center justify-center transition-all cursor-pointer"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-brand-200 text-muted hover:text-ink flex items-center justify-center transition-all cursor-pointer shrink-0"
           >
             ✕
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-brand-100 px-6 bg-brand-50/40 overflow-x-auto scrollbar-none gap-2 shrink-0">
+        <div className="flex border-b border-brand-100 px-3 sm:px-6 bg-brand-50/40 overflow-x-auto scrollbar-none gap-1.5 sm:gap-2 shrink-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`py-3 px-3.5 text-xs sm:text-sm font-semibold flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 border-b-2 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 activeTab === tab.id
-                  ? "border-brand-600 text-brand-700 bg-white shadow-xs rounded-t-lg"
-                  : "border-transparent text-muted hover:text-ink"
+                  ? "border-brand-600 text-brand-700 bg-white"
+                  : "border-transparent text-muted hover:text-ink hover:bg-white/50"
               }`}
             >
               <span>{tab.icon}</span>
@@ -641,7 +692,7 @@ export default function AdminPhotographyFormModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {error && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2">
               <span>⚠️</span>
@@ -1205,8 +1256,16 @@ export default function AdminPhotographyFormModal({
               </div>
 
               {/* New Album Form */}
-              <div className="p-4 bg-brand-50/50 rounded-xl border border-brand-100 space-y-3">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-ink">+ Add New Album</h4>
+              <div className="p-4 bg-brand-50/50 rounded-xl border border-brand-100 space-y-3.5">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-ink flex items-center justify-between">
+                  <span>+ Add New Album</span>
+                  {(uploadingAlbumCover || uploadingAlbumPhotos) && (
+                    <span className="text-xs text-brand-600 font-semibold animate-pulse">
+                      Uploading image(s)...
+                    </span>
+                  )}
+                </h4>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-ink mb-1">Album Title *</label>
@@ -1215,22 +1274,9 @@ export default function AdminPhotographyFormModal({
                       placeholder="e.g. Rahul & Priya — Royal Heritage Sangeet"
                       value={newAlbum.title}
                       onChange={(e) => setNewAlbum({ ...newAlbum, title: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
+                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500 bg-white"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-ink mb-1">Cover Image URL</label>
-                    <input
-                      type="url"
-                      placeholder="https://example.com/cover.jpg"
-                      value={newAlbum.coverImage}
-                      onChange={(e) => setNewAlbum({ ...newAlbum, coverImage: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-ink mb-1">Short Description</label>
                     <input
@@ -1238,32 +1284,128 @@ export default function AdminPhotographyFormModal({
                       placeholder="e.g. 2-Day Destination wedding in Rajgir"
                       value={newAlbum.description}
                       onChange={(e) => setNewAlbum({ ...newAlbum, description: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
+                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500 bg-white"
                     />
                   </div>
+                </div>
+
+                {/* Album Cover Section */}
+                <div className="p-3 bg-white rounded-xl border border-brand-200/70 space-y-2">
+                  <label className="block text-xs font-bold text-ink">
+                    1. Album Cover Image
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingAlbumCover}
+                        onChange={handleAlbumCoverUpload}
+                        className="block w-full text-xs text-muted file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="url"
+                        placeholder="Or paste direct cover image URL"
+                        value={newAlbum.coverImage}
+                        onChange={(e) => setNewAlbum({ ...newAlbum, coverImage: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {newAlbum.coverImage && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <img
+                        src={newAlbum.coverImage}
+                        alt="Album Cover Preview"
+                        className="w-14 h-14 object-cover rounded-lg border border-brand-200"
+                      />
+                      <div className="text-xs">
+                        <span className="font-semibold text-emerald-700 block">✓ Cover Selected</span>
+                        <button
+                          type="button"
+                          onClick={() => setNewAlbum({ ...newAlbum, coverImage: "" })}
+                          className="text-rose-600 hover:underline font-medium text-[11px]"
+                        >
+                          ✕ Remove Cover
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Album Photos Section */}
+                <div className="p-3 bg-white rounded-xl border border-brand-200/70 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-ink">
+                      2. Album Photos ({albumPhotosList.length})
+                    </label>
+                    {albumPhotosList.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setAlbumPhotosList([])}
+                        className="text-[11px] text-rose-600 hover:underline font-semibold"
+                      >
+                        Clear Uploaded ({albumPhotosList.length})
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-muted mb-1">Choose Files from Device</label>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        disabled={uploadingAlbumPhotos}
+                        onChange={handleAlbumPhotosUpload}
+                        className="block w-full text-xs text-muted file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-muted mb-1">Or Paste Direct URLs (comma separated)</label>
+                      <input
+                        type="text"
+                        placeholder="https://.../img1.jpg, https://.../img2.jpg"
+                        value={newAlbum.imagesText}
+                        onChange={(e) => setNewAlbum({ ...newAlbum, imagesText: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {albumPhotosList.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-1 max-h-36 overflow-y-auto p-1 bg-brand-50/50 rounded-lg border border-brand-100">
+                      {albumPhotosList.map((photoUrl, pIdx) => (
+                        <div key={pIdx} className="relative aspect-square rounded-md overflow-hidden border border-brand-200 group">
+                          <img src={photoUrl} alt={`Album photo ${pIdx + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAlbumDraftPhoto(pIdx)}
+                            className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-ink mb-1">External Gallery Link</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">External Gallery Link (Optional)</label>
                     <input
                       type="url"
                       placeholder="e.g. Google Drive, WedMeGood, or Web Link"
                       value={newAlbum.link}
                       onChange={(e) => setNewAlbum({ ...newAlbum, link: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
+                      className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500 bg-white"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-ink mb-1">
-                    Album Photo URLs (Comma or newline separated)
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="https://example.com/p1.jpg, https://example.com/p2.jpg..."
-                    value={newAlbum.imagesText}
-                    onChange={(e) => setNewAlbum({ ...newAlbum, imagesText: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg border border-brand-200 text-xs focus:ring-2 focus:ring-brand-500"
-                  />
                 </div>
 
                 <div className="flex justify-end pt-1">
@@ -1307,6 +1449,16 @@ export default function AdminPhotographyFormModal({
                           <span className="text-[10px] text-brand-600 font-semibold block mt-1">
                             {alb.images?.length || 0} Photos Included
                           </span>
+                          {Array.isArray(alb.images) && alb.images.length > 0 && (
+                            <div className="flex items-center gap-1 mt-1.5 overflow-hidden">
+                              {alb.images.slice(0, 4).map((img, iIdx) => (
+                                <img key={iIdx} src={img} alt="" className="w-6 h-6 rounded object-cover border border-brand-100" />
+                              ))}
+                              {alb.images.length > 4 && (
+                                <span className="text-[10px] text-muted px-1 font-medium">+{alb.images.length - 4}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <button
@@ -1468,7 +1620,7 @@ export default function AdminPhotographyFormModal({
 
           {/* Footer Action Bar */}
           <div className="pt-4 border-t border-brand-100 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
               {activeTab !== "basic" && (
                 <button
                   type="button"
@@ -1476,9 +1628,9 @@ export default function AdminPhotographyFormModal({
                     const idx = tabs.findIndex((t) => t.id === activeTab);
                     if (idx > 0) setActiveTab(tabs[idx - 1].id);
                   }}
-                  className="px-3 py-2 text-xs font-semibold text-ink bg-white border border-brand-200 rounded-xl hover:bg-brand-50"
+                  className="px-3 py-2 text-xs font-semibold text-ink bg-white border border-brand-200 rounded-xl hover:bg-brand-50 cursor-pointer"
                 >
-                  ← Previous Tab
+                  ← Previous
                 </button>
               )}
               {activeTab !== "about" && (
@@ -1488,27 +1640,27 @@ export default function AdminPhotographyFormModal({
                     const idx = tabs.findIndex((t) => t.id === activeTab);
                     if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id);
                   }}
-                  className="px-3 py-2 text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-200 rounded-xl hover:bg-brand-100"
+                  className="px-3 py-2 text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-200 rounded-xl hover:bg-brand-100 ml-auto sm:ml-0 cursor-pointer"
                 >
-                  Next Tab →
+                  Next →
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:text-ink border border-transparent hover:border-brand-200"
+                className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:text-ink border border-line hover:border-brand-200 text-center cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-md shadow-brand-600/20 disabled:opacity-60 cursor-pointer transition-all"
+                className="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-md shadow-brand-600/20 disabled:opacity-60 cursor-pointer transition-all text-center"
               >
-                {submitting ? "Saving Listing..." : initialData ? "Save Changes" : "Create Photography Listing"}
+                {submitting ? "Saving..." : initialData ? "Save Changes" : "Save Listing"}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import api from "@/api/axios";
+import { uploadFile } from "@/lib/uploadHelper";
 
 const POPULAR_ROOM_AMENITIES = [
   { id: "ac", name: "Air Conditioning (AC)", icon: "❄️" },
@@ -291,22 +292,9 @@ export default function AdminRoomFormModal({
       for (let i = 0; i < validFiles.length; i++) {
         setUploadProgress({ current: i + 1, total: validFiles.length });
         const file = validFiles[i];
-        const base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
-          reader.readAsDataURL(file);
-        });
-
-        const { data } = await api.post("/api/upload/direct", {
-          file: base64Data,
-          folder: "flipsaura/rooms",
-        });
-
-        if (data?.ok && data?.data?.url) {
-          uploadedUrls.push(data.data.url);
-        } else {
-          console.warn("Failed upload for file:", file.name, data?.error);
+        const url = await uploadFile(file, "flipsaura/rooms");
+        if (url) {
+          uploadedUrls.push(url);
         }
       }
 

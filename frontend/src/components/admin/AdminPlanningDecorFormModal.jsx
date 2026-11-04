@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import api from "@/api/axios";
+import { uploadFile } from "@/lib/uploadHelper";
 
 export const PLANNING_DECOR_GROUPS = [
   {
@@ -351,13 +352,8 @@ export default function AdminPlanningDecorFormModal({
       for (let i = 0; i < files.length; i++) {
         setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
         const file = files[i];
-        const url = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        uploadedUrls.push(url);
+        const url = await uploadFile(file, "flipsaura/planningdecor");
+        if (url) uploadedUrls.push(url);
       }
 
       setForm((prev) => ({
@@ -462,51 +458,51 @@ export default function AdminPlanningDecorFormModal({
   const totalSelectedCatalogueCount = form.subcategories.length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-ink/60 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-4xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white shrink-0">
-          <div>
+        <div className="flex items-start sm:items-center justify-between px-4 py-3.5 sm:px-6 sm:py-4.5 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white shrink-0 gap-3">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🎨</span>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-tight">
-                {isEdit ? "Edit Planning & Decor Services" : "Add Planning & Decor Services"}
+              <span className="text-xl sm:text-2xl">🎨</span>
+              <h2 className="font-serif text-lg sm:text-2xl font-bold tracking-tight truncate">
+                {isEdit ? "Edit Planning & Decor Services" : "Add Planning & Decor"}
               </h2>
             </div>
-            <p className="text-xs text-rose-100/90 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-rose-100/90 mt-0.5 line-clamp-1">
               Wedding themes, floral mandaps, entrance styling, Haldi/Sangeet decor & full wedding coordination.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer text-sm font-bold"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer text-sm font-bold shrink-0"
           >
             ✕
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center border-b border-line bg-surface/50 px-6 shrink-0 overflow-x-auto gap-2">
+        <div className="flex items-center border-b border-line bg-surface/50 px-3 sm:px-6 shrink-0 overflow-x-auto gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => setActiveTab("catalogue")}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            className={`py-2.5 sm:py-3 px-3 sm:px-4 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === "catalogue"
                 ? "border-rose-600 text-rose-900 bg-rose-50/50"
                 : "border-transparent text-muted hover:text-ink"
             }`}
           >
             <span>🌸</span>
-            <span>Decor Concepts & Themes</span>
-            <span className="ml-1 text-[11px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold">
-              {totalSelectedCatalogueCount} Selected
+            <span>Concepts & Themes</span>
+            <span className="ml-1 text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold">
+              {totalSelectedCatalogueCount}
             </span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("basic")}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            className={`py-2.5 sm:py-3 px-3 sm:px-4 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === "basic"
                 ? "border-rose-600 text-rose-900 bg-rose-50/50"
                 : "border-transparent text-muted hover:text-ink"
@@ -519,22 +515,22 @@ export default function AdminPlanningDecorFormModal({
           <button
             type="button"
             onClick={() => setActiveTab("photos")}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            className={`py-2.5 sm:py-3 px-3 sm:px-4 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === "photos"
                 ? "border-rose-600 text-rose-900 bg-rose-50/50"
                 : "border-transparent text-muted hover:text-ink"
             }`}
           >
             <span>📷</span>
-            <span>Portfolio Photos</span>
-            <span className="ml-1 text-[11px] px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-700">
+            <span>Portfolio</span>
+            <span className="ml-1 text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-700">
               {form.images.length}
             </span>
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-medium flex items-center gap-2">
               <span>⚠️</span>
@@ -1007,15 +1003,15 @@ export default function AdminPlanningDecorFormModal({
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-line bg-surface/50 flex items-center justify-between shrink-0">
-          <div className="text-xs text-muted">
+        <div className="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-line bg-surface/50 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+          <div className="text-xs text-muted text-center sm:text-left">
             <span className="font-semibold text-ink">{totalSelectedCatalogueCount}</span> decor themes & services selected.
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-line text-xs font-semibold text-ink hover:bg-gray-100 transition cursor-pointer"
+              className="flex-1 sm:flex-initial px-4 py-2 rounded-xl border border-line text-xs font-semibold text-ink hover:bg-gray-100 transition cursor-pointer text-center"
             >
               Cancel
             </button>
@@ -1023,9 +1019,9 @@ export default function AdminPlanningDecorFormModal({
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50 text-center"
             >
-              {submitting ? "Saving..." : isEdit ? "Save Changes" : "Save & Publish Listing"}
+              {submitting ? "Saving..." : isEdit ? "Save Changes" : "Save & Publish"}
             </button>
           </div>
         </div>

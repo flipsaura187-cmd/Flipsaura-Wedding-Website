@@ -3,6 +3,10 @@ import crypto from "crypto";
 
 export function createUpload(req, res) {
   try {
+    // If request contains file or dataUrl, handle as direct upload
+    if (req.body?.file || req.body?.dataUrl) {
+      return directUpload(req, res);
+    }
     const data = createUploadSignature({
       folder: req.body.folder || "flipsaura/items",
       publicId: req.body.publicId,
@@ -19,7 +23,7 @@ export function createUpload(req, res) {
  */
 export async function directUpload(req, res) {
   try {
-    const { file, dataUrl, folder = "flipsaura/documents" } = req.body;
+    const { file, dataUrl, folder = "flipsaura/documents" } = req.body || {};
     const fileToUpload = file || dataUrl;
 
     if (!fileToUpload) {
@@ -53,20 +57,28 @@ export async function directUpload(req, res) {
 
       if (response.ok) {
         const uploadResult = await response.json();
+        const finalUrl = uploadResult.secure_url || uploadResult.url;
         return res.json({
           ok: true,
+          url: finalUrl,
+          secure_url: finalUrl,
           data: {
-            url: uploadResult.secure_url || uploadResult.url,
+            url: finalUrl,
             publicId: uploadResult.public_id,
             format: uploadResult.format,
           },
         });
+      } else {
+        const errJson = await response.json().catch(() => ({}));
+        console.warn("Cloudinary upload returned error:", errJson);
       }
     }
 
     // Fallback: If cloudinary not available or fails, use the provided data URI
     return res.json({
       ok: true,
+      url: fileToUpload,
+      secure_url: fileToUpload,
       data: {
         url: fileToUpload,
       },

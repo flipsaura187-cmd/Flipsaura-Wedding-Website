@@ -197,6 +197,18 @@ export default function CategoryPage() {
     (filters.sort && filters.sort !== "newest")
   );
 
+  const formattedCategoryTitle = useMemo(() => {
+    const s = String(slug || "").toLowerCase();
+    if (s.includes("home-setup")) return "Home Setup – Pandal, Tent & DJ";
+    if (s.includes("planning") || s.includes("decor")) return "Planning & Decor";
+    if (s.includes("catering") || s.includes("food")) return "Food & Catering";
+    if (s.includes("mehndi") || s.includes("mehandi")) return "Mehndi Services";
+    if (s.includes("photo")) return "Photographer & Videographer";
+    if (s === "hotels") return "Hotels & Stays";
+    if (s === "venues") return "Wedding Venues & Resorts";
+    return String(slug).replace(/-/g, " ");
+  }, [slug]);
+
   const priceInvalid =
     filters.minPrice !== "" &&
     filters.maxPrice !== "" &&
@@ -206,24 +218,24 @@ export default function CategoryPage() {
   const unitShort = filterMeta.pricingUnit?.short || "unit";
 
   return (
-    <section className="py-8 md:py-12 bg-white min-h-[70vh] w-full">
-      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12">
+    <section className="py-6 sm:py-8 md:py-12 bg-white min-h-[70vh] w-full">
+      <div className="w-full px-3.5 sm:px-6 lg:px-10 xl:px-12">
         {/* Category Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-1.5 block">
-              Category
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-brand-600 mb-1 block">
+              Wedding Category
             </span>
-            <h1 className="font-serif text-3xl md:text-4xl font-bold text-ink capitalize">
-              {String(slug).replace(/-/g, " ")}
+            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-ink capitalize leading-tight">
+              {formattedCategoryTitle}
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium bg-brand-50 text-brand-700 px-3 py-1.5 rounded-full border border-brand-200">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] sm:text-xs font-medium bg-brand-50 text-brand-700 px-3 py-1 rounded-full border border-brand-200">
               Pricing: <b>{unitLabel}</b>
             </span>
-            <span className="text-xs text-muted font-medium">
+            <span className="text-[11px] sm:text-xs text-muted font-medium bg-surface px-2.5 py-1 rounded-full border border-line">
               {totalCount} {totalCount === 1 ? "listing" : "listings"} available
             </span>
           </div>
@@ -482,7 +494,7 @@ export default function CategoryPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
             {items.map((it) => (
               <ItemCard key={it._id} item={it} />
             ))}

@@ -19,6 +19,28 @@ export default function ItemCard({ item }) {
     (item.category?.name || "").toLowerCase().includes("photograph") ||
     Boolean(item.photographyPackages?.basic?.price || item.photographyPackages?.standard?.price);
 
+  const isMehandi =
+    item.category?.slug?.includes("mehndi") ||
+    item.category?.slug?.includes("mehandi") ||
+    (item.category?.name || "").toLowerCase().includes("mehndi") ||
+    (item.category?.name || "").toLowerCase().includes("mehandi") ||
+    Boolean(item.mehandiPackages?.basic?.price || item.mehandiPackages?.standard?.price);
+
+  const isHomeSetup =
+    item.category?.slug?.includes("home-setup") ||
+    (item.category?.name || "").toLowerCase().includes("home setup") ||
+    (item.category?.name || "").toLowerCase().includes("ghar setup");
+
+  const isPlanningDecor =
+    item.category?.slug?.includes("planning-decor") ||
+    (item.category?.name || "").toLowerCase().includes("planning") ||
+    (item.category?.name || "").toLowerCase().includes("decor");
+
+  const isCatering =
+    item.category?.slug?.includes("catering") ||
+    (item.category?.name || "").toLowerCase().includes("catering") ||
+    (item.category?.name || "").toLowerCase().includes("food");
+
   const guestCap = item.guestCapacity || item.capacity || 0;
   const rental = item.rentalPrice || (isVenue ? item.price : 0);
 
@@ -94,7 +116,39 @@ export default function ItemCard({ item }) {
         {isPhotography && item.photographyPackages && (
           <div className="pt-0.5">
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-purple-50 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-full">
-              <span>📷</span> 4 Package Tiers Available
+              <span>📷</span> 4 Package Tiers
+            </span>
+          </div>
+        )}
+
+        {isMehandi && (
+          <div className="pt-0.5">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <span>🌿</span> {item.mehandiPackages ? "4 Package Tiers" : "Bridal Mehndi"}
+            </span>
+          </div>
+        )}
+
+        {isHomeSetup && Array.isArray(item.subcategories) && item.subcategories.length > 0 && (
+          <div className="pt-0.5">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+              <span>🎪</span> {item.subcategories.length} Setups (Pandal / DJ / Lights)
+            </span>
+          </div>
+        )}
+
+        {isPlanningDecor && Array.isArray(item.subcategories) && item.subcategories.length > 0 && (
+          <div className="pt-0.5">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-full">
+              <span>🎨</span> {item.subcategories.length} Decor Themes
+            </span>
+          </div>
+        )}
+
+        {isCatering && (
+          <div className="pt-0.5">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 rounded-full">
+              <span>🍽️</span> {item.subcategories?.length ? `${item.subcategories.length} Menu Dishes & Counters` : "Buffet & Royal Feast"}
             </span>
           </div>
         )}
@@ -142,7 +196,7 @@ export default function ItemCard({ item }) {
                 </span>
               )}
             </div>
-          ) : isPhotography ? (
+          ) : isPhotography || isMehandi ? (
             <div className="leading-tight">
               {item.price && item.price > 0 ? (
                 <>
@@ -157,10 +211,21 @@ export default function ItemCard({ item }) {
                 </span>
               )}
             </div>
+          ) : isCatering && item.pricePerPlateVeg > 0 ? (
+            <div className="leading-tight">
+              <span className="text-[10px] text-muted font-medium block">Per-Plate Feast</span>
+              <span className="text-sm font-bold text-orange-700">
+                ₹{item.pricePerPlateVeg.toLocaleString("en-IN")}
+                <span className="text-[10px] text-muted font-normal"> / plate</span>
+              </span>
+            </div>
           ) : item.price && item.price > 0 ? (
-            <span className="text-base font-bold text-brand-700">
-              ₹{item.price.toLocaleString("en-IN")}
-            </span>
+            <div className="leading-tight">
+              <span className="text-[10px] text-muted font-medium block">Tariff from</span>
+              <span className="text-base font-bold text-brand-700">
+                ₹{item.price.toLocaleString("en-IN")}
+              </span>
+            </div>
           ) : (
             <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">
               Price on Request

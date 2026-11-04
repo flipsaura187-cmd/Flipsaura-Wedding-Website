@@ -4,6 +4,7 @@ import { useRouter } from "@/compat/navigation";
 import Image from "@/compat/Image";
 import api from "@/api/axios";
 import axios from "axios";
+import { uploadFile } from "@/lib/uploadHelper";
 
 export const POPULAR_ROOM_FACILITIES = [
   "Air Conditioning (AC)",
@@ -208,31 +209,14 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
     if (!file) return;
     setUploadingRoomIdx(idx);
     try {
-      const { data: sigData } = await api.post("/api/upload", {
-        folder: "flipsaura/rooms",
-      });
-      if (!sigData.ok) throw new Error(sigData.error || "Failed to get upload signature");
-
-      const { signature, timestamp, apiKey, cloudName } = sigData.data;
-
-      const cloudForm = new FormData();
-      cloudForm.append("file", file);
-      cloudForm.append("api_key", apiKey);
-      cloudForm.append("timestamp", timestamp);
-      cloudForm.append("signature", signature);
-      cloudForm.append("folder", "flipsaura/rooms");
-
-      const { data: uploadData } = await axios.post(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        cloudForm
-      );
-      if (!uploadData.secure_url) throw new Error("Upload failed");
+      const url = await uploadFile(file, "flipsaura/rooms");
+      if (!url) throw new Error("Upload failed");
 
       setRooms((prev) => {
         const copy = [...prev];
         copy[idx] = {
           ...copy[idx],
-          images: [...(copy[idx].images || []), uploadData.secure_url],
+          images: [...(copy[idx].images || []), url],
         };
         return copy;
       });
@@ -313,37 +297,20 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
   const uploadImage = async (file) => {
     setUploading(true);
     try {
-      const { data: sigData } = await api.post("/api/upload", {
-        folder: "flipsaura/items",
-      });
-      if (!sigData.ok) throw new Error(sigData.error || "Failed to get upload signature");
-
-      const { signature, timestamp, apiKey, cloudName } = sigData.data;
-
-      const cloudForm = new FormData();
-      cloudForm.append("file", file);
-      cloudForm.append("api_key", apiKey);
-      cloudForm.append("timestamp", timestamp);
-      cloudForm.append("signature", signature);
-      cloudForm.append("folder", "flipsaura/items");
-
-      const { data: uploadData } = await axios.post(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        cloudForm
-      );
-      if (!uploadData.secure_url) throw new Error("Upload failed");
+      const url = await uploadFile(file, "flipsaura/items");
+      if (!url) throw new Error("Upload failed");
 
       const newImages = [...form.images];
       const lastIndex = newImages.length - 1;
       if (newImages[lastIndex] === "") {
-        newImages[lastIndex] = uploadData.secure_url;
+        newImages[lastIndex] = url;
         newImages.push("");
       } else {
-        newImages.push(uploadData.secure_url, "");
+        newImages.push(url, "");
       }
-      setForm((prev) => ({ ...prev, images: newImages.filter((url) => url !== "") }));
+      setForm((prev) => ({ ...prev, images: newImages.filter((u) => u !== "") }));
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to upload image");
     } finally {
       setUploading(false);
     }

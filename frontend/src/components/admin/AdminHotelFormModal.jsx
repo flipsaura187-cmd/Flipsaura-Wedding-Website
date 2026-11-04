@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import api from "@/api/axios";
+import { uploadFile } from "@/lib/uploadHelper";
 
 const POPULAR_HOTEL_AMENITIES = [
   "Free High-Speed Wi-Fi",
@@ -176,56 +177,33 @@ export default function AdminHotelFormModal({
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (JPG, PNG, WebP).");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError("Image size exceeds 10MB limit.");
-      return;
-    }
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
     setUploadingImage(true);
     setError("");
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64Data = reader.result;
-          const { data } = await api.post("/api/upload/direct", {
-            file: base64Data,
-            folder: "flipsaura/hotels",
-          });
+      const uploadedUrls = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 10 * 1024 * 1024) continue;
+        const url = await uploadFile(file, "flipsaura/hotels");
+        if (url) uploadedUrls.push(url);
+      }
 
-          if (!data?.ok || !data?.data?.url) {
-            throw new Error(data?.error || "Upload failed");
-          }
-
-          setForm((prev) => ({
-            ...prev,
-            images: [...prev.images, data.data.url],
-          }));
-        } catch (uploadErr) {
-          console.error("Direct upload error:", uploadErr);
-          setError(uploadErr.response?.data?.error || uploadErr.message || "Failed to upload image");
-        } finally {
-          setUploadingImage(false);
-          e.target.value = "";
-        }
-      };
-      reader.onerror = () => {
-        setError("Could not read image file.");
-        setUploadingImage(false);
-      };
-      reader.readAsDataURL(file);
+      if (uploadedUrls.length > 0) {
+        setForm((prev) => ({
+          ...prev,
+          images: [...prev.images, ...uploadedUrls],
+        }));
+      }
     } catch (err) {
+      console.error("Hotel upload error:", err);
       setError(err.message || "Image upload failed");
+    } finally {
       setUploadingImage(false);
+      e.target.value = "";
     }
   };
 
@@ -684,6 +662,7 @@ export default function AdminHotelFormModal({
               <label className="flex-1 cursor-pointer">
                 <input
                   type="file"
+                  multiple
                   accept="image/*"
                   onChange={handleFileUpload}
                   disabled={uploadingImage}

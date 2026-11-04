@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import api from "@/api/axios";
+import { uploadFile } from "@/lib/uploadHelper";
 import { CATALOGUE_GROUPS } from "@/constants/catalogue";
 
 export const VENUE_PRIMARY_CATEGORIES = [
@@ -358,28 +359,8 @@ export default function AdminVenueFormModal({
       for (let i = 0; i < files.length; i++) {
         setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
         const file = files[i];
-        const url = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = async () => {
-            try {
-              const base64Data = reader.result;
-              const { data } = await api.post("/api/upload/direct", {
-                file: base64Data,
-                folder: "flipsaura/venues",
-              });
-
-              if (!data?.ok || !data?.data?.url) {
-                throw new Error(data?.error || `Upload failed for ${file.name}`);
-              }
-              resolve(data.data.url);
-            } catch (err) {
-              reject(err);
-            }
-          };
-          reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
-          reader.readAsDataURL(file);
-        });
-        uploadedUrls.push(url);
+        const url = await uploadFile(file, "flipsaura/venues");
+        if (url) uploadedUrls.push(url);
       }
 
       setForm((prev) => ({

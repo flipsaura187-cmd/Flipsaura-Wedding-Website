@@ -344,14 +344,14 @@ export default function VendorItems() {
 
       {/* Items Content */}
       {items.length === 0 ? (
-        <div className="bg-white p-12 text-center rounded-2xl border border-dashed border-line shadow-2xs">
+        <div className="bg-white p-8 sm:p-12 text-center rounded-2xl border border-dashed border-line shadow-2xs">
           <div className="w-14 h-14 mx-auto rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-2xl mb-4">
             📦
           </div>
           <h3 className="font-serif text-lg font-bold text-ink mb-1">No services listed yet</h3>
           <p className="text-muted text-xs sm:text-sm max-w-md mx-auto mb-6">
             {isApproved
-              ? "Click '+ New Service Item' to choose your category (Venues, Hotels, Photography, Mehndi) and showcase your work."
+              ? "Click '+ New Service Item' to choose your category (Venues, Hotels, Photography, Mehndi, Home Setup, Decor, Catering) and showcase your services."
               : "Services will appear here once your vendor account is verified by FlipsAura administrators."}
           </p>
           {isApproved && (
@@ -364,101 +364,191 @@ export default function VendorItems() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-line shadow-2xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-line bg-surface/60 text-xs font-semibold text-muted uppercase tracking-wider">
-                  <th className="py-3.5 px-4 md:px-6">Title & Category</th>
-                  <th className="py-3.5 px-4 md:px-6">Price</th>
-                  <th className="py-3.5 px-4 md:px-6">City</th>
-                  <th className="py-3.5 px-4 md:px-6">Active</th>
-                  <th className="py-3.5 px-4 md:px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line text-sm text-ink">
-                {items.map((it) => {
-                  const badge = getCategoryBadge(it);
-                  return (
-                    <tr key={it._id} className="hover:bg-brand-50/30 transition-colors">
-                      <td className="py-3.5 px-4 md:px-6 font-medium text-ink">
-                        <div className="flex items-center gap-3">
-                          {it.images?.[0] ? (
-                            <img
-                              src={it.images[0]}
-                              alt={it.title}
-                              className="w-12 h-12 rounded-xl object-cover border border-line flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-base flex-shrink-0">
-                              {badge.icon}
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <div className="font-semibold text-ink line-clamp-1">{it.title}</div>
-                            <div className="mt-1 flex items-center gap-2 flex-wrap">
-                              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${badge.color}`}>
-                                <span>{badge.icon}</span>
-                                <span>{badge.label}</span>
-                              </span>
-                              {it.subcategories?.length > 0 && (
-                                <span className="text-[11px] text-muted">
-                                  • {it.subcategories.length} equipment/options
-                                </span>
-                              )}
-                              {it.rooms?.length > 0 && (
-                                <span className="text-[11px] text-muted">
-                                  • {it.rooms.length} rooms
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 md:px-6 font-semibold text-brand-700 whitespace-nowrap">
-                        ₹{(it.rentalPrice || it.price || 0).toLocaleString("en-IN")}
-                      </td>
-                      <td className="py-3.5 px-4 md:px-6 text-muted whitespace-nowrap">{it.city || "—"}</td>
-                      <td className="py-3.5 px-4 md:px-6 whitespace-nowrap">
+        <div className="space-y-4">
+          {/* Mobile Card View (shown on screens < 768px) */}
+          <div className="grid grid-cols-1 gap-3.5 md:hidden">
+            {items.map((it) => {
+              const badge = getCategoryBadge(it);
+              const price = (it.rentalPrice || it.price || 0);
+
+              return (
+                <div
+                  key={it._id}
+                  className="bg-white p-4 rounded-2xl border border-line shadow-2xs space-y-3"
+                >
+                  <div className="flex items-start gap-3">
+                    {it.images?.[0] ? (
+                      <img
+                        src={it.images[0]}
+                        alt={it.title}
+                        className="w-16 h-16 rounded-xl object-cover border border-line flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-2xl flex-shrink-0">
+                        {badge.icon}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border ${badge.color}`}>
+                          <span>{badge.icon}</span>
+                          <span>{badge.label}</span>
+                        </span>
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             it.active
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-gray-100 text-gray-600 border border-gray-200"
                           }`}
                         >
-                          {it.active ? "Yes" : "No"}
+                          {it.active ? "Active" : "Draft"}
                         </span>
-                      </td>
-                      <td className="py-3.5 px-4 md:px-6 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2">
-                          <Link
-                            href={detectCategory(it) === "hotel" ? `/hotels/${it._id}` : `/venues/${it._id}`}
-                            className="px-3 py-1.5 rounded-lg border border-line text-xs font-medium text-ink hover:text-brand-600 hover:border-brand-600 transition-colors"
+                      </div>
+
+                      <h4 className="font-serif font-bold text-sm text-ink line-clamp-1 mt-1">
+                        {it.title}
+                      </h4>
+
+                      <div className="text-xs text-muted mt-0.5 flex items-center gap-1">
+                        <span>📍</span>
+                        <span className="truncate">{it.city || "Pan India"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-line/70 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-muted block">Tariff / Price</span>
+                      <span className="text-base font-bold text-brand-700">
+                        ₹{price.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Link
+                        href={detectCategory(it) === "hotel" ? `/hotels/${it._id}` : `/venues/${it._id}`}
+                        className="px-2.5 py-1.5 rounded-lg border border-line text-xs font-semibold text-ink hover:text-brand-600 hover:border-brand-600 transition-colors"
+                      >
+                        View ↗
+                      </Link>
+                      <button
+                        disabled={!isApproved}
+                        onClick={() => handleEdit(it)}
+                        className="px-3 py-1.5 rounded-lg bg-brand-50 border border-brand-200 text-xs font-bold text-brand-700 hover:bg-brand-100 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        disabled={!isApproved}
+                        onClick={() => remove(it._id)}
+                        className="px-2.5 py-1.5 rounded-lg border border-line text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View (shown on md: and above) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-line shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-line bg-surface/60 text-xs font-semibold text-muted uppercase tracking-wider">
+                    <th className="py-3.5 px-4 md:px-6">Title & Category</th>
+                    <th className="py-3.5 px-4 md:px-6">Price</th>
+                    <th className="py-3.5 px-4 md:px-6">City</th>
+                    <th className="py-3.5 px-4 md:px-6">Active</th>
+                    <th className="py-3.5 px-4 md:px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line text-sm text-ink">
+                  {items.map((it) => {
+                    const badge = getCategoryBadge(it);
+                    return (
+                      <tr key={it._id} className="hover:bg-brand-50/30 transition-colors">
+                        <td className="py-3.5 px-4 md:px-6 font-medium text-ink">
+                          <div className="flex items-center gap-3">
+                            {it.images?.[0] ? (
+                              <img
+                                src={it.images[0]}
+                                alt={it.title}
+                                className="w-12 h-12 rounded-xl object-cover border border-line flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-base flex-shrink-0">
+                                {badge.icon}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="font-semibold text-ink line-clamp-1">{it.title}</div>
+                              <div className="mt-1 flex items-center gap-2 flex-wrap">
+                                <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${badge.color}`}>
+                                  <span>{badge.icon}</span>
+                                  <span>{badge.label}</span>
+                                </span>
+                                {it.subcategories?.length > 0 && (
+                                  <span className="text-[11px] text-muted">
+                                    • {it.subcategories.length} equipment/options
+                                  </span>
+                                )}
+                                {it.rooms?.length > 0 && (
+                                  <span className="text-[11px] text-muted">
+                                    • {it.rooms.length} rooms
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 md:px-6 font-semibold text-brand-700 whitespace-nowrap">
+                          ₹{(it.rentalPrice || it.price || 0).toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-3.5 px-4 md:px-6 text-muted whitespace-nowrap">{it.city || "—"}</td>
+                        <td className="py-3.5 px-4 md:px-6 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              it.active
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-gray-100 text-gray-600 border border-gray-200"
+                            }`}
                           >
-                            View ↗
-                          </Link>
-                          <button
-                            disabled={!isApproved}
-                            onClick={() => handleEdit(it)}
-                            className="px-3 py-1.5 rounded-lg border border-line text-xs font-medium text-ink hover:text-brand-600 hover:border-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            disabled={!isApproved}
-                            onClick={() => remove(it._id)}
-                            className="px-3 py-1.5 rounded-lg border border-line text-xs font-medium text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            {it.active ? "Yes" : "No"}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 md:px-6 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-2">
+                            <Link
+                              href={detectCategory(it) === "hotel" ? `/hotels/${it._id}` : `/venues/${it._id}`}
+                              className="px-3 py-1.5 rounded-lg border border-line text-xs font-medium text-ink hover:text-brand-600 hover:border-brand-600 transition-colors"
+                            >
+                              View ↗
+                            </Link>
+                            <button
+                              disabled={!isApproved}
+                              onClick={() => handleEdit(it)}
+                              className="px-3 py-1.5 rounded-lg border border-line text-xs font-medium text-ink hover:text-brand-600 hover:border-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              disabled={!isApproved}
+                              onClick={() => remove(it._id)}
+                              className="px-3 py-1.5 rounded-lg border border-line text-xs font-medium text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -466,16 +556,16 @@ export default function VendorItems() {
       {/* Category Picker Modal */}
       {isCategoryPickerOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2.5 sm:p-4 overflow-y-auto"
           onClick={() => setIsCategoryPickerOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto p-6 md:p-8 relative border border-line animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 md:p-8 relative border border-line animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-4 border-b border-line mb-6">
-              <div>
-                <h3 className="font-serif text-2xl font-bold text-wine tracking-tight">
+            <div className="flex items-start sm:items-center justify-between pb-3 sm:pb-4 border-b border-line mb-4 sm:mb-6 gap-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-wine tracking-tight">
                   Choose Service Category
                 </h3>
                 <p className="mt-1 text-xs sm:text-sm text-muted">
@@ -484,13 +574,13 @@ export default function VendorItems() {
               </div>
               <button
                 onClick={() => setIsCategoryPickerOpen(false)}
-                className="text-gray-400 hover:text-ink w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors text-lg cursor-pointer"
+                className="text-gray-400 hover:text-ink w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors text-lg cursor-pointer shrink-0"
               >
                 ✕
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {SERVICE_CATEGORY_CARDS.map((cat) => (
                 <button
                   key={cat.type}
@@ -500,18 +590,18 @@ export default function VendorItems() {
                     setEditingItem(null);
                     setActiveCategoryType(cat.type);
                   }}
-                  className={`text-left p-5 rounded-2xl border-2 border-line/80 bg-gradient-to-br ${cat.bgGradient} ${cat.borderColor} transition-all duration-200 hover:shadow-lg group flex flex-col justify-between cursor-pointer`}
+                  className={`text-left p-4 sm:p-5 rounded-2xl border-2 border-line/80 bg-gradient-to-br ${cat.bgGradient} ${cat.borderColor} transition-all duration-200 hover:shadow-lg group flex flex-col justify-between cursor-pointer`}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-3xl group-hover:scale-110 transition-transform">
+                      <span className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
                         {cat.icon}
                       </span>
-                      <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${cat.badgeColor}`}>
+                      <span className={`text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-0.5 rounded-full border ${cat.badgeColor}`}>
                         {cat.badge}
                       </span>
                     </div>
-                    <h4 className="font-serif text-lg font-bold text-ink group-hover:text-brand-600 transition-colors">
+                    <h4 className="font-serif text-base sm:text-lg font-bold text-ink group-hover:text-brand-600 transition-colors">
                       {cat.title}
                     </h4>
                     <p className="mt-1 text-xs text-muted leading-relaxed">
@@ -519,7 +609,7 @@ export default function VendorItems() {
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-line/60">
+                  <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-line/60">
                     <div className="flex flex-wrap gap-1.5">
                       {cat.highlights.map((h, i) => (
                         <span
@@ -530,7 +620,7 @@ export default function VendorItems() {
                         </span>
                       ))}
                     </div>
-                    <div className="mt-3 text-xs font-semibold text-brand-600 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                    <div className="mt-2.5 sm:mt-3 text-xs font-semibold text-brand-600 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Add {cat.title} →
                     </div>
                   </div>

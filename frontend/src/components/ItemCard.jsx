@@ -13,6 +13,12 @@ export default function ItemCard({ item }) {
     (item.category?.name || "").toLowerCase().includes("venue") ||
     Boolean(item.venueType);
 
+  const isPhotography =
+    item.category?.slug === "photographer-videographer" ||
+    item.category?.slug === "photography" ||
+    (item.category?.name || "").toLowerCase().includes("photograph") ||
+    Boolean(item.photographyPackages?.basic?.price || item.photographyPackages?.standard?.price);
+
   const guestCap = item.guestCapacity || item.capacity || 0;
   const rental = item.rentalPrice || (isVenue ? item.price : 0);
 
@@ -85,6 +91,14 @@ export default function ItemCard({ item }) {
           </div>
         )}
 
+        {isPhotography && item.photographyPackages && (
+          <div className="pt-0.5">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-purple-50 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-full">
+              <span>📷</span> 4 Package Tiers Available
+            </span>
+          </div>
+        )}
+
         <div className="mt-2 pt-2 border-t border-brand-50 flex items-center justify-between">
           {isHotel ? (
             <div className="leading-tight">
@@ -122,6 +136,21 @@ export default function ItemCard({ item }) {
                 <span className="text-base font-bold text-brand-700">
                   ₹{item.price.toLocaleString("en-IN")}
                 </span>
+              ) : (
+                <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">
+                  Price on Request
+                </span>
+              )}
+            </div>
+          ) : isPhotography ? (
+            <div className="leading-tight">
+              {item.price && item.price > 0 ? (
+                <>
+                  <span className="text-[10px] text-muted font-medium block">Packages from</span>
+                  <span className="text-sm font-bold text-brand-700">
+                    ₹{item.price.toLocaleString("en-IN")}
+                  </span>
+                </>
               ) : (
                 <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">
                   Price on Request

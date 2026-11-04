@@ -28,6 +28,14 @@ import {
   deleteAdminVenue,
 } from "../controllers/adminVenueController.js";
 
+import {
+  getAdminPhotographies,
+  getAdminPhotographyDetail,
+  createAdminPhotography,
+  updateAdminPhotography,
+  deleteAdminPhotography,
+} from "../controllers/adminPhotographyController.js";
+
 const router = express.Router();
 const adminOnly = [requireAuth, requireRole("admin")];
 
@@ -57,5 +65,12 @@ router.get("/venues/:id", ...adminOnly, getAdminVenueDetail);
 router.post("/venues", ...adminOnly, createAdminVenue);
 router.put("/venues/:id", ...adminOnly, updateAdminVenue);
 router.delete("/venues/:id", ...adminOnly, deleteAdminVenue);
+
+// Photography Management Routes
+router.get("/photography", ...adminOnly, getAdminPhotographies);
+router.get("/photography/:id", ...adminOnly, getAdminPhotographyDetail);
+router.post("/photography", ...adminOnly, createAdminPhotography);
+router.put("/photography/:id", ...adminOnly, updateAdminPhotography);
+router.delete("/photography/:id", ...adminOnly, deleteAdminPhotography);
 
 export default router;

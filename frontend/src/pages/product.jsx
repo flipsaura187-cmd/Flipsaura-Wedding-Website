@@ -4,6 +4,7 @@ import { useParams, useRouter } from "@/compat/navigation";
 import ServiceAmenities from "@/components/ServiceAmenities";
 import HotelRoomsSection from "@/components/HotelRoomsSection";
 import VenueOverviewSection from "@/components/VenueOverviewSection";
+import PhotographyOverviewSection from "@/components/PhotographyOverviewSection";
 import api from "@/api/axios";
 export default function ProductPage() {
   const { id } = useParams();
@@ -108,6 +109,19 @@ export default function ProductPage() {
     const catSlug = (item.category?.slug || "").toLowerCase();
     const catName = (item.category?.name || "").toLowerCase();
     return catSlug === "venues" || catName.includes("venue") || Boolean(item.venueType);
+  }, [item]);
+
+  const isPhotography = useMemo(() => {
+    if (!item) return false;
+    const catSlug = (item.category?.slug || "").toLowerCase();
+    const catName = (item.category?.name || "").toLowerCase();
+    return (
+      catSlug === "photographer-videographer" ||
+      catSlug === "photography" ||
+      catName.includes("photograph") ||
+      Boolean(item.photographyPackages?.basic?.price || item.photographyPackages?.standard?.price) ||
+      (Array.isArray(item.albums) && item.albums.length > 0)
+    );
   }, [item]);
 
   const handleBookingClick = () => {
@@ -397,6 +411,7 @@ export default function ProductPage() {
                 {/* Info Details below gallery on larger screens */}
                 <div className="pt-6 space-y-6">
                   {isVenue && <VenueOverviewSection item={item} />}
+                  {isPhotography && <PhotographyOverviewSection item={item} />}
 
                   <div>
                     <h3 className="font-serif text-xl font-bold text-ink mb-2">

@@ -21,9 +21,53 @@ const ItemSchema = new mongoose.Schema(
     price: { type: Number, default: 0, min: 0, index: true },
     city: { type: String, trim: true, index: true },
     state: { type: String, trim: true, index: true },
+    address: { type: String, trim: true },
+    pincode: { type: String, trim: true },
     contactPhone: String,
     contactEmail: String,
     capacity: Number,
+    // Photography-specific fields
+    photographyPackages: {
+      basic: {
+        price: { type: Number, default: 0, min: 0 },
+        title: { type: String, default: "Basic Package" },
+        description: { type: String, default: "" },
+        deliverables: [{ type: String, trim: true }],
+      },
+      standard: {
+        price: { type: Number, default: 0, min: 0 },
+        title: { type: String, default: "Standard Package" },
+        description: { type: String, default: "" },
+        deliverables: [{ type: String, trim: true }],
+      },
+      premium: {
+        price: { type: Number, default: 0, min: 0 },
+        title: { type: String, default: "Premium Package" },
+        description: { type: String, default: "" },
+        deliverables: [{ type: String, trim: true }],
+      },
+      luxury: {
+        price: { type: Number, default: 0, min: 0 },
+        title: { type: String, default: "Luxury Package" },
+        description: { type: String, default: "" },
+        deliverables: [{ type: String, trim: true }],
+      },
+    },
+    albums: [
+      {
+        title: { type: String, trim: true },
+        description: { type: String, trim: true },
+        coverImage: { type: String, trim: true },
+        images: [{ type: String, trim: true }],
+        link: { type: String, trim: true },
+      },
+    ],
+    videos: [
+      {
+        title: { type: String, trim: true },
+        url: { type: String, trim: true },
+      },
+    ],
     // Venue-specific fields
     venueType: { type: String, trim: true, index: true },
     locality: { type: String, trim: true, index: true },

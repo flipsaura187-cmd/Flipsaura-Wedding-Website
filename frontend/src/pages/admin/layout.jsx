@@ -39,6 +39,7 @@ export default function AdminLayout() {
     { href: "/admin/dashboard", label: "Dashboard", icon: "📊" },
     { href: "/admin/hotels", label: "Hotels & Rooms", icon: "🏨" },
     { href: "/admin/venues", label: "Venues", icon: "🏛️" },
+    { href: "/admin/photography", label: "Photography", icon: "📷" },
     { href: "/admin/vendors", label: "Vendors", icon: "🏪" },
     { href: "/admin/events", label: "Events", icon: "🏆" },
     { href: "/admin/blogs", label: "Blogs", icon: "📝" },

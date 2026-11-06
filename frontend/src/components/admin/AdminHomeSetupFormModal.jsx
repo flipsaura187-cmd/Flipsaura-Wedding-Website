@@ -51,6 +51,8 @@ export default function AdminHomeSetupFormModal({
 
   const [customSubcategoriesMap, setCustomSubcategoriesMap] = useState({});
   const [customInputs, setCustomInputs] = useState({});
+  const [categoryPhotosMap, setCategoryPhotosMap] = useState({});
+  const [activePhotoCategory, setActivePhotoCategory] = useState("general");
   const [directImageUrl, setDirectImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
@@ -110,8 +112,32 @@ export default function AdminHomeSetupFormModal({
         });
       }
       setCustomSubcategoriesMap(initialCustomMap);
+
+      const initialCatPhotosMap = {};
+      CATALOGUE_GROUPS.forEach((g) => {
+        initialCatPhotosMap[g.name] = [];
+      });
+      if (initialData.categoryPhotosMap && typeof initialData.categoryPhotosMap === "object") {
+        for (const [k, v] of Object.entries(initialData.categoryPhotosMap)) {
+          if (Array.isArray(v)) initialCatPhotosMap[k] = [...v];
+        }
+      } else if (Array.isArray(initialData.categoryPhotos)) {
+        initialData.categoryPhotos.forEach((cp) => {
+          if (cp?.categoryName && Array.isArray(cp.images)) {
+            initialCatPhotosMap[cp.categoryName] = [...cp.images];
+          }
+        });
+      }
+      setCategoryPhotosMap(initialCatPhotosMap);
+      setActivePhotoCategory("general");
     } else {
       setCustomSubcategoriesMap({});
+      const defaultCatPhotosMap = {};
+      CATALOGUE_GROUPS.forEach((g) => {
+        defaultCatPhotosMap[g.name] = [];
+      });
+      setCategoryPhotosMap(defaultCatPhotosMap);
+      setActivePhotoCategory("general");
       setForm({
         title: "",
         ownerName: "",
@@ -282,7 +308,10 @@ export default function AdminHomeSetupFormModal({
     }));
   };
 
-  // Image upload
+  // Image upload & category photo handlers
+  const allCategoryPhotosFlat = Object.values(categoryPhotosMap).flat();
+  const allUniquePhotos = Array.from(new Set([...form.images, ...allCategoryPhotosFlat])).filter(Boolean);
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -294,22 +323,37 @@ export default function AdminHomeSetupFormModal({
     }
 
     setUploadingImage(true);
-    setUploadProgress(`Uploading 1 of ${files.length}...`);
+    const catLabel = activePhotoCategory === "general" ? "Main Listing Cover" : activePhotoCategory;
+    setUploadProgress(`Uploading 1 of ${files.length} for ${catLabel}...`);
     setError("");
 
     try {
       const uploadedUrls = [];
       for (let i = 0; i < files.length; i++) {
-        setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
+        setUploadProgress(`Uploading ${i + 1} of ${files.length} for ${catLabel}...`);
         const file = files[i];
         const url = await uploadFile(file, "flipsaura/homesetup");
         if (url) uploadedUrls.push(url);
       }
 
-      setForm((prev) => ({
-        ...prev,
-        images: [...prev.images, ...uploadedUrls],
-      }));
+      if (activePhotoCategory === "general") {
+        setForm((prev) => ({
+          ...prev,
+          images: [...prev.images, ...uploadedUrls],
+        }));
+      } else {
+        setCategoryPhotosMap((prev) => {
+          const current = prev[activePhotoCategory] || [];
+          return {
+            ...prev,
+            [activePhotoCategory]: Array.from(new Set([...current, ...uploadedUrls])),
+          };
+        });
+        setForm((prev) => ({
+          ...prev,
+          images: Array.from(new Set([...prev.images, ...uploadedUrls])),
+        }));
+      }
     } catch (err) {
       console.error("Upload error:", err);
       setError("Failed to process images.");
@@ -323,10 +367,26 @@ export default function AdminHomeSetupFormModal({
   const handleAddDirectImageUrl = () => {
     const url = directImageUrl.trim();
     if (!url) return;
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.includes(url) ? prev.images : [...prev.images, url],
-    }));
+
+    if (activePhotoCategory === "general") {
+      setForm((prev) => ({
+        ...prev,
+        images: prev.images.includes(url) ? prev.images : [...prev.images, url],
+      }));
+    } else {
+      setCategoryPhotosMap((prev) => {
+        const current = prev[activePhotoCategory] || [];
+        if (current.includes(url)) return prev;
+        return {
+          ...prev,
+          [activePhotoCategory]: [...current, url],
+        };
+      });
+      setForm((prev) => ({
+        ...prev,
+        images: prev.images.includes(url) ? prev.images : [...prev.images, url],
+      }));
+    }
     setDirectImageUrl("");
   };
 
@@ -335,6 +395,26 @@ export default function AdminHomeSetupFormModal({
       ...prev,
       images: prev.images.filter((_, i) => i !== idx),
     }));
+  };
+
+  const removeCategoryPhoto = (catName, targetUrl) => {
+    setCategoryPhotosMap((prev) => {
+      const current = prev[catName] || [];
+      return {
+        ...prev,
+        [catName]: current.filter((u) => u !== targetUrl),
+      };
+    });
+  };
+
+  const setAsCoverPhoto = (targetUrl) => {
+    setForm((prev) => {
+      const remaining = prev.images.filter((u) => u !== targetUrl);
+      return {
+        ...prev,
+        images: [targetUrl, ...remaining],
+      };
+    });
   };
 
   // Submit Handler
@@ -357,6 +437,22 @@ export default function AdminHomeSetupFormModal({
     setSubmitting(true);
 
     try {
+      const allCatPhotos = [];
+      const allCatImagesFlat = [];
+      for (const [catName, imgs] of Object.entries(categoryPhotosMap)) {
+        if (Array.isArray(imgs) && imgs.length > 0) {
+          const grp = CATALOGUE_GROUPS.find((g) => g.name === catName);
+          allCatPhotos.push({
+            categoryName: catName,
+            icon: grp?.icon || "🎪",
+            images: imgs,
+          });
+          allCatImagesFlat.push(...imgs);
+        }
+      }
+
+      const combinedImages = Array.from(new Set([...form.images, ...allCatImagesFlat])).filter(Boolean);
+
       const payload = {
         title: form.title.trim(),
         name: form.title.trim(),
@@ -373,7 +469,9 @@ export default function AdminHomeSetupFormModal({
         rentalPrice: Number(form.rentalPrice || form.price) || 0,
         about: form.about.trim(),
         description: form.description.trim() || form.about.trim(),
-        images: form.images.length > 0 ? form.images : ["https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226355/flipsaura/categories/category_home_setup.png"],
+        images: combinedImages.length > 0 ? combinedImages : ["https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226355/flipsaura/categories/category_home_setup.png"],
+        categoryPhotosMap,
+        categoryPhotos: allCatPhotos,
         mainCategories: form.mainCategories,
         subcategories: form.subcategories,
         customSubcategoriesMap: customSubcategoriesMap,
@@ -473,9 +571,9 @@ export default function AdminHomeSetupFormModal({
             }`}
           >
             <span>📷</span>
-            <span>Photos</span>
-            <span className="ml-1 text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-700">
-              {form.images.length}
+            <span>Category Photos</span>
+            <span className="ml-1 text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
+              {allUniquePhotos.length}
             </span>
           </button>
         </div>
@@ -868,88 +966,408 @@ export default function AdminHomeSetupFormModal({
             </div>
           )}
 
-          {/* TAB 3: PHOTOS & SHOWCASE */}
+          {/* TAB 3: CATEGORY-WISE PHOTOS & SHOWCASE */}
           {activeTab === "photos" && (
             <div className="space-y-6">
-              <div className="p-5 rounded-2xl bg-surface border border-line space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
-                  Upload Setup Photos & Work Portfolio
-                </h4>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <label className="flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-gray-300 hover:border-brand-500 bg-white transition cursor-pointer">
-                    <span className="text-3xl mb-1">📸</span>
-                    <span className="text-xs font-semibold text-ink">
-                      {uploadingImage ? uploadProgress : "Click to Upload Multiple Photos"}
-                    </span>
-                    <span className="text-[11px] text-muted mt-0.5">JPG, PNG, WebP up to 10MB each</span>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      disabled={uploadingImage}
-                      className="hidden"
-                    />
+              {/* Category-Wise Photos Explainer Banner */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-start sm:items-center gap-3">
+                  <span className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xl shrink-0 shadow-xs">
+                    📸
+                  </span>
+                  <div>
+                    <h4 className="font-serif font-bold text-sm sm:text-base text-amber-950">
+                      Category-Wise Setup Photos & Equipment Showcase
+                    </h4>
+                    <p className="text-xs text-amber-900/80 mt-0.5">
+                      Upload photos separately for each equipment category (DJ, Tent, Stage, Furniture, Lighting, etc.). Customers can now view your real photos under each exact service!
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    Total {allUniquePhotos.length} Photos
+                  </span>
+                </div>
+              </div>
+
+              {/* Category Selection Tabs */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📁</span>
+                    <span>Select Service Category to Manage Photos:</span>
                   </label>
+                  <span className="text-[11px] text-muted">Click any category tab below</span>
                 </div>
 
-                <div className="pt-2 flex items-center gap-2">
-                  <input
-                    type="url"
-                    value={directImageUrl}
-                    onChange={(e) => setDirectImageUrl(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddDirectImageUrl();
-                      }
-                    }}
-                    placeholder="Or paste direct image URL (https://...)"
-                    className="flex-1 px-3.5 py-2 rounded-xl border border-line text-xs text-ink focus:outline-none focus:border-brand-500"
-                  />
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {/* General / Cover Button */}
                   <button
                     type="button"
-                    onClick={handleAddDirectImageUrl}
-                    className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-amber-100 text-gray-800 text-xs font-semibold transition cursor-pointer shrink-0"
+                    onClick={() => setActivePhotoCategory("general")}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border ${
+                      activePhotoCategory === "general"
+                        ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                        : "bg-white text-gray-700 border-line hover:border-amber-300 hover:bg-amber-50/50"
+                    }`}
                   >
-                    + Add Image URL
+                    <span>🌟</span>
+                    <span>Main Cover / General</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        activePhotoCategory === "general"
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {form.images.length}
+                    </span>
+                  </button>
+
+                  {/* 7 Catalogue Group Tabs */}
+                  {CATALOGUE_GROUPS.map((grp) => {
+                    const isSelectedInCatalogue = form.mainCategories.includes(grp.name);
+                    const count = (categoryPhotosMap[grp.name] || []).length;
+                    const isActive = activePhotoCategory === grp.name;
+
+                    return (
+                      <button
+                        key={grp.key}
+                        type="button"
+                        onClick={() => setActivePhotoCategory(grp.name)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border ${
+                          isActive
+                            ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                            : isSelectedInCatalogue
+                            ? "bg-white text-ink border-amber-200 hover:border-amber-400 hover:bg-amber-50/40"
+                            : "bg-gray-50/90 text-muted border-line hover:border-gray-300 hover:text-ink"
+                        }`}
+                      >
+                        <span>{grp.icon}</span>
+                        <span>{grp.name}</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : count > 0
+                              ? "bg-amber-100 text-amber-900 border border-amber-300"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {/* View All Combined Tab */}
+                  <button
+                    type="button"
+                    onClick={() => setActivePhotoCategory("all_overview")}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                      activePhotoCategory === "all_overview"
+                        ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                        : "bg-white text-gray-700 border-line hover:border-amber-300"
+                    }`}
+                  >
+                    <span>🖼️</span>
+                    <span>All Photos Overview</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        activePhotoCategory === "all_overview"
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {allUniquePhotos.length}
+                    </span>
                   </button>
                 </div>
               </div>
 
-              {/* Photo Previews */}
-              {form.images.length > 0 && (
-                <div className="space-y-2">
-                  <h5 className="text-xs font-semibold text-ink">
-                    Added Photos ({form.images.length})
-                  </h5>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {form.images.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className="relative group rounded-xl overflow-hidden border border-line aspect-video bg-gray-100"
-                      >
-                        <img
-                          src={img}
-                          alt={`Setup ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(idx)}
-                          className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition cursor-pointer opacity-80 group-hover:opacity-100"
-                          title="Remove photo"
-                        >
-                          ✕
-                        </button>
-                        {idx === 0 && (
-                          <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-600 text-white shadow-2xs">
-                            Cover Image
+              {/* ACTIVE CATEGORY UPLOADER & SHOWCASE */}
+              {activePhotoCategory !== "all_overview" ? (
+                <div className="space-y-4">
+                  {/* Category Info Header */}
+                  {(() => {
+                    const guidance = {
+                      "Tent & Pandal": {
+                        icon: "⛺",
+                        title: "Tent & Pandal Photos",
+                        desc: "Upload photos of waterproof tents, German hangers, royal shamianas, entrance canopies, and luxury pandal setups.",
+                      },
+                      "Furniture & Seating": {
+                        icon: "🪑",
+                        title: "Furniture & Seating Photos",
+                        desc: "Upload photos of VIP sofas, bride & groom seating, banquet chairs, round dining tables, and lounge setups.",
+                      },
+                      "Stage & Decoration": {
+                        icon: "🌸",
+                        title: "Stage & Decoration Photos",
+                        desc: "Upload photos of wedding stages, floral mandap setups, LED backdrop screens, and red carpet entrance decor.",
+                      },
+                      "DJ & Sound System": {
+                        icon: "🔊",
+                        title: "DJ & Sound System Photos",
+                        desc: "Upload photos of professional DJ consoles, line array systems, heavy bass subwoofers, live microphones, and dance floors.",
+                      },
+                      "Lighting & Special Effects": {
+                        icon: "💡",
+                        title: "Lighting & Special Effects Photos",
+                        desc: "Upload photos of LED par lights, moving heads, lasers, serial lights, disco floors, and cold pyro celebrations.",
+                      },
+                      "Power & Generator": {
+                        icon: "⚡",
+                        title: "Power & Generator Photos",
+                        desc: "Upload photos of silent DG sets, heavy power backup generators, distribution boards, and electrical switchgear.",
+                      },
+                      "Additional Facilities": {
+                        icon: "🚪",
+                        title: "Additional Facilities Photos",
+                        desc: "Upload photos of portable green rooms, bridal changing rooms, AC/cooler setups, mist fans, and parking arrangements.",
+                      },
+                      general: {
+                        icon: "🌟",
+                        title: "Main Listing Cover & General Setup Photos",
+                        desc: "Upload primary photos for your search card cover, exterior pandal views, and overall wedding portfolio.",
+                      },
+                    };
+                    const curMeta = guidance[activePhotoCategory] || {
+                      icon: "🎪",
+                      title: `${activePhotoCategory} Photos`,
+                      desc: `Upload photos specifically for ${activePhotoCategory}. Customers viewing this service will see these photos.`,
+                    };
+
+                    const currentCategoryPhotos =
+                      activePhotoCategory === "general"
+                        ? form.images
+                        : (categoryPhotosMap[activePhotoCategory] || []);
+
+                    return (
+                      <div className="p-5 rounded-2xl bg-surface border border-line space-y-4">
+                        <div className="flex items-center justify-between gap-3 border-b border-line/70 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-2xl">{curMeta.icon}</span>
+                            <div>
+                              <h4 className="font-bold text-sm text-ink">{curMeta.title}</h4>
+                              <p className="text-[11px] text-muted mt-0.5">{curMeta.desc}</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 shrink-0">
+                            {currentCategoryPhotos.length} {currentCategoryPhotos.length === 1 ? "Photo" : "Photos"}
                           </span>
+                        </div>
+
+                        {/* File Upload Dropzone */}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <label className="flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-amber-300 hover:border-amber-500 bg-white transition cursor-pointer group shadow-2xs">
+                            <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">
+                              {curMeta.icon || "📸"}
+                            </span>
+                            <span className="text-xs font-semibold text-ink">
+                              {uploadingImage ? uploadProgress : `Click to Upload Photos for ${curMeta.title}`}
+                            </span>
+                            <span className="text-[11px] text-muted mt-0.5">
+                              JPG, PNG, WebP up to 10MB each (Multi-select allowed)
+                            </span>
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              onChange={handleFileUpload}
+                              disabled={uploadingImage}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+
+                        {/* Direct URL Input */}
+                        <div className="pt-1 flex items-center gap-2">
+                          <input
+                            type="url"
+                            value={directImageUrl}
+                            onChange={(e) => setDirectImageUrl(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddDirectImageUrl();
+                              }
+                            }}
+                            placeholder={`Or paste direct image URL for ${curMeta.title} (https://...)`}
+                            className="flex-1 px-3.5 py-2 rounded-xl border border-line text-xs text-ink focus:outline-none focus:border-amber-500 bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddDirectImageUrl}
+                            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs"
+                          >
+                            + Add Image URL
+                          </button>
+                        </div>
+
+                        {/* Photos Grid for this Active Category */}
+                        {currentCategoryPhotos.length > 0 ? (
+                          <div className="pt-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h5 className="text-xs font-bold text-ink">
+                                Uploaded Photos ({currentCategoryPhotos.length})
+                              </h5>
+                              <span className="text-[11px] text-muted">
+                                Top photo or set cover becomes main listing card image
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              {currentCategoryPhotos.map((img, idx) => {
+                                const isMainCover = form.images?.[0] === img;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className="relative group rounded-xl overflow-hidden border border-line aspect-video bg-gray-100 shadow-2xs"
+                                  >
+                                    <img
+                                      src={img}
+                                      alt={`${curMeta.title} ${idx + 1}`}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+
+                                    {/* Action buttons */}
+                                    <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (activePhotoCategory === "general") {
+                                            removeImage(idx);
+                                          } else {
+                                            removeCategoryPhoto(activePhotoCategory, img);
+                                          }
+                                        }}
+                                        className="w-7 h-7 rounded-full bg-black/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition cursor-pointer shadow"
+                                        title="Remove this photo"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+
+                                    {/* Set as Cover button on hover */}
+                                    {!isMainCover && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setAsCoverPhoto(img)}
+                                        className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition px-2 py-0.5 rounded-md bg-black/70 hover:bg-amber-600 text-white text-[10px] font-bold shadow-xs cursor-pointer"
+                                      >
+                                        Set as Cover
+                                      </button>
+                                    )}
+
+                                    {isMainCover && (
+                                      <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-600 text-white shadow-2xs">
+                                        ⭐ Main Cover
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-8 rounded-xl border-2 border-dashed border-gray-200 bg-white/70 text-center space-y-2">
+                            <span className="text-3xl block">{curMeta.icon}</span>
+                            <p className="text-xs font-semibold text-ink">
+                              No photos added for {curMeta.title} yet
+                            </p>
+                            <p className="text-[11px] text-muted max-w-sm mx-auto">
+                              Add photos above so customers can see your actual equipment and setup work when viewing {curMeta.title}!
+                            </p>
+                          </div>
                         )}
                       </div>
-                    ))}
+                    );
+                  })()}
+                </div>
+              ) : (
+                /* ALL PHOTOS OVERVIEW VIEW */
+                <div className="space-y-6">
+                  {/* General Cover Photos */}
+                  <div className="p-5 rounded-2xl bg-white border border-line space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">🌟</span>
+                        <h4 className="font-bold text-sm text-ink">Main Cover & General Photos</h4>
+                      </div>
+                      <span className="text-xs font-bold text-muted bg-gray-100 px-2 py-0.5 rounded-full">
+                        {form.images.length} Photos
+                      </span>
+                    </div>
+
+                    {form.images.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {form.images.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className="relative group rounded-xl overflow-hidden border border-line aspect-video bg-gray-100"
+                          >
+                            <img src={img} alt={`General ${idx + 1}`} className="w-full h-full object-cover" />
+                            {idx === 0 && (
+                              <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-600 text-white shadow-2xs">
+                                ⭐ Primary Cover
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted italic">No general photos added.</p>
+                    )}
                   </div>
+
+                  {/* Each Subcategory Breakdown */}
+                  {CATALOGUE_GROUPS.map((grp) => {
+                    const imgs = categoryPhotosMap[grp.name] || [];
+                    if (imgs.length === 0) return null;
+
+                    return (
+                      <div key={grp.key} className="p-5 rounded-2xl bg-white border border-line space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{grp.icon}</span>
+                            <h4 className="font-bold text-sm text-ink">{grp.name}</h4>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                              {imgs.length} Photos
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setActivePhotoCategory(grp.name)}
+                              className="text-xs font-semibold text-amber-600 hover:text-amber-700 underline cursor-pointer"
+                            >
+                              Manage
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {imgs.map((img, iIdx) => (
+                            <div
+                              key={iIdx}
+                              className="relative group rounded-xl overflow-hidden border border-line aspect-video bg-gray-100"
+                            >
+                              <img src={img} alt={`${grp.name} ${iIdx + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeCategoryPhoto(grp.name, img)}
+                                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition cursor-pointer opacity-80 group-hover:opacity-100"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

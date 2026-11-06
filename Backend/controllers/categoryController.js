@@ -1,9 +1,24 @@
 import { dbConnect } from "../lib/db.js";
 import Category from "../models/Category.js";
 
+const EXCLUDED_SLUGS = [
+  "tent-pandal",
+  "furniture-seating",
+  "stage-decoration",
+  "dj-sound-system",
+  "lighting-special-effects",
+  "power-generator",
+  "additional-facilities",
+  "venues-resorts",
+];
+
 export async function getCategories(req, res) {
   await dbConnect();
-  const categories = await Category.find({}).sort({ order: 1, name: 1 }).lean();
+  const categories = await Category.find({
+    slug: { $nin: EXCLUDED_SLUGS },
+  })
+    .sort({ order: 1, name: 1 })
+    .lean();
   res.json({ ok: true, data: { categories } });
 }
 

@@ -4,6 +4,7 @@ import { useParams, useRouter, useSearchParams } from "@/compat/navigation";
 import ItemCard from "@/components/ItemCard";
 import Pagination from "@/components/Pagination";
 import VenueListingView from "@/components/venue/VenueListingView";
+import HomeSetupListingView from "@/components/homesetup/HomeSetupListingView";
 import api from "@/api/axios";
 
 const ALL_BIHAR_DISTRICTS = [
@@ -53,6 +54,9 @@ export default function CategoryPage() {
   const { slug } = useParams();
   if (slug === "venues") {
     return <VenueListingView />;
+  }
+  if (slug === "home-setup-pandal-tent-dj" || slug === "home-setup") {
+    return <HomeSetupListingView />;
   }
   const router = useRouter();
   const sp = useSearchParams();

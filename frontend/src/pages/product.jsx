@@ -6,6 +6,7 @@ import HotelRoomsSection from "@/components/HotelRoomsSection";
 import VenueOverviewSection from "@/components/VenueOverviewSection";
 import PhotographyOverviewSection from "@/components/PhotographyOverviewSection";
 import MehandiOverviewSection from "@/components/MehandiOverviewSection";
+import HomeSetupOverviewSection from "@/components/HomeSetupOverviewSection";
 import api from "@/api/axios";
 export default function ProductPage() {
   const { id } = useParams();
@@ -136,6 +137,17 @@ export default function ProductPage() {
       catName.includes("mehndi") ||
       catName.includes("mehandi") ||
       Boolean(item.mehandiPackages?.basic?.price || item.mehandiPackages?.standard?.price)
+    );
+  }, [item]);
+
+  const isHomeSetup = useMemo(() => {
+    if (!item) return false;
+    const catSlug = (item.category?.slug || "").toLowerCase();
+    const catName = (item.category?.name || "").toLowerCase();
+    return (
+      catSlug.includes("home-setup") ||
+      catName.includes("home setup") ||
+      (Array.isArray(item.mainCategories) && item.mainCategories.length > 0)
     );
   }, [item]);
 
@@ -484,6 +496,7 @@ export default function ProductPage() {
                       onSelectPackage={setSelectedPackage}
                     />
                   )}
+                  {isHomeSetup && <HomeSetupOverviewSection item={item} />}
 
                   <div>
                     <h3 className="font-serif text-xl font-bold text-ink mb-2">

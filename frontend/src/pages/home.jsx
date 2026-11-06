@@ -197,10 +197,22 @@ export default function HomePage() {
     "invites-gifts",              // Invite gift sbse neeche
   ];
 
-  const rawCategories =
+  const EXCLUDED_SLUGS = [
+    "tent-pandal",
+    "furniture-seating",
+    "stage-decoration",
+    "dj-sound-system",
+    "lighting-special-effects",
+    "power-generator",
+    "additional-facilities",
+    "venues-resorts",
+  ];
+
+  const rawCategories = (
     data.categories && data.categories.length > 0
       ? data.categories
-      : defaultCategories;
+      : defaultCategories
+  ).filter((c) => !EXCLUDED_SLUGS.includes(c.slug));
 
   const categoriesToRender = [...rawCategories].sort((a, b) => {
     const idxA = orderedSlugs.indexOf(a.slug);

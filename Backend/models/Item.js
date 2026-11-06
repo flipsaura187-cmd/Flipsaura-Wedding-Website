@@ -111,6 +111,14 @@ const ItemSchema = new mongoose.Schema(
     mainCategories: [{ type: String, trim: true, index: true }],
     subcategories: [{ type: String, trim: true, index: true }],
     customSubcategoriesMap: { type: mongoose.Schema.Types.Mixed, default: {} },
+    categoryPhotos: [
+      {
+        categoryName: { type: String, trim: true },
+        icon: { type: String, default: "" },
+        images: [{ type: String, trim: true }],
+      },
+    ],
+    categoryPhotosMap: { type: mongoose.Schema.Types.Mixed, default: {} },
     rating: { type: Number, default: 0 },
     reviewsCount: { type: Number, default: 0 },
     active: { type: Boolean, default: true, index: true },

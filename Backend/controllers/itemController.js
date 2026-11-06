@@ -199,13 +199,40 @@ export async function getItems(req, res) {
   if (req.query.category) {
     const slug = req.query.category;
     const cat = await Category.findOne({
-      $or: [{ slug }, ...(slug === "hotels-resorts" ? [{ slug: "hotels" }] : [])]
+      $or: [
+        { slug },
+        ...(slug === "hotels-resorts" ? [{ slug: "hotels" }] : []),
+        ...(slug === "home-setup" ? [{ slug: "home-setup-pandal-tent-dj" }] : []),
+      ]
     }).lean();
     if (!cat) return res.json({ ok: true, data: { items: [], total: 0, page, totalPages: 0 } });
-    q.category = cat._id;
+    if (slug === "home-setup-pandal-tent-dj" || slug === "home-setup") {
+      q.$or = [
+        { category: cat._id },
+        { "mainCategories.0": { $exists: true } },
+      ];
+    } else {
+      q.category = cat._id;
+    }
   }
 
   const andConditions = [];
+
+  // Main Category / Catalogue Group filter (e.g. Tent & Pandal, Furniture & Seating)
+  const mainCategoryQuery = (req.query.mainCategory || req.query.catalogueGroup || "").trim();
+  if (mainCategoryQuery && mainCategoryQuery !== "all") {
+    andConditions.push({
+      mainCategories: new RegExp(`^${escapeRegex(mainCategoryQuery)}$`, "i"),
+    });
+  }
+
+  // Subcategory filter (e.g. Waterproof Tent, VIP Sofa)
+  const subcategoryQuery = (req.query.subcategory || "").trim();
+  if (subcategoryQuery && subcategoryQuery !== "all") {
+    andConditions.push({
+      subcategories: new RegExp(`^${escapeRegex(subcategoryQuery)}$`, "i"),
+    });
+  }
 
   if (req.query.q?.trim()) {
     const rawQ = req.query.q.trim();
@@ -217,6 +244,8 @@ export async function getItems(req, res) {
         { state: new RegExp(escapedQ, "i") },
         { about: new RegExp(escapedQ, "i") },
         { description: new RegExp(escapedQ, "i") },
+        { mainCategories: new RegExp(escapedQ, "i") },
+        { subcategories: new RegExp(escapedQ, "i") },
       ],
     });
   }

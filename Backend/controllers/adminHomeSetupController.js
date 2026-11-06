@@ -63,6 +63,44 @@ export async function getAdminHomeSetups(req, res) {
   }
 }
 
+function normalizeCategoryPhotos(categoryPhotosMap, categoryPhotos) {
+  let cleanMap = {};
+  if (categoryPhotosMap && typeof categoryPhotosMap === "object") {
+    for (const [catName, imgs] of Object.entries(categoryPhotosMap)) {
+      if (Array.isArray(imgs)) {
+        cleanMap[catName] = imgs.map((s) => String(s).trim()).filter(Boolean);
+      }
+    }
+  }
+
+  if (Array.isArray(categoryPhotos)) {
+    for (const entry of categoryPhotos) {
+      if (entry && entry.categoryName) {
+        const imgs = Array.isArray(entry.images) ? entry.images.map((s) => String(s).trim()).filter(Boolean) : [];
+        cleanMap[entry.categoryName] = Array.from(new Set([...(cleanMap[entry.categoryName] || []), ...imgs]));
+      }
+    }
+  }
+
+  const ICON_MAP = {
+    "Tent & Pandal": "⛺",
+    "Furniture & Seating": "🪑",
+    "Stage & Decoration": "🌸",
+    "DJ & Sound System": "🔊",
+    "Lighting & Special Effects": "💡",
+    "Power & Generator": "⚡",
+    "Additional Facilities": "🚪",
+  };
+
+  const structuredList = Object.entries(cleanMap).map(([catName, imgs]) => ({
+    categoryName: catName,
+    icon: ICON_MAP[catName] || "🎪",
+    images: imgs,
+  }));
+
+  return { cleanMap, structuredList };
+}
+
 /**
  * Get single Home Setup listing detail
  */
@@ -110,6 +148,8 @@ export async function createAdminHomeSetup(req, res) {
       description,
       photos = [],
       images = [],
+      categoryPhotosMap = {},
+      categoryPhotos = [],
       mainCategories = [],
       subcategories = [],
       customSubcategoriesMap = {},
@@ -167,9 +207,14 @@ export async function createAdminHomeSetup(req, res) {
       });
     }
 
-    // Process images
+    // Process images and category-specific photos
+    const { cleanMap, structuredList } = normalizeCategoryPhotos(categoryPhotosMap, categoryPhotos);
+    const allCatPhotos = Object.values(cleanMap).flat();
+
     const rawImages = Array.isArray(photos) && photos.length > 0 ? photos : (Array.isArray(images) ? images : []);
-    const cleanImages = rawImages.map((img) => String(img).trim()).filter(Boolean);
+    const userImages = rawImages.map((img) => String(img).trim()).filter(Boolean);
+    let cleanImages = Array.from(new Set([...userImages, ...allCatPhotos]));
+
     if (cleanImages.length === 0) {
       cleanImages.push("https://res.cloudinary.com/dvvpsnea0/image/upload/v1792226355/flipsaura/categories/category_home_setup.png");
     }
@@ -194,6 +239,8 @@ export async function createAdminHomeSetup(req, res) {
       about: about?.trim() || `${finalTitle} provides comprehensive home wedding setups, pandal, tent, sound, stage & lighting services in ${city}, ${state}.`,
       description: description?.trim() || about?.trim() || `${finalTitle} specializes in flawless event setups for wedding ceremonies, sangeet, reception, and family functions at home.`,
       images: cleanImages,
+      categoryPhotosMap: cleanMap,
+      categoryPhotos: structuredList,
       mainCategories: Array.isArray(mainCategories) ? mainCategories : [],
       subcategories: Array.isArray(subcategories) ? subcategories : [],
       customSubcategoriesMap: typeof customSubcategoriesMap === "object" && customSubcategoriesMap !== null ? customSubcategoriesMap : {},
@@ -260,6 +307,8 @@ export async function updateAdminHomeSetup(req, res) {
       description,
       photos,
       images,
+      categoryPhotosMap,
+      categoryPhotos,
       mainCategories,
       subcategories,
       customSubcategoriesMap,
@@ -291,6 +340,19 @@ export async function updateAdminHomeSetup(req, res) {
 
     if (photos !== undefined) item.images = (Array.isArray(photos) ? photos : []).filter(Boolean);
     else if (images !== undefined) item.images = (Array.isArray(images) ? images : []).filter(Boolean);
+
+    if (categoryPhotosMap !== undefined || categoryPhotos !== undefined) {
+      const { cleanMap, structuredList } = normalizeCategoryPhotos(categoryPhotosMap, categoryPhotos);
+      item.categoryPhotosMap = cleanMap;
+      item.categoryPhotos = structuredList;
+      item.markModified("categoryPhotosMap");
+      item.markModified("categoryPhotos");
+
+      const allCatImgs = Object.values(cleanMap).flat();
+      if (allCatImgs.length > 0) {
+        item.images = Array.from(new Set([...(item.images || []), ...allCatImgs]));
+      }
+    }
 
     if (mainCategories !== undefined) {
       item.mainCategories = Array.isArray(mainCategories) ? mainCategories : [];

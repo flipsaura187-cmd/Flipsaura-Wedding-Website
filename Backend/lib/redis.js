@@ -1,19 +1,72 @@
 import Redis from "ioredis";
 
 /**
- * Shared Redis Client for FlipsAura Authentication.
+ * Shared Redis Client and Dual-Tier Cache for FlipsAura.
  * Connects via process.env.REDIS_URL.
  *
  * Reliability Guarantees:
  * 1. Single reusable singleton client across the backend lifecycle.
  * 2. enableOfflineQueue: false ensures requests never stall or hang if Redis is offline.
- * 3. Every helper function catches Redis errors and degrades gracefully to null/false,
- *    allowing the MongoDB-based authentication flow to proceed uninterrupted.
+ * 3. In-memory L1 cache (MemoryCache) fallback ensures that all caching operations
+ *    succeed at 0ms latency even when Redis is offline or running in local dev.
+ * 4. Safe degradations across all cache calls without unhandled rejections.
  */
 
 let redisClient = null;
 let isConnected = false;
 let hasLoggedOfflineWarning = false;
+
+// In-Memory L1 Cache with TTL and LRU expiration
+class MemoryCache {
+  constructor(maxSize = 2000) {
+    this.cache = new Map();
+    this.maxSize = maxSize;
+  }
+
+  get(key) {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.val;
+  }
+
+  set(key, val, ttlSeconds = 300) {
+    if (this.cache.size >= this.maxSize) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) this.cache.delete(oldestKey);
+    }
+    const expiry = Date.now() + Math.max(1, ttlSeconds) * 1000;
+    this.cache.set(key, { val, expiry });
+  }
+
+  del(...keys) {
+    let count = 0;
+    for (const k of keys) {
+      if (this.cache.delete(k)) count++;
+    }
+    return count;
+  }
+
+  delByPrefix(prefix) {
+    let count = 0;
+    for (const k of this.cache.keys()) {
+      if (k.startsWith(prefix)) {
+        this.cache.delete(k);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+}
+
+const localCache = new MemoryCache(3000);
 
 export function getRedisClient() {
   if (redisClient) return redisClient;
@@ -21,7 +74,7 @@ export function getRedisClient() {
   const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) {
     if (!hasLoggedOfflineWarning) {
-      console.warn("[Redis] REDIS_URL environment variable is not defined. Caching is disabled.");
+      console.warn("[Redis] REDIS_URL not configured. Operating in high-performance in-memory cache mode.");
       hasLoggedOfflineWarning = true;
     }
     return null;
@@ -34,7 +87,7 @@ export function getRedisClient() {
       enableOfflineQueue: false,
       lazyConnect: false,
       retryStrategy: (times) => {
-        if (times > 10) return 10000;
+        if (times > 5) return 15000;
         return Math.min(times * 1000, 10000);
       },
     });
@@ -52,7 +105,7 @@ export function getRedisClient() {
     redisClient.on("error", (err) => {
       isConnected = false;
       if (!hasLoggedOfflineWarning) {
-        console.warn(`[Redis] Connection warning (${err.message}). Authentication will fall back to MongoDB gracefully.`);
+        console.warn(`[Redis] Connection warning (${err.message}). In-memory L1 cache active.`);
         hasLoggedOfflineWarning = true;
       }
     });
@@ -74,6 +127,23 @@ getRedisClient();
 
 export function isRedisReady() {
   return Boolean(redisClient && isConnected && redisClient.status === "ready");
+}
+
+/**
+ * Deterministic hash/serialization of query parameters
+ */
+export function hashQuery(queryObj = {}) {
+  const keys = Object.keys(queryObj).filter(
+    (k) =>
+      queryObj[k] !== undefined &&
+      queryObj[k] !== null &&
+      String(queryObj[k]).trim() !== ""
+  );
+  keys.sort();
+  const sorted = keys
+    .map((k) => `${k}=${String(queryObj[k]).trim()}`)
+    .join("&");
+  return sorted || "default";
 }
 
 /**
@@ -147,8 +217,75 @@ export async function redisDel(...keys) {
 }
 
 /**
+ * Unified Cache GET (Tries Redis -> falls back to MemoryCache)
+ */
+export async function cacheGetJSON(key) {
+  if (isRedisReady()) {
+    try {
+      const data = await redisGetJSON(key);
+      if (data !== null && data !== undefined) return data;
+    } catch {
+      // Fall through to memory cache
+    }
+  }
+  return localCache.get(key);
+}
+
+/**
+ * Unified Cache SET (Sets in MemoryCache and Redis)
+ */
+export async function cacheSetJSON(key, value, ttlSeconds = 300) {
+  localCache.set(key, value, ttlSeconds);
+  if (isRedisReady()) {
+    try {
+      await redisSetJSON(key, value, ttlSeconds);
+    } catch {
+      // Degrade gracefully
+    }
+  }
+  return true;
+}
+
+/**
+ * Unified Cache DEL
+ */
+export async function cacheDel(...keys) {
+  localCache.del(...keys);
+  if (isRedisReady()) {
+    try {
+      await redisDel(...keys);
+    } catch {
+      // Degrade gracefully
+    }
+  }
+  return true;
+}
+
+/**
+ * Unified Cache DEL by Prefix
+ */
+export async function cacheDelByPrefix(prefix) {
+  localCache.delByPrefix(prefix);
+  if (isRedisReady()) {
+    try {
+      const client = getRedisClient();
+      if (client) {
+        const stream = client.scanStream({ match: `${prefix}*`, count: 100 });
+        stream.on("data", async (resultKeys) => {
+          if (Array.isArray(resultKeys) && resultKeys.length > 0) {
+            await client.del(...resultKeys);
+          }
+        });
+      }
+    } catch {
+      // Degrade gracefully
+    }
+  }
+  return true;
+}
+
+/**
  * Safe atomic lock SET NX EX wrapper
- * Returns true if the key was set (lock acquired), false if already exists or error.
  */
 export async function redisAcquireLock(key, ttlSeconds = 15) {
   try {
@@ -206,7 +343,78 @@ export async function invalidateUserAuthCache(email, userId = null) {
   if (userId) {
     keys.push(`auth:session:${String(userId)}`);
   }
+  localCache.del(...keys);
   return await redisDel(...keys);
+}
+
+/**
+ * Domain-specific Invalidation Helpers
+ */
+export async function invalidateItemCache(itemId = null) {
+  await cacheDelByPrefix("items:");
+  await cacheDelByPrefix("item:");
+  await cacheDelByPrefix("filter-options:");
+  if (itemId) {
+    await cacheDel(`item:${String(itemId)}`);
+  }
+}
+
+export async function invalidateHotelCache(hotelId = null) {
+  await cacheDelByPrefix("hotels:");
+  await cacheDelByPrefix("hotel:");
+  await cacheDelByPrefix("admin:hotels:");
+  await invalidateItemCache(hotelId);
+  if (hotelId) {
+    await cacheDel(`hotel:${String(hotelId)}`, `admin:hotel:${String(hotelId)}`);
+  }
+}
+
+export async function invalidateVenueCache(venueId = null) {
+  await cacheDelByPrefix("venues:");
+  await cacheDelByPrefix("venue:");
+  await cacheDelByPrefix("admin:venues:");
+  await invalidateItemCache(venueId);
+  if (venueId) {
+    await cacheDel(`venue:${String(venueId)}`, `admin:venue:${String(venueId)}`);
+  }
+}
+
+export async function invalidateCategoryCache(slug = null) {
+  await cacheDelByPrefix("categories:");
+  await cacheDelByPrefix("category:");
+  await cacheDelByPrefix("filter-options:");
+  if (slug) {
+    await cacheDel(`category:${String(slug).toLowerCase()}`);
+  }
+}
+
+export async function invalidateRoomCache(roomId = null, hotelId = null) {
+  await cacheDelByPrefix("rooms:");
+  await cacheDelByPrefix("room:");
+  if (hotelId) {
+    await cacheDel(`rooms:hotel:${String(hotelId)}`);
+    await invalidateHotelCache(hotelId);
+  }
+  if (roomId) {
+    await cacheDel(`room:${String(roomId)}`);
+  }
+}
+
+export async function invalidateBlogCache(slugOrId = null) {
+  await cacheDelByPrefix("blogs:");
+  if (slugOrId) {
+    await cacheDel(`blog:${String(slugOrId).toLowerCase()}`);
+  }
+}
+
+export async function invalidateEventCache(slug = null, id = null) {
+  await cacheDelByPrefix("events:");
+  if (slug) {
+    await cacheDel(`event:${String(slug).toLowerCase()}`);
+  }
+  if (id) {
+    await cacheDel(`event:${String(id)}`);
+  }
 }
 
 export default {
@@ -217,9 +425,20 @@ export default {
   redisSet,
   redisSetJSON,
   redisDel,
+  cacheGetJSON,
+  cacheSetJSON,
+  cacheDel,
+  cacheDelByPrefix,
+  hashQuery,
   redisAcquireLock,
   redisReleaseLock,
   redisIncrWithTTL,
   invalidateUserAuthCache,
+  invalidateItemCache,
+  invalidateHotelCache,
+  invalidateVenueCache,
+  invalidateCategoryCache,
+  invalidateRoomCache,
+  invalidateBlogCache,
+  invalidateEventCache,
 };
-

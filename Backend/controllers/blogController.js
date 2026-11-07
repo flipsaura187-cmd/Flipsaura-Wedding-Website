@@ -1,6 +1,12 @@
 import sanitizeHtml from "sanitize-html";
 import { dbConnect } from "../lib/db.js";
 import Blog from "../models/Blog.js";
+import {
+  cacheGetJSON,
+  cacheSetJSON,
+  hashQuery,
+  invalidateBlogCache,
+} from "../lib/redis.js";
 
 // HTML Sanitization configuration supporting rich text, links, images, and video embeds
 const sanitizeOptions = {
@@ -43,6 +49,17 @@ function slugify(text) {
 
 // Public: GET /api/blogs (published only)
 export async function getBlogs(req, res) {
+  const cacheKey = `blogs:${hashQuery(req.query)}`;
+  try {
+    const cached = await cacheGetJSON(cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached);
+    }
+  } catch (err) {
+    console.error("Cache read error getBlogs:", err);
+  }
+
   await dbConnect();
   const page = Math.max(1, parseInt(req.query.page || "1", 10));
   const limit = Math.max(1, parseInt(req.query.limit || "9", 10));
@@ -64,31 +81,62 @@ export async function getBlogs(req, res) {
     Blog.countDocuments(filter),
   ]);
 
-  res.json({
+  const payload = {
     ok: true,
     blogs,
     data: blogs,
     total,
     page,
     totalPages: Math.ceil(total / limit) || 1,
-  });
+  };
+
+  try {
+    await cacheSetJSON(cacheKey, payload, 300); // 5 min cache
+  } catch (err) {
+    console.error("Cache write error getBlogs:", err);
+  }
+
+  res.setHeader("X-Cache", "MISS");
+  res.json(payload);
 }
 
 // Public: GET /api/blogs/:slug (published only)
 export async function getBlog(req, res) {
-  await dbConnect();
   const { slug } = req.params;
+  const normalizedSlug = String(slug || "").toLowerCase().trim();
+  const cacheKey = `blog:${normalizedSlug}`;
 
-  const blog = await Blog.findOne({ slug: slug.toLowerCase(), status: "published" });
+  try {
+    const cached = await cacheGetJSON(cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached);
+    }
+  } catch (err) {
+    console.error("Cache read error getBlog:", err);
+  }
+
+  await dbConnect();
+
+  const blog = await Blog.findOne({ slug: normalizedSlug, status: "published" });
   if (!blog) {
     return res.status(404).json({ ok: false, error: "Blog post not found or is unpublished" });
   }
 
-  res.json({
+  const payload = {
     ok: true,
     blog,
     data: blog,
-  });
+  };
+
+  try {
+    await cacheSetJSON(cacheKey, payload, 600); // 10 min cache
+  } catch (err) {
+    console.error("Cache write error getBlog:", err);
+  }
+
+  res.setHeader("X-Cache", "MISS");
+  res.json(payload);
 }
 
 // Admin only: GET /api/admin/blogs (drafts + published)
@@ -139,6 +187,7 @@ export async function createBlog(req, res) {
   };
 
   const blog = await Blog.create(blogData);
+  await invalidateBlogCache(blog.slug);
   res.status(201).json({ ok: true, blog, data: blog, message: "Blog post created successfully" });
 }
 
@@ -189,6 +238,7 @@ export async function updateBlog(req, res) {
     return res.status(404).json({ ok: false, error: "Blog post not found" });
   }
 
+  await invalidateBlogCache(blog.slug);
   res.json({ ok: true, blog, data: blog, message: "Blog post updated successfully" });
 }
 
@@ -206,6 +256,7 @@ export async function deleteBlog(req, res) {
     return res.status(404).json({ ok: false, error: "Blog post not found" });
   }
 
+  await invalidateBlogCache(blog.slug || idOrSlug);
   res.json({ ok: true, message: "Blog post deleted successfully" });
 }
 
@@ -228,6 +279,7 @@ export async function publishBlog(req, res) {
     return res.status(404).json({ ok: false, error: "Blog post not found" });
   }
 
+  await invalidateBlogCache(blog.slug);
   res.json({ ok: true, blog, data: blog, message: "Blog published successfully" });
 }
 
@@ -250,5 +302,6 @@ export async function unpublishBlog(req, res) {
     return res.status(404).json({ ok: false, error: "Blog post not found" });
   }
 
+  await invalidateBlogCache(blog.slug);
   res.json({ ok: true, blog, data: blog, message: "Blog unpublished (moved to drafts)" });
 }

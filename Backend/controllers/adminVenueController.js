@@ -2,6 +2,12 @@ import { dbConnect } from "../lib/db.js";
 import Item from "../models/Item.js";
 import Category from "../models/Category.js";
 import User from "../models/User.js";
+import {
+  cacheGetJSON,
+  cacheSetJSON,
+  hashQuery,
+  invalidateVenueCache,
+} from "../lib/redis.js";
 
 function slugify(text) {
   return String(text || "")
@@ -24,6 +30,13 @@ export const VENUE_PRIMARY_CATEGORIES = [
  */
 export async function getAdminVenues(req, res) {
   try {
+    const cacheKey = `venues:admin:list:${hashQuery(req.query)}`;
+    const cached = await cacheGetJSON(cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json({ ok: true, data: cached });
+    }
+
     await dbConnect();
 
     // 1. Locate venue category
@@ -120,21 +133,26 @@ export async function getAdminVenues(req, res) {
       venueFeatures: Array.isArray(v.venueFeatures) ? v.venueFeatures : [],
     }));
 
+    const responseData = {
+      venues: formattedVenues,
+      totalVenues: formattedVenues.length,
+      stats: {
+        total: allVenues.length,
+        banquetHalls: banquetHallsCount,
+        marriageLawns: marriageLawnsCount,
+        weddingResorts: weddingResortsCount,
+        partyHalls: partyHallsCount,
+        citiesCount: citiesSet.size,
+        cities: Array.from(citiesSet).sort(),
+      },
+    };
+
+    await cacheSetJSON(cacheKey, responseData, 60);
+    res.setHeader("X-Cache", "MISS");
+
     return res.json({
       ok: true,
-      data: {
-        venues: formattedVenues,
-        totalVenues: formattedVenues.length,
-        stats: {
-          total: allVenues.length,
-          banquetHalls: banquetHallsCount,
-          marriageLawns: marriageLawnsCount,
-          weddingResorts: weddingResortsCount,
-          partyHalls: partyHallsCount,
-          citiesCount: citiesSet.size,
-          cities: Array.from(citiesSet).sort(),
-        },
-      },
+      data: responseData,
     });
   } catch (error) {
     console.error("getAdminVenues error:", error);
@@ -147,8 +165,15 @@ export async function getAdminVenues(req, res) {
  */
 export async function getAdminVenueDetail(req, res) {
   try {
-    await dbConnect();
     const { id } = req.params;
+    const cacheKey = `venues:admin:detail:${id}`;
+    const cached = await cacheGetJSON(cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json({ ok: true, data: cached });
+    }
+
+    await dbConnect();
 
     const venue = await Item.findById(id)
       .populate("category", "name slug")
@@ -159,11 +184,13 @@ export async function getAdminVenueDetail(req, res) {
       return res.status(404).json({ ok: false, error: "Venue not found" });
     }
 
+    const responseData = { venue };
+    await cacheSetJSON(cacheKey, responseData, 120);
+    res.setHeader("X-Cache", "MISS");
+
     return res.json({
       ok: true,
-      data: {
-        venue,
-      },
+      data: responseData,
     });
   } catch (error) {
     console.error("getAdminVenueDetail error:", error);
@@ -395,6 +422,8 @@ export async function createAdminVenue(req, res) {
       .populate("vendor", "name email phone vendorProfile")
       .lean();
 
+    await invalidateVenueCache(venue._id);
+
     return res.status(201).json({
       ok: true,
       message: "Venue created successfully.",
@@ -584,6 +613,8 @@ export async function updateAdminVenue(req, res) {
       .populate("vendor", "name email phone vendorProfile")
       .lean();
 
+    await invalidateVenueCache(venue._id);
+
     return res.json({
       ok: true,
       message: "Venue updated successfully.",
@@ -620,6 +651,8 @@ export async function deleteAdminVenue(req, res) {
     }
 
     await venue.deleteOne();
+
+    await invalidateVenueCache(id);
 
     return res.json({
       ok: true,

@@ -4,6 +4,12 @@ import Event from "../models/Event.js";
 import Registration from "../models/Registration.js";
 import { getRazorpay, verifyRazorpaySignature } from "../lib/razorpay.js";
 import { sendMail } from "../lib/mailer.js";
+import {
+  cacheGetJSON,
+  cacheSetJSON,
+  hashQuery,
+  invalidateEventCache,
+} from "../lib/redis.js";
 
 // Helper to generate a unique Human-friendly Registration ID (e.g. CVC-82F391)
 function generateRegistrationId(event) {
@@ -44,6 +50,17 @@ function isValidEmail(email) {
  * Public: Get published active events (with optional featured filter)
  */
 export async function getPublicEvents(req, res) {
+  const cacheKey = `events:public:${hashQuery(req.query)}`;
+  try {
+    const cached = await cacheGetJSON(cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached);
+    }
+  } catch (err) {
+    console.error("Cache read error getPublicEvents:", err);
+  }
+
   try {
     await dbConnect();
     const query = { status: "PUBLISHED" };
@@ -55,7 +72,16 @@ export async function getPublicEvents(req, res) {
       .sort({ createdAt: -1 })
       .lean();
 
-    res.json({ ok: true, data: { events } });
+    const payload = { ok: true, data: { events } };
+
+    try {
+      await cacheSetJSON(cacheKey, payload, 300); // 5 min cache
+    } catch (err) {
+      console.error("Cache write error getPublicEvents:", err);
+    }
+
+    res.setHeader("X-Cache", "MISS");
+    res.json(payload);
   } catch (error) {
     console.error("getPublicEvents error:", error);
     res.status(500).json({ ok: false, error: "Failed to fetch events" });
@@ -66,13 +92,26 @@ export async function getPublicEvents(req, res) {
  * Public: Get single event by slug
  */
 export async function getEventBySlug(req, res) {
+  const { slug } = req.params;
+  const normalizedSlug = String(slug || "").toLowerCase().trim();
+  const cacheKey = `event:${normalizedSlug}`;
+
+  try {
+    const cached = await cacheGetJSON(cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached);
+    }
+  } catch (err) {
+    console.error("Cache read error getEventBySlug:", err);
+  }
+
   try {
     await dbConnect();
-    const { slug } = req.params;
     const event = await Event.findOne({
       $or: [
-        { slug: String(slug).toLowerCase() },
-        ...(String(slug).match(/^[0-9a-fA-F]{24}$/) ? [{ _id: slug }] : []),
+        { slug: normalizedSlug },
+        ...(normalizedSlug.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: normalizedSlug }] : []),
       ],
     }).lean();
 
@@ -87,7 +126,7 @@ export async function getEventBySlug(req, res) {
       isRegistrationOpen = false;
     }
 
-    res.json({
+    const payload = {
       ok: true,
       data: {
         event: {
@@ -95,7 +134,16 @@ export async function getEventBySlug(req, res) {
           isRegistrationOpen,
         },
       },
-    });
+    };
+
+    try {
+      await cacheSetJSON(cacheKey, payload, 300); // 5 min cache
+    } catch (err) {
+      console.error("Cache write error getEventBySlug:", err);
+    }
+
+    res.setHeader("X-Cache", "MISS");
+    res.json(payload);
   } catch (error) {
     console.error("getEventBySlug error:", error);
     res.status(500).json({ ok: false, error: "Failed to fetch event" });
@@ -709,6 +757,8 @@ export async function createAdminEvent(req, res) {
       registrationFee: Number(payload.registrationFee) || 0,
     });
 
+    await invalidateEventCache(event.slug, event._id);
+
     res.status(201).json({ ok: true, message: "Event created successfully", data: { event } });
   } catch (error) {
     console.error("createAdminEvent error:", error);
@@ -742,6 +792,8 @@ export async function updateAdminEvent(req, res) {
       return res.status(404).json({ ok: false, error: "Event not found" });
     }
 
+    await invalidateEventCache(event.slug, event._id);
+
     res.json({ ok: true, message: "Event updated successfully", data: { event } });
   } catch (error) {
     console.error("updateAdminEvent error:", error);
@@ -770,6 +822,7 @@ export async function deleteAdminEvent(req, res) {
 
     await Event.findByIdAndDelete(id);
     await Registration.deleteMany({ event: id });
+    await invalidateEventCache(event.slug, id);
 
     res.json({ ok: true, message: "Event and unconfirmed drafts deleted successfully" });
   } catch (error) {

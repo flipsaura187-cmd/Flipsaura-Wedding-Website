@@ -8,13 +8,18 @@ import PhotographyOverviewSection from "@/components/PhotographyOverviewSection"
 import MehandiOverviewSection from "@/components/MehandiOverviewSection";
 import HomeSetupOverviewSection from "@/components/HomeSetupOverviewSection";
 import api from "@/api/axios";
+import { useListings } from "@/context/ListingContext";
 export default function ProductPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [item, setItem] = useState(null);
+
+  const { getItemDetailFromState, getCachedItemDetail } = useListings();
+
+  const cachedItem = useMemo(() => getItemDetailFromState(id), [id, getItemDetailFromState]);
+  const [item, setItem] = useState(() => cachedItem || null);
   const [reviews, setReviews] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !cachedItem);
   const [showLightbox, setShowLightbox] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
 
@@ -27,27 +32,41 @@ export default function ProductPage() {
 
   // Fetch item, reviews, and current user
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
-        const [itemRes, reviewRes, userRes] = await Promise.all([
-          api.get(`/api/items/${id}`),
-          api.get(`/api/reviews?itemId=${id}`),
-          api.get("/api/auth/me") // adjust endpoint if needed
-        ]);
-        const itemData = itemRes.data;
-        const reviewData = reviewRes.data;
-        const userData = userRes.data;
+        if (!getItemDetailFromState(id)) {
+          setLoading(true);
+        }
 
-        if (itemData.ok) setItem(itemData.data.item);
-        if (reviewData.ok) setReviews(reviewData.data.reviews);
-        if (userData.ok) setUser(userData.data.user);
+        const [cachedDetailResult, reviewRes, userRes] = await Promise.all([
+          getCachedItemDetail(id),
+          api.get(`/api/reviews?itemId=${id}`).catch(() => ({ data: { ok: false } })),
+          api.get("/api/auth/me").catch(() => ({ data: { ok: false } })),
+        ]);
+
+        if (active) {
+          if (cachedDetailResult?.item) {
+            setItem(cachedDetailResult.item);
+          }
+          if (reviewRes.data?.ok) {
+            setReviews(reviewRes.data.data?.reviews || reviewRes.data.reviews || []);
+          }
+          if (userRes.data?.ok) {
+            setUser(userRes.data.data?.user || userRes.data.user || null);
+          }
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Product fetch error:", err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
-  }, [id]);
+
+    return () => {
+      active = false;
+    };
+  }, [id, getCachedItemDetail, getItemDetailFromState]);
 
   // Compute resolved facilities for this item/service
   const facilitiesList = useMemo(() => {

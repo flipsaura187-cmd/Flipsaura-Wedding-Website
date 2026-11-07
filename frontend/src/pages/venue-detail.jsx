@@ -5,13 +5,17 @@ import Link from "@/compat/Link";
 import api from "@/api/axios";
 import VenueOverviewSection from "@/components/VenueOverviewSection";
 import { CATALOGUE_GROUPS } from "@/constants/catalogue";
+import { useListings } from "@/context/ListingContext";
 
 export default function VenueDetailPage() {
   const { id } = useParams();
   const router = useRouter();
 
-  const [venue, setVenue] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { getItemDetailFromState, getCachedItemDetail } = useListings();
+
+  const cachedVenue = useMemo(() => getItemDetailFromState(id), [id, getItemDetailFromState]);
+  const [venue, setVenue] = useState(() => cachedVenue || null);
+  const [loading, setLoading] = useState(() => !cachedVenue);
   const [error, setError] = useState("");
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [similarVenues, setSimilarVenues] = useState([]);
@@ -25,39 +29,47 @@ export default function VenueDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    let active = true;
+
     const fetchVenue = async () => {
       try {
-        setLoading(true);
+        if (!getItemDetailFromState(id)) {
+          setLoading(true);
+        }
         setError("");
-        const { data } = await api.get(`/api/items/${id}`);
-        if (data?.ok && data.data) {
-          const loadedVenue = data.data.item || data.data.venue || data.data;
+
+        const result = await getCachedItemDetail(id);
+        const loadedVenue = result?.item;
+
+        if (active && loadedVenue) {
           setVenue(loadedVenue);
 
           // Fetch similar venues in the same city or category
           try {
-            const city = loadedVenue.city || "";
             const simRes = await api.get(`/api/items?category=venues&limit=4`);
-            if (simRes.data?.ok) {
+            if (active && simRes.data?.ok) {
               const list = simRes.data.data.items || [];
               setSimilarVenues(list.filter((item) => String(item._id) !== String(id)).slice(0, 3));
             }
           } catch {
             // Ignore similar error
           }
-        } else {
+        } else if (active && !loadedVenue) {
           setError("Venue not found.");
         }
       } catch (err) {
         console.error("Failed to load venue:", err);
-        setError(err.response?.data?.error || "Failed to load venue details.");
+        if (active) setError(err.response?.data?.error || "Failed to load venue details.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchVenue();
-  }, [id]);
+    return () => {
+      active = false;
+    };
+  }, [id, getCachedItemDetail, getItemDetailFromState]);
 
   const images = useMemo(() => {
     if (Array.isArray(venue?.images) && venue.images.length > 0) {

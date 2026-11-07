@@ -6,6 +6,7 @@ import Pagination from "@/components/Pagination";
 import VenueListingView from "@/components/venue/VenueListingView";
 import HomeSetupListingView from "@/components/homesetup/HomeSetupListingView";
 import api from "@/api/axios";
+import { useListings } from "@/context/ListingContext";
 
 const ALL_BIHAR_DISTRICTS = [
   "Araria",
@@ -61,19 +62,14 @@ export default function CategoryPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const [items, setItems] = useState([]);
+  const {
+    getCachedFilterMeta,
+    getFilterMetaFromState,
+    getCachedCategoryItems,
+    getCategoryFromState,
+  } = useListings();
+
   const [page, setPage] = useState(parseInt(sp.get("page") || "1", 10));
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [warningMessage, setWarningMessage] = useState("");
-
-  const [filterMeta, setFilterMeta] = useState({
-    pricingUnit: { unit: "per booking", label: "₹ / booking", short: "booking" },
-    priceBounds: { min: 0, max: 100000 },
-    states: [],
-  });
-
   const [filters, setFilters] = useState({
     q: sp.get("q") || "",
     district: sp.get("district") || sp.get("city") || "",
@@ -82,14 +78,45 @@ export default function CategoryPage() {
     sort: sp.get("sort") || "newest",
   });
 
+  const queryParams = useMemo(() => {
+    const p = { page: String(page) };
+    if (filters.q?.trim()) p.q = filters.q.trim();
+    if (filters.district?.trim()) p.district = filters.district.trim();
+    if (filters.minPrice !== "") p.minPrice = filters.minPrice;
+    if (filters.maxPrice !== "") p.maxPrice = filters.maxPrice;
+    if (filters.sort && filters.sort !== "newest") p.sort = filters.sort;
+    return p;
+  }, [page, filters]);
+
+  // Synchronously initialize from state cache if available (0ms loading!)
+  const initialData = useMemo(() => {
+    return getCategoryFromState(slug, queryParams);
+  }, [slug, queryParams, getCategoryFromState]);
+
+  const [items, setItems] = useState(() => initialData?.items || []);
+  const [totalPages, setTotalPages] = useState(() => initialData?.totalPages || 1);
+  const [totalCount, setTotalCount] = useState(() => initialData?.total ?? initialData?.items?.length ?? 0);
+  const [loading, setLoading] = useState(() => !initialData);
+  const [warningMessage, setWarningMessage] = useState(() => initialData?.warning || "");
+
+  const [filterMeta, setFilterMeta] = useState(() => {
+    return (
+      getFilterMetaFromState(slug) || {
+        pricingUnit: { unit: "per booking", label: "₹ / booking", short: "booking" },
+        priceBounds: { min: 0, max: 100000 },
+        states: [],
+      }
+    );
+  });
+
   // Fetch dynamic category-specific filter metadata (pricing unit, states & districts)
   useEffect(() => {
     let active = true;
     async function fetchFilterMeta() {
       try {
-        const { data: res } = await api.get(`/api/items/filter-options?category=${slug}`);
-        if (active && res?.ok && res.data) {
-          setFilterMeta(res.data);
+        const meta = await getCachedFilterMeta(slug);
+        if (active && meta) {
+          setFilterMeta(meta);
         }
       } catch (err) {
         console.error("Failed to load filter options", err);
@@ -99,7 +126,7 @@ export default function CategoryPage() {
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [slug, getCachedFilterMeta]);
 
   // Derive districts for Bihar with dynamic counts
   const biharDistricts = useMemo(() => {
@@ -127,34 +154,26 @@ export default function CategoryPage() {
   }, [filterMeta.states]);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const cached = getCategoryFromState(slug, queryParams);
+    if (!cached && items.length === 0) {
+      setLoading(true);
+    }
     setWarningMessage("");
-    const params = new URLSearchParams({
-      category: slug,
-      page: String(page),
-      limit: "12",
-    });
-
-    if (filters.q?.trim()) params.set("q", filters.q.trim());
-    if (filters.district?.trim()) params.set("district", filters.district.trim());
-    if (filters.minPrice !== "") params.set("minPrice", filters.minPrice);
-    if (filters.maxPrice !== "") params.set("maxPrice", filters.maxPrice);
-    if (filters.sort) params.set("sort", filters.sort);
 
     try {
-      const { data: j } = await api.get(`/api/items?${params.toString()}`);
-      if (j.ok) {
-        setItems(j.data.items || []);
-        setTotalPages(j.data.totalPages || 1);
-        setTotalCount(j.data.total ?? j.data.items?.length ?? 0);
-        if (j.data.warning) setWarningMessage(j.data.warning);
+      const res = await getCachedCategoryItems(slug, queryParams);
+      if (res?.data) {
+        setItems(res.data.items || []);
+        setTotalPages(res.data.totalPages || 1);
+        setTotalCount(res.data.total ?? res.data.items?.length ?? 0);
+        if (res.data.warning) setWarningMessage(res.data.warning);
       }
     } catch (err) {
       console.error("Failed to load category items", err);
     } finally {
       setLoading(false);
     }
-  }, [slug, page, filters]);
+  }, [slug, queryParams, getCategoryFromState, getCachedCategoryItems, items.length]);
 
   useEffect(() => {
     load();

@@ -2,6 +2,12 @@ import { dbConnect } from "../lib/db.js";
 import Room from "../models/Room.js";
 import Item from "../models/Item.js";
 import User from "../models/User.js";
+import {
+  cacheGetJSON,
+  cacheSetJSON,
+  hashQuery,
+  invalidateRoomCache,
+} from "../lib/redis.js";
 
 /**
  * List rooms:
@@ -19,6 +25,13 @@ export async function getRooms(req, res) {
 
     // Public customer request for a specific hotel's rooms
     if (hotelId) {
+      const cacheKey = `rooms:hotel:${hotelId}:${hashQuery(req.query)}`;
+      const cached = await cacheGetJSON(cacheKey);
+      if (cached) {
+        res.setHeader("X-Cache", "HIT");
+        return res.json({ ok: true, data: cached });
+      }
+
       const filter = { hotel: hotelId };
       // Non-admin / non-vendor / public only sees active rooms
       const isAdminOrVendor = req.user && ["admin", "vendor"].includes(String(req.user.role || "").toLowerCase());
@@ -35,7 +48,11 @@ export async function getRooms(req, res) {
         .sort({ pricePerNight: 1, createdAt: -1 })
         .lean();
 
-      return res.json({ ok: true, data: { rooms } });
+      const responseData = { rooms };
+      await cacheSetJSON(cacheKey, responseData, 120);
+      res.setHeader("X-Cache", "MISS");
+
+      return res.json({ ok: true, data: responseData });
     }
 
     // Authenticated vendor or admin listing rooms
@@ -92,8 +109,16 @@ export async function getRooms(req, res) {
  */
 export async function getRoom(req, res) {
   try {
+    const { id } = req.params;
+    const cacheKey = `room:detail:${id}`;
+    const cached = await cacheGetJSON(cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json({ ok: true, data: cached });
+    }
+
     await dbConnect();
-    const room = await Room.findById(req.params.id)
+    const room = await Room.findById(id)
       .populate("hotel", "title city state images category vendor")
       .lean();
 
@@ -101,7 +126,11 @@ export async function getRoom(req, res) {
       return res.status(404).json({ ok: false, error: "Room not found" });
     }
 
-    return res.json({ ok: true, data: { room } });
+    const responseData = { room };
+    await cacheSetJSON(cacheKey, responseData, 180);
+    res.setHeader("X-Cache", "MISS");
+
+    return res.json({ ok: true, data: responseData });
   } catch (error) {
     console.error("getRoom error:", error);
     return res.status(500).json({ ok: false, error: error.message || "Failed to fetch room" });
@@ -203,6 +232,8 @@ export async function createRoom(req, res) {
     const populatedRoom = await Room.findById(room._id)
       .populate("hotel", "title city state images category")
       .lean();
+
+    await invalidateRoomCache(room._id, hotel._id);
 
     return res.status(201).json({
       ok: true,
@@ -316,6 +347,8 @@ export async function updateRoom(req, res) {
       .populate("hotel", "title city state images category")
       .lean();
 
+    await invalidateRoomCache(room._id, room.hotel);
+
     return res.json({
       ok: true,
       message: "Room updated successfully.",
@@ -353,6 +386,8 @@ export async function deleteRoom(req, res) {
     }
 
     await room.deleteOne();
+
+    await invalidateRoomCache(req.params.id, room.hotel);
 
     return res.json({
       ok: true,

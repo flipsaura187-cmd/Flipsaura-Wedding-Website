@@ -4,6 +4,7 @@ import Link from "@/compat/Link";
 import { useRouter, useSearchParams } from "@/compat/navigation";
 import api from "@/api/axios";
 import Pagination from "@/components/Pagination";
+import { useListings } from "@/context/ListingContext";
 
 const ALL_BIHAR_DISTRICTS = [
   "Araria",
@@ -81,13 +82,14 @@ export default function VenueListingView() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // Primary list state
-  const [venues, setVenues] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
+  const {
+    getVenuesFromState,
+    getCachedVenues,
+    getFilterMetaFromState,
+    getCachedFilterMeta,
+  } = useListings();
+
   const [page, setPage] = useState(parseInt(sp.get("page") || "1", 10));
-  const [totalPages, setTotalPages] = useState(1);
-  const [filterMeta, setFilterMeta] = useState(null);
 
   // Mobile filters drawer open/close
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -110,14 +112,49 @@ export default function VenueListingView() {
     sort: sp.get("sort") || "newest",
   });
 
+  const venueQueryParams = useMemo(() => {
+    const p = { page: String(page) };
+    if (filters.q?.trim()) p.q = filters.q.trim();
+    if (filters.district?.trim()) p.district = filters.district.trim();
+    if (filters.locality?.trim()) p.locality = filters.locality.trim();
+    if (filters.minGuests) p.minGuests = filters.minGuests;
+    if (filters.maxGuests) p.maxGuests = filters.maxGuests;
+    if (filters.minRooms) p.minRooms = filters.minRooms;
+    if (filters.maxPricePerPlate) p.maxPricePerPlate = filters.maxPricePerPlate;
+    if (filters.minRental) p.minRental = filters.minRental;
+    if (filters.maxRental) p.maxRental = filters.maxRental;
+    if (filters.venueType && filters.venueType !== "all") p.venueType = filters.venueType;
+    if (filters.space) p.space = filters.space;
+    if (filters.minRating) p.minRating = filters.minRating;
+    if (Array.isArray(filters.features) && filters.features.length > 0) {
+      p.features = filters.features.join(",");
+    }
+    if (filters.sort && filters.sort !== "newest") p.sort = filters.sort;
+    return p;
+  }, [page, filters]);
+
+  // Synchronously initialize from state cache if available (0ms instant display!)
+  const initialData = useMemo(() => {
+    return getVenuesFromState(venueQueryParams);
+  }, [venueQueryParams, getVenuesFromState]);
+
+  const [venues, setVenues] = useState(() => initialData?.items || []);
+  const [totalCount, setTotalCount] = useState(() => initialData?.total ?? initialData?.items?.length ?? 0);
+  const [totalPages, setTotalPages] = useState(() => initialData?.totalPages || 1);
+  const [loading, setLoading] = useState(() => !initialData);
+  const [filterMeta, setFilterMeta] = useState(() => {
+    const cached = getFilterMetaFromState("venues");
+    return cached?.venueFilterMeta || cached || null;
+  });
+
   // Fetch filter metadata
   useEffect(() => {
     let active = true;
     async function fetchMeta() {
       try {
-        const { data } = await api.get("/api/items/filter-options?category=venues");
-        if (active && data?.ok) {
-          setFilterMeta(data.data?.venueFilterMeta || null);
+        const meta = await getCachedFilterMeta("venues");
+        if (active && meta) {
+          setFilterMeta(meta.venueFilterMeta || meta);
         }
       } catch (err) {
         console.error("Filter options fetch error:", err);
@@ -127,47 +164,27 @@ export default function VenueListingView() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [getCachedFilterMeta]);
 
   // Fetch venues with all filters
   const loadVenues = useCallback(async () => {
-    setLoading(true);
+    const cached = getVenuesFromState(venueQueryParams);
+    if (!cached && venues.length === 0) {
+      setLoading(true);
+    }
     try {
-      const params = new URLSearchParams({
-        category: "venues",
-        page: String(page),
-        limit: "12",
-      });
-
-      if (filters.q?.trim()) params.set("q", filters.q.trim());
-      if (filters.district?.trim()) params.set("district", filters.district.trim());
-      if (filters.locality?.trim()) params.set("locality", filters.locality.trim());
-      if (filters.minGuests) params.set("minGuests", filters.minGuests);
-      if (filters.maxGuests) params.set("maxGuests", filters.maxGuests);
-      if (filters.minRooms) params.set("minRooms", filters.minRooms);
-      if (filters.maxPricePerPlate) params.set("maxPricePerPlate", filters.maxPricePerPlate);
-      if (filters.minRental) params.set("minRental", filters.minRental);
-      if (filters.maxRental) params.set("maxRental", filters.maxRental);
-      if (filters.venueType && filters.venueType !== "all") params.set("venueType", filters.venueType);
-      if (filters.space) params.set("space", filters.space);
-      if (filters.minRating) params.set("minRating", filters.minRating);
-      if (Array.isArray(filters.features) && filters.features.length > 0) {
-        params.set("features", filters.features.join(","));
-      }
-      if (filters.sort && filters.sort !== "newest") params.set("sort", filters.sort);
-
-      const { data } = await api.get(`/api/items?${params.toString()}`);
-      if (data?.ok) {
-        setVenues(data.data.items || []);
-        setTotalPages(data.data.totalPages || 1);
-        setTotalCount(data.data.total ?? data.data.items?.length ?? 0);
+      const res = await getCachedVenues(venueQueryParams);
+      if (res?.data) {
+        setVenues(res.data.items || []);
+        setTotalPages(res.data.totalPages || 1);
+        setTotalCount(res.data.total ?? res.data.items?.length ?? 0);
       }
     } catch (err) {
       console.error("Load venues error:", err);
     } finally {
       setLoading(false);
     }
-  }, [page, filters]);
+  }, [venueQueryParams, getVenuesFromState, getCachedVenues, venues.length]);
 
   useEffect(() => {
     loadVenues();

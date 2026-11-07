@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { ListingProvider } from "@/context/ListingContext";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -61,7 +62,8 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Navbar />
+        <ListingProvider>
+          <Navbar />
 
         <main>
           <Routes>
@@ -133,6 +135,7 @@ export default function AppRoutes() {
         </main>
 
         <Footer />
+        </ListingProvider>
       </AuthProvider>
     </BrowserRouter>
   );

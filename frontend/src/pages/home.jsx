@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Link from "@/compat/Link";
 import { useRouter } from "@/compat/navigation";
 import { useAuth } from "@/context/AuthContext";
 import ItemCard from "@/components/ItemCard";
 import HeroSlideshow from "@/components/Hero";
 import EventNotificationBanner from "@/components/EventNotificationBanner";
-import api from "@/api/axios";
+import { fetchHomePage, selectHomeData } from "@/store/listingsSlice";
 
 const indianWeddingImages = [
   {
@@ -130,6 +131,8 @@ function getCategoryImageUrl(image) {
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const { categories: reduxCategories, featured, isLoading: homeLoading } = useSelector(selectHomeData);
 
   const isVendor = !authLoading && user && String(user.role || "").toLowerCase() === "vendor";
 
@@ -139,46 +142,10 @@ export default function HomePage() {
     }
   }, [isVendor, router]);
 
-  const [data, setData] = useState({
-    categories: defaultCategories,
-    featured: [],
-  });
-
   useEffect(() => {
     if (isVendor) return;
-    let isMounted = true;
-
-    const fetchHomePageData = async () => {
-      // Fetch categories & featured items concurrently in parallel
-      await Promise.allSettled([
-        api.get("/api/categories")
-          .then((catRes) => {
-            const fetchedCats = catRes.data?.data?.categories;
-            if (isMounted && Array.isArray(fetchedCats) && fetchedCats.length > 0) {
-              setData((prev) => ({ ...prev, categories: fetchedCats }));
-            }
-          })
-          .catch((error) => {
-            console.warn("Failed to load categories from API, using fallback:", error);
-          }),
-        api.get("/api/items?limit=8&sort=newest")
-          .then((itemsRes) => {
-            const fetchedItems = itemsRes.data?.data?.items;
-            if (isMounted && Array.isArray(fetchedItems)) {
-              setData((prev) => ({ ...prev, featured: fetchedItems }));
-            }
-          })
-          .catch((error) => {
-            console.warn("Failed to load featured items:", error);
-          }),
-      ]);
-    };
-
-    fetchHomePageData();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    dispatch(fetchHomePage());
+  }, [dispatch, isVendor]);
 
   const orderedSlugs = [
     "hotels",                     // 1. Hotel
@@ -209,8 +176,8 @@ export default function HomePage() {
   ];
 
   const rawCategories = (
-    data.categories && data.categories.length > 0
-      ? data.categories
+    (reduxCategories && reduxCategories.length > 0)
+      ? reduxCategories
       : defaultCategories
   ).filter((c) => !EXCLUDED_SLUGS.includes(c.slug));
 
@@ -327,9 +294,9 @@ export default function HomePage() {
             </h2>
           </div>
 
-          {data.featured.length > 0 ? (
+          {featured.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {data.featured.map((item) => (
+              {featured.map((item) => (
                 <ItemCard key={item._id} item={item} />
               ))}
             </div>

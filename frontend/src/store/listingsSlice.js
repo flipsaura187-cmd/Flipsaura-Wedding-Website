@@ -108,6 +108,51 @@ export const fetchItemDetail = createAsyncThunk(
   }
 );
 
+/**
+ * Fetch home page data: categories list + featured items (newest 8).
+ * Caches both with 5-min TTL — instant revisit, 0 flicker.
+ */
+export const fetchHomePage = createAsyncThunk(
+  "listings/fetchHomePage",
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState().listings;
+    const catCached = state.homeCache?.categories;
+    const featCached = state.homeCache?.featured;
+
+    const catFresh = isFresh(catCached?.timestamp);
+    const featFresh = isFresh(featCached?.timestamp);
+
+    if (catFresh && featFresh) {
+      return { categories: catCached.data, featured: featCached.data, fromCache: true };
+    }
+
+    try {
+      const [catRes, featRes] = await Promise.allSettled([
+        catFresh ? Promise.resolve(null) : api.get("/api/categories"),
+        featFresh ? Promise.resolve(null) : api.get("/api/items?limit=8&sort=newest"),
+      ]);
+
+      const categories =
+        catFresh
+          ? catCached.data
+          : catRes.status === "fulfilled" && catRes.value?.data?.data?.categories?.length > 0
+            ? catRes.value.data.data.categories
+            : null;
+
+      const featured =
+        featFresh
+          ? featCached.data
+          : featRes.status === "fulfilled" && Array.isArray(featRes.value?.data?.data?.items)
+            ? featRes.value.data.data.items
+            : [];
+
+      return { categories, featured, fromCache: false, timestamp: Date.now() };
+    } catch (err) {
+      return rejectWithValue(err.message || "Network error");
+    }
+  }
+);
+
 // ─── Slice ────────────────────────────────────────────────────────────────────
 const listingsSlice = createSlice({
   name: "listings",
@@ -120,6 +165,9 @@ const listingsSlice = createSlice({
 
     // { [idOrSlug]: { item, timestamp } }
     itemDetailsCache: {},
+
+    // Home page data: { categories: { data, timestamp }, featured: { data, timestamp } }
+    homeCache: null,
 
     // { [queryKey]: "idle" | "loading" | "succeeded" | "failed" }
     loadingStates: {},
@@ -166,11 +214,18 @@ const listingsSlice = createSlice({
       if (key) delete state.itemDetailsCache[key];
     },
 
+    /** Invalidate home page cache */
+    invalidateHome(state) {
+      state.homeCache = null;
+      delete state.loadingStates["home"];
+    },
+
     /** Full cache reset */
     invalidateAll(state) {
       state.categoriesCache = {};
       state.filterMetaCache = {};
       state.itemDetailsCache = {};
+      state.homeCache = null;
       state.loadingStates = {};
       state.errors = {};
     },
@@ -235,6 +290,36 @@ const listingsSlice = createSlice({
       .addCase(fetchItemDetail.rejected, (state, action) => {
         state.loadingStates[`item:${action.meta.arg}`] = "failed";
       });
+
+    // ── fetchHomePage ──────────────────────────────────────────────────────
+    builder
+      .addCase(fetchHomePage.pending, (state) => {
+        state.loadingStates["home"] = "loading";
+      })
+      .addCase(fetchHomePage.fulfilled, (state, action) => {
+        const { categories, featured, timestamp, fromCache } = action.payload;
+        if (!fromCache) {
+          state.homeCache = {
+            categories: categories
+              ? { data: categories, timestamp }
+              : state.homeCache?.categories || null,
+            featured: { data: featured || [], timestamp },
+          };
+          // Pre-fill item details from featured items
+          const now = Date.now();
+          for (const item of featured || []) {
+            if (!item) continue;
+            const entry = { item, timestamp: now };
+            if (item._id) state.itemDetailsCache[String(item._id)] = entry;
+            if (item.slug) state.itemDetailsCache[String(item.slug)] = entry;
+          }
+        }
+        state.loadingStates["home"] = "succeeded";
+      })
+      .addCase(fetchHomePage.rejected, (state, action) => {
+        state.loadingStates["home"] = "failed";
+        state.errors["home"] = action.payload;
+      });
   },
 });
 
@@ -243,6 +328,7 @@ export const {
   invalidateHotels,
   invalidateVenues,
   invalidateItem,
+  invalidateHome,
   invalidateAll,
 } = listingsSlice.actions;
 
@@ -275,5 +361,10 @@ export const selectItemDetailLoading = (idOrSlug) => (state) => {
   return state.listings.loadingStates[`item:${idOrSlug}`] === "loading";
 };
 
-export default listingsSlice.reducer;
+export const selectHomeData = (state) => ({
+  categories: state.listings.homeCache?.categories?.data || null,
+  featured: state.listings.homeCache?.featured?.data || [],
+  isLoading: state.listings.loadingStates["home"] === "loading",
+});
 
+export default listingsSlice.reducer;

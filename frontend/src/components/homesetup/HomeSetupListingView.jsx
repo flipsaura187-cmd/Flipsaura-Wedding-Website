@@ -1,9 +1,16 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Link from "@/compat/Link";
 import { useRouter, useSearchParams } from "@/compat/navigation";
-import api from "@/api/axios";
 import Pagination from "@/components/Pagination";
+import {
+  fetchCategoryItems,
+  selectCategoryItems,
+  selectCategoryLoading,
+} from "@/store/listingsSlice";
+
+const HOME_SETUP_SLUG = "home-setup-pandal-tent-dj";
 
 const ALL_BIHAR_DISTRICTS = [
   "Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur",
@@ -141,12 +148,9 @@ export const HOME_SETUP_SUBCATEGORIES = [
 export default function HomeSetupListingView() {
   const router = useRouter();
   const sp = useSearchParams();
+  const dispatch = useDispatch();
 
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(parseInt(sp.get("page") || "1", 10));
-  const [totalPages, setTotalPages] = useState(1);
   const [warningMessage, setWarningMessage] = useState("");
 
   // Subcategory tab state
@@ -162,46 +166,40 @@ export default function HomeSetupListingView() {
     sort: sp.get("sort") || "newest",
   });
 
-  const loadListings = useCallback(async () => {
-    setLoading(true);
-    setWarningMessage("");
-
-    const params = new URLSearchParams({
-      category: "home-setup-pandal-tent-dj",
-      page: String(page),
-      limit: "12",
-    });
-
-    if (activeSubcat && activeSubcat !== "all") {
-      params.set("mainCategory", activeSubcat);
-    }
-    if (selectedItemPill) {
-      params.set("subcategory", selectedItemPill);
-    }
-    if (filters.q?.trim()) params.set("q", filters.q.trim());
-    if (filters.district?.trim()) params.set("district", filters.district.trim());
-    if (filters.minPrice !== "") params.set("minPrice", filters.minPrice);
-    if (filters.maxPrice !== "") params.set("maxPrice", filters.maxPrice);
-    if (filters.sort) params.set("sort", filters.sort);
-
-    try {
-      const { data: res } = await api.get(`/api/items?${params.toString()}`);
-      if (res?.ok) {
-        setItems(res.data.items || []);
-        setTotalPages(res.data.totalPages || 1);
-        setTotalCount(res.data.total ?? res.data.items?.length ?? 0);
-        if (res.data.warning) setWarningMessage(res.data.warning);
-      }
-    } catch (err) {
-      console.error("Failed to load Home Setup items:", err);
-    } finally {
-      setLoading(false);
-    }
+  // ── Build query params object for Redux cache key ──────────────────────────
+  const queryParams = useMemo(() => {
+    const p = { page: String(page) };
+    if (activeSubcat && activeSubcat !== "all") p.mainCategory = activeSubcat;
+    if (selectedItemPill) p.subcategory = selectedItemPill;
+    if (filters.q?.trim()) p.q = filters.q.trim();
+    if (filters.district?.trim()) p.district = filters.district.trim();
+    if (filters.minPrice !== "") p.minPrice = filters.minPrice;
+    if (filters.maxPrice !== "") p.maxPrice = filters.maxPrice;
+    if (filters.sort) p.sort = filters.sort;
+    return p;
   }, [page, activeSubcat, selectedItemPill, filters]);
 
+  // ── Redux selectors (instant from cache, 0ms on revisit) ──────────────────
+  const cachedData = useSelector(selectCategoryItems(HOME_SETUP_SLUG, queryParams));
+  const isLoading = useSelector(selectCategoryLoading(HOME_SETUP_SLUG, queryParams));
+
+  const items = cachedData?.items || [];
+  const totalCount = cachedData?.total ?? 0;
+  const totalPages = cachedData?.totalPages ?? 1;
+
+  // ── Fetch via Redux thunk (skips if cache is fresh) ───────────────────────
   useEffect(() => {
-    loadListings();
-  }, [loadListings]);
+    dispatch(fetchCategoryItems({ slug: HOME_SETUP_SLUG, params: queryParams }));
+  }, [dispatch, queryParams]);
+
+  // Show loading only when no cached data exists
+  const loading = isLoading && items.length === 0;
+
+  // Show warning from cached data
+  useEffect(() => {
+    if (cachedData?.warning) setWarningMessage(cachedData.warning);
+    else setWarningMessage("");
+  }, [cachedData]);
 
   const updateSubcatTab = (subcatId) => {
     setActiveSubcat(subcatId);

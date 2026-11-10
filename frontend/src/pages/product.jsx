@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "@/compat/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import ServiceAmenities from "@/components/ServiceAmenities";
 import HotelRoomsSection from "@/components/HotelRoomsSection";
 import VenueOverviewSection from "@/components/VenueOverviewSection";
@@ -8,14 +9,16 @@ import PhotographyOverviewSection from "@/components/PhotographyOverviewSection"
 import MehandiOverviewSection from "@/components/MehandiOverviewSection";
 import HomeSetupOverviewSection from "@/components/HomeSetupOverviewSection";
 import api from "@/api/axios";
-import { useListings } from "@/context/ListingContext";
+import { fetchItemDetail, selectItemDetail, selectItemDetailLoading } from "@/store/listingsSlice";
 export default function ProductPage() {
   const { id } = useParams();
   const router = useRouter();
+  const dispatch = useDispatch();
 
-  const { getItemDetailFromState, getCachedItemDetail } = useListings();
+  // ── Redux store: instant item from cache (0ms if already visited via list) ──
+  const cachedItem = useSelector(selectItemDetail(id));
+  const isItemLoading = useSelector(selectItemDetailLoading(id));
 
-  const cachedItem = useMemo(() => getItemDetailFromState(id), [id, getItemDetailFromState]);
   const [item, setItem] = useState(() => cachedItem || null);
   const [reviews, setReviews] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
@@ -28,26 +31,35 @@ export default function ProductPage() {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [user, setUser] = useState(null); // logged in user
+  const [user, setUser] = useState(null);
 
-  // Fetch item, reviews, and current user
+  // ── Sync redux cachedItem into local state when it arrives ─────────────
   useEffect(() => {
+    if (cachedItem && !item) {
+      setItem(cachedItem);
+      setLoading(false);
+    }
+  }, [cachedItem]);
+
+  // ── Fetch item + reviews + user in parallel ────────────────────────────
+  useEffect(() => {
+    if (!id) return;
     let active = true;
+
     (async () => {
       try {
-        if (!getItemDetailFromState(id)) {
-          setLoading(true);
-        }
+        // Dispatch Redux thunk (skips API if already in store & fresh)
+        const result = await dispatch(fetchItemDetail(id));
+        const fetchedItem = result?.payload?.item;
 
-        const [cachedDetailResult, reviewRes, userRes] = await Promise.all([
-          getCachedItemDetail(id),
+        const [reviewRes, userRes] = await Promise.all([
           api.get(`/api/reviews?itemId=${id}`).catch(() => ({ data: { ok: false } })),
           api.get("/api/auth/me").catch(() => ({ data: { ok: false } })),
         ]);
 
         if (active) {
-          if (cachedDetailResult?.item) {
-            setItem(cachedDetailResult.item);
+          if (fetchedItem) {
+            setItem(fetchedItem);
           }
           if (reviewRes.data?.ok) {
             setReviews(reviewRes.data.data?.reviews || reviewRes.data.reviews || []);
@@ -66,7 +78,7 @@ export default function ProductPage() {
     return () => {
       active = false;
     };
-  }, [id, getCachedItemDetail, getItemDetailFromState]);
+  }, [id, dispatch]);
 
   // Compute resolved facilities for this item/service
   const facilitiesList = useMemo(() => {

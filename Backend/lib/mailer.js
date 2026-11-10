@@ -1,5 +1,12 @@
-import "dotenv/config";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+
+// Load .env from Backend directory regardless of CWD
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: resolve(__dirname, "../.env") });
 
 let transporter;
 
@@ -9,16 +16,24 @@ function getTransporter() {
   const host = process.env.SMTP_HOST || process.env.EMAIL_HOST;
   const port = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
   const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const pass = (process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || "").trim();
+  // Remove ALL spaces from app password (Gmail app passwords have spaces for readability only)
+  const pass = (process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || "")
+    .replace(/\s+/g, "")
+    .trim();
+
+  console.log(`[mailer] Connecting to ${host}:${port} as ${user}`);
 
   transporter = nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
     auth: { user, pass },
-    connectionTimeout: 5000,
-    greetingTimeout: 5000,
-    socketTimeout: 5000,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
 
   return transporter;
@@ -26,26 +41,40 @@ function getTransporter() {
 
 export async function sendMail({ to, subject, html, text }) {
   const host = process.env.SMTP_HOST || process.env.EMAIL_HOST;
-  if (!host) {
-    console.warn("[mailer] SMTP not configured, skipping:", subject);
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || "";
+
+  if (!host || !user || !pass) {
+    console.warn("[mailer] SMTP not configured. host:", host, "user:", user, "pass set:", !!pass);
     return { skipped: true };
   }
 
   const from =
     process.env.SMTP_FROM ||
     process.env.EMAIL_FROM ||
-    `FlipsAura <${process.env.SMTP_USER || process.env.EMAIL_USER || "no-reply@flipsaura.com"}>`;
+    `FlipsAura <${user}>`;
 
-  const info = await getTransporter().sendMail({
-    from,
-    to,
-    subject,
-    html,
-    text,
-  });
+  console.log(`[mailer] Attempting to send "${subject}" to ${to} from ${from}`);
 
-  console.log(`[mailer] Email sent successfully to ${to} (MessageId: ${info.messageId})`);
-  return info;
+  // Reset transporter on each call so it picks up fresh credentials
+  transporter = null;
+
+  try {
+    const info = await getTransporter().sendMail({
+      from,
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    console.log(`[mailer] ✅ Email sent successfully to ${to} (MessageId: ${info.messageId})`);
+    return info;
+  } catch (err) {
+    console.error(`[mailer] ❌ Failed to send email to ${to}:`, err.message);
+    console.error(`[mailer] SMTP Error code: ${err.code}, Response: ${err.response}`);
+    throw err;
+  }
 }
 
 export function passwordResetHtml({ name, resetUrl }) {

@@ -1,10 +1,16 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "@/compat/Link";
 import { useRouter, useSearchParams } from "@/compat/navigation";
-import api from "@/api/axios";
 import Pagination from "@/components/Pagination";
-import { useListings } from "@/context/ListingContext";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchCategoryItems,
+  fetchFilterMeta,
+  selectCategoryItems,
+  selectCategoryLoading,
+  selectFilterMeta,
+} from "@/store/listingsSlice";
 
 const ALL_BIHAR_DISTRICTS = [
   "Araria",
@@ -81,13 +87,7 @@ export const FEATURE_FILTER_OPTIONS = [
 export default function VenueListingView() {
   const router = useRouter();
   const sp = useSearchParams();
-
-  const {
-    getVenuesFromState,
-    getCachedVenues,
-    getFilterMetaFromState,
-    getCachedFilterMeta,
-  } = useListings();
+  const dispatch = useDispatch();
 
   const [page, setPage] = useState(parseInt(sp.get("page") || "1", 10));
 
@@ -133,62 +133,25 @@ export default function VenueListingView() {
     return p;
   }, [page, filters]);
 
-  // Synchronously initialize from state cache if available (0ms instant display!)
-  const initialData = useMemo(() => {
-    return getVenuesFromState(venueQueryParams);
-  }, [venueQueryParams, getVenuesFromState]);
+  // ── Redux selectors (instant from store, 0ms on revisit) ──────────────
+  const cachedData = useSelector(selectCategoryItems("venues", venueQueryParams));
+  const isLoadingFromRedux = useSelector(selectCategoryLoading("venues", venueQueryParams));
+  const filterMetaFromRedux = useSelector(selectFilterMeta("venues"));
 
-  const [venues, setVenues] = useState(() => initialData?.items || []);
-  const [totalCount, setTotalCount] = useState(() => initialData?.total ?? initialData?.items?.length ?? 0);
-  const [totalPages, setTotalPages] = useState(() => initialData?.totalPages || 1);
-  const [loading, setLoading] = useState(() => !initialData);
-  const [filterMeta, setFilterMeta] = useState(() => {
-    const cached = getFilterMetaFromState("venues");
-    return cached?.venueFilterMeta || cached || null;
-  });
+  const venues = cachedData?.items || [];
+  const totalCount = cachedData?.total ?? venues.length;
+  const totalPages = cachedData?.totalPages || 1;
+  const loading = !cachedData && isLoadingFromRedux;
+  const filterMeta = filterMetaFromRedux?.venueFilterMeta || filterMetaFromRedux || null;
 
-  // Fetch filter metadata
+  // ── Dispatch fetches (thunks handle cache-hit skip internally) ─────────
   useEffect(() => {
-    let active = true;
-    async function fetchMeta() {
-      try {
-        const meta = await getCachedFilterMeta("venues");
-        if (active && meta) {
-          setFilterMeta(meta.venueFilterMeta || meta);
-        }
-      } catch (err) {
-        console.error("Filter options fetch error:", err);
-      }
-    }
-    fetchMeta();
-    return () => {
-      active = false;
-    };
-  }, [getCachedFilterMeta]);
-
-  // Fetch venues with all filters
-  const loadVenues = useCallback(async () => {
-    const cached = getVenuesFromState(venueQueryParams);
-    if (!cached && venues.length === 0) {
-      setLoading(true);
-    }
-    try {
-      const res = await getCachedVenues(venueQueryParams);
-      if (res?.data) {
-        setVenues(res.data.items || []);
-        setTotalPages(res.data.totalPages || 1);
-        setTotalCount(res.data.total ?? res.data.items?.length ?? 0);
-      }
-    } catch (err) {
-      console.error("Load venues error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [venueQueryParams, getVenuesFromState, getCachedVenues, venues.length]);
+    dispatch(fetchCategoryItems({ slug: "venues", params: venueQueryParams }));
+  }, [dispatch, JSON.stringify(venueQueryParams)]);
 
   useEffect(() => {
-    loadVenues();
-  }, [loadVenues]);
+    dispatch(fetchFilterMeta("venues"));
+  }, [dispatch]);
 
   // Update filter & sync URL
   const updateFilter = (patch) => {

@@ -3,17 +3,19 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "@/compat/navigation";
 import Link from "@/compat/Link";
 import api from "@/api/axios";
+import { useDispatch, useSelector } from "react-redux";
 import VenueOverviewSection from "@/components/VenueOverviewSection";
 import { CATALOGUE_GROUPS } from "@/constants/catalogue";
-import { useListings } from "@/context/ListingContext";
+import { fetchItemDetail, selectItemDetail } from "@/store/listingsSlice";
 
 export default function VenueDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const dispatch = useDispatch();
 
-  const { getItemDetailFromState, getCachedItemDetail } = useListings();
+  // ── Instant from Redux store (0ms if already loaded via venue list) ────
+  const cachedVenue = useSelector(selectItemDetail(id));
 
-  const cachedVenue = useMemo(() => getItemDetailFromState(id), [id, getItemDetailFromState]);
   const [venue, setVenue] = useState(() => cachedVenue || null);
   const [loading, setLoading] = useState(() => !cachedVenue);
   const [error, setError] = useState("");
@@ -27,24 +29,31 @@ export default function VenueDetailPage() {
   const [inquiryGuests, setInquiryGuests] = useState("");
   const [inquirySent, setInquirySent] = useState(false);
 
+  // Sync redux state into local state
+  useEffect(() => {
+    if (cachedVenue && !venue) {
+      setVenue(cachedVenue);
+      setLoading(false);
+    }
+  }, [cachedVenue]);
+
   useEffect(() => {
     if (!id) return;
     let active = true;
 
     const fetchVenue = async () => {
       try {
-        if (!getItemDetailFromState(id)) {
-          setLoading(true);
-        }
+        if (!cachedVenue) setLoading(true);
         setError("");
 
-        const result = await getCachedItemDetail(id);
-        const loadedVenue = result?.item;
+        // Dispatch Redux thunk (skips API if still fresh in store)
+        const result = await dispatch(fetchItemDetail(id));
+        const loadedVenue = result?.payload?.item;
 
         if (active && loadedVenue) {
           setVenue(loadedVenue);
 
-          // Fetch similar venues in the same city or category
+          // Fetch similar venues
           try {
             const simRes = await api.get(`/api/items?category=venues&limit=4`);
             if (active && simRes.data?.ok) {
@@ -54,7 +63,7 @@ export default function VenueDetailPage() {
           } catch {
             // Ignore similar error
           }
-        } else if (active && !loadedVenue) {
+        } else if (active && !loadedVenue && !cachedVenue) {
           setError("Venue not found.");
         }
       } catch (err) {
@@ -69,7 +78,7 @@ export default function VenueDetailPage() {
     return () => {
       active = false;
     };
-  }, [id, getCachedItemDetail, getItemDetailFromState]);
+  }, [id, dispatch]);
 
   const images = useMemo(() => {
     if (Array.isArray(venue?.images) && venue.images.length > 0) {

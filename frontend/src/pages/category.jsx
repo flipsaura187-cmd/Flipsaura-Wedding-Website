@@ -1,12 +1,18 @@
 "use client";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "@/compat/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import ItemCard from "@/components/ItemCard";
 import Pagination from "@/components/Pagination";
 import VenueListingView from "@/components/venue/VenueListingView";
 import HomeSetupListingView from "@/components/homesetup/HomeSetupListingView";
-import api from "@/api/axios";
-import { useListings } from "@/context/ListingContext";
+import {
+  fetchCategoryItems,
+  fetchFilterMeta,
+  selectCategoryItems,
+  selectCategoryLoading,
+  selectFilterMeta,
+} from "@/store/listingsSlice";
 
 const ALL_BIHAR_DISTRICTS = [
   "Araria",
@@ -61,13 +67,7 @@ export default function CategoryPage() {
   }
   const router = useRouter();
   const sp = useSearchParams();
-
-  const {
-    getCachedFilterMeta,
-    getFilterMetaFromState,
-    getCachedCategoryItems,
-    getCategoryFromState,
-  } = useListings();
+  const dispatch = useDispatch();
 
   const [page, setPage] = useState(parseInt(sp.get("page") || "1", 10));
   const [filters, setFilters] = useState({
@@ -88,45 +88,31 @@ export default function CategoryPage() {
     return p;
   }, [page, filters]);
 
-  // Synchronously initialize from state cache if available (0ms loading!)
-  const initialData = useMemo(() => {
-    return getCategoryFromState(slug, queryParams);
-  }, [slug, queryParams, getCategoryFromState]);
+  // ── Redux selectors (instant from store, 0ms) ──────────────────────────
+  const cachedData = useSelector(selectCategoryItems(slug, queryParams));
+  const isLoadingFromRedux = useSelector(selectCategoryLoading(slug, queryParams));
+  const filterMetaFromRedux = useSelector(selectFilterMeta(slug));
 
-  const [items, setItems] = useState(() => initialData?.items || []);
-  const [totalPages, setTotalPages] = useState(() => initialData?.totalPages || 1);
-  const [totalCount, setTotalCount] = useState(() => initialData?.total ?? initialData?.items?.length ?? 0);
-  const [loading, setLoading] = useState(() => !initialData);
-  const [warningMessage, setWarningMessage] = useState(() => initialData?.warning || "");
+  const items = cachedData?.items || [];
+  const totalPages = cachedData?.totalPages || 1;
+  const totalCount = cachedData?.total ?? items.length;
+  const warningMessage = cachedData?.warning || "";
+  const loading = !cachedData && isLoadingFromRedux;
 
-  const [filterMeta, setFilterMeta] = useState(() => {
-    return (
-      getFilterMetaFromState(slug) || {
-        pricingUnit: { unit: "per booking", label: "₹ / booking", short: "booking" },
-        priceBounds: { min: 0, max: 100000 },
-        states: [],
-      }
-    );
-  });
+  const filterMeta = filterMetaFromRedux || {
+    pricingUnit: { unit: "per booking", label: "₹ / booking", short: "booking" },
+    priceBounds: { min: 0, max: 100000 },
+    states: [],
+  };
 
-  // Fetch dynamic category-specific filter metadata (pricing unit, states & districts)
+  // ── Dispatch fetches (thunks handle cache-hit skip internally) ─────────
   useEffect(() => {
-    let active = true;
-    async function fetchFilterMeta() {
-      try {
-        const meta = await getCachedFilterMeta(slug);
-        if (active && meta) {
-          setFilterMeta(meta);
-        }
-      } catch (err) {
-        console.error("Failed to load filter options", err);
-      }
-    }
-    fetchFilterMeta();
-    return () => {
-      active = false;
-    };
-  }, [slug, getCachedFilterMeta]);
+    dispatch(fetchCategoryItems({ slug, params: queryParams }));
+  }, [dispatch, slug, JSON.stringify(queryParams)]);
+
+  useEffect(() => {
+    dispatch(fetchFilterMeta(slug));
+  }, [dispatch, slug]);
 
   // Derive districts for Bihar with dynamic counts
   const biharDistricts = useMemo(() => {
@@ -152,32 +138,6 @@ export default function CategoryPage() {
       return a.name.localeCompare(b.name);
     });
   }, [filterMeta.states]);
-
-  const load = useCallback(async () => {
-    const cached = getCategoryFromState(slug, queryParams);
-    if (!cached && items.length === 0) {
-      setLoading(true);
-    }
-    setWarningMessage("");
-
-    try {
-      const res = await getCachedCategoryItems(slug, queryParams);
-      if (res?.data) {
-        setItems(res.data.items || []);
-        setTotalPages(res.data.totalPages || 1);
-        setTotalCount(res.data.total ?? res.data.items?.length ?? 0);
-        if (res.data.warning) setWarningMessage(res.data.warning);
-      }
-    } catch (err) {
-      console.error("Failed to load category items", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [slug, queryParams, getCategoryFromState, getCachedCategoryItems, items.length]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const updateFilter = (patch) => {
     setFilters((prev) => {

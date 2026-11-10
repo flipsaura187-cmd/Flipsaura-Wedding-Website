@@ -298,10 +298,10 @@ export async function register(req, res) {
     if (user.isPhoneVerified) {
       return res.status(409).json({
         ok: false,
-        error: "This email is already registered and verified. Please sign in.",
+        error: "This email is already registered. Please sign in.",
       });
     }
-    // If user exists but is not verified, update their info and re-send OTP
+    // User exists but was never verified — update their info and complete registration
     user.name = (ownerName || name).trim();
     user.phone = phone.trim();
     user.passwordHash = await User.hashPassword(password);
@@ -366,39 +366,26 @@ export async function register(req, res) {
     });
   }
 
-  // Generate 6-digit WhatsApp OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  user.phoneOtp = crypto.createHash("sha256").update(otp).digest("hex");
-  user.phoneOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-  user.phoneOtpLastSent = new Date();
+  // OTP verification DISABLED — mark phone as verified immediately
+  user.isPhoneVerified = true;
+  user.phoneOtp = null;
+  user.phoneOtpExpires = null;
   await user.save();
 
-  // Store temporary signup verification data in Redis (10 min TTL)
-  await redisSetJSON(`auth:signup:otp:${normalizedEmail}`, {
-    email: normalizedEmail,
-    phone: user.phone,
-    hashedOtp: user.phoneOtp,
-    expiresAt: user.phoneOtpExpires.getTime(),
-  }, 600);
-  await redisSet(`auth:signup:otp:cooldown:${normalizedEmail}`, "1", 45);
+  // Auto-link vendor services if phone was used in admin listings
+  await autoLinkAdminServicesToVendor(user);
 
-  // Send WhatsApp OTP via FireClashPro
-  const sendResult = await sendWhatsAppOtp(user.phone, otp);
-
-  // Clear cookie: unverified user cannot log in
+  // DO NOT auto-login — user must sign in manually after registration
   clearAuthCookie(res);
+
+  console.log(`[Register] New user registered: ${user.email} (role: ${user.role})`);
 
   res.status(200).json({
     ok: true,
-    requiresVerification: true,
-    message: sendResult.success
-      ? "Account created! A 6-digit OTP has been sent to your mobile number via SMS / WhatsApp."
-      : (sendResult.error || "Account created! Please enter the OTP to verify your mobile number."),
+    requiresVerification: false,
+    message: "Account created successfully! Please sign in to continue.",
     data: {
       email: user.email,
-      phone: user.phone,
-      maskedPhone: maskPhoneNumber(user.phone),
-      devOtp: otp,
     },
   });
   } finally {
@@ -593,11 +580,29 @@ export async function forgotPassword(req, res) {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
+  console.log(`[forgotPassword] Request received for: ${normalizedEmail}`);
+
+  // Rate limit: max 3 reset requests per email per hour (wrapped safely — Redis offline shouldn't block)
+  try {
+    const rateLimitKey = `auth:forgot:attempts:${normalizedEmail}`;
+    const attempts = await redisGet(rateLimitKey);
+    if (attempts && Number(attempts) >= 3) {
+      return res.status(429).json({
+        ok: false,
+        error: "Too many reset requests. Please wait a while before trying again.",
+      });
+    }
+    await redisIncrWithTTL(rateLimitKey, 3600);
+  } catch (redisErr) {
+    console.warn("[forgotPassword] Redis rate-limit check failed (continuing):", redisErr.message);
+  }
+
   await dbConnect();
   const user = await User.findOne({ email: normalizedEmail });
 
-  // Prevent account enumeration: return consistent success message
+  // Prevent account enumeration: return consistent success message even if user not found
   if (!user) {
+    console.log(`[forgotPassword] No user found for: ${normalizedEmail} — returning generic success`);
     return res.json({
       ok: true,
       message: "If an account exists with that email, a password reset link has been sent.",
@@ -606,7 +611,7 @@ export async function forgotPassword(req, res) {
 
   const now = Date.now();
 
-  // Generate secure reset token and store hashed version in database
+  // Generate secure reset token (raw sent in URL, hashed stored in DB)
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 
@@ -623,6 +628,7 @@ export async function forgotPassword(req, res) {
   ).replace(/\/+$/, "");
 
   const resetUrl = `${clientUrl}/reset-password?token=${rawToken}`;
+  console.log(`[forgotPassword] Reset link for ${normalizedEmail}: ${resetUrl}`);
 
   try {
     const sendResult = await sendPasswordResetMail({
@@ -632,19 +638,21 @@ export async function forgotPassword(req, res) {
     });
 
     if (sendResult?.skipped) {
-      console.warn("[forgotPassword] SMTP not configured. Token generated:", rawToken);
-      return res.status(500).json({
-        ok: false,
-        error: "Email service is temporarily unavailable. Please contact support.",
+      console.warn("[forgotPassword] SMTP not configured — token for dev:", rawToken);
+      // In dev mode, still return success so UI shows the message
+      return res.json({
+        ok: true,
+        message: "A password reset link has been sent to your email.",
       });
     }
 
+    console.log(`[forgotPassword] ✅ Reset email sent to ${user.email}`);
     res.json({
       ok: true,
       message: "A password reset link has been sent to your email.",
     });
   } catch (error) {
-    console.error("[forgotPassword] Failed to send email:", error);
+    console.error("[forgotPassword] ❌ Failed to send email:", error.message);
     res.status(500).json({
       ok: false,
       error: "Failed to send reset email. Please try again in a few moments.",

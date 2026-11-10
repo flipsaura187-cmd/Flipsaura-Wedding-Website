@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { useRouter } from "@/compat/navigation";
 import Link from "@/compat/Link";
@@ -64,22 +64,8 @@ export default function RegisterPage() {
 
       const res = await register(payload);
 
-      if (res?.requiresVerification) {
-        const queryParams = new URLSearchParams({
-          email: form.email.trim(),
-          phone: form.phone.trim(),
-        });
-        if (res.data?.maskedPhone) {
-          queryParams.set("maskedPhone", res.data.maskedPhone);
-        }
-        if (res.data?.devOtp) {
-          queryParams.set("code", res.data.devOtp);
-        }
-        router.push(`/verify-otp?${queryParams.toString()}`);
-      } else {
-        // Redirect user to login page so they must explicitly log in
-        router.push("/login?registered=true");
-      }
+      // Redirect to login — user must sign in after registration
+      router.push("/login?registered=true");
     } catch (err) {
       setError(err.message || "Registration failed. Please check your inputs.");
     } finally {
@@ -373,7 +359,7 @@ export default function RegisterPage() {
               <div>
                 <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>Mobile Number *</span>
-                  <span className="text-[11px] text-brand-600 font-semibold normal-case">OTP sent via Twilio / SMS</span>
+                  
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
@@ -394,9 +380,7 @@ export default function RegisterPage() {
                     className="w-full pl-12 pr-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all font-mono"
                   />
                 </div>
-                <p className="text-[11px] text-muted mt-1">
-                  We will send a 6-digit verification code to this mobile number.
-                </p>
+                
               </div>
 
               <div>

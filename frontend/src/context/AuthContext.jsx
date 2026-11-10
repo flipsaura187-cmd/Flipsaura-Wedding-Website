@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
     const { data: j } = await api.post("/api/auth/register", payload);
     if (!j.ok) throw new Error(j.error || "Register failed");
 
-    // Do NOT auto-login upon registration
+    // Do NOT auto-login — clear any existing session, user must sign in manually
     if (typeof window !== "undefined") {
       localStorage.removeItem("fa_token");
       delete api.defaults.headers.common["Authorization"];

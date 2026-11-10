@@ -38,7 +38,7 @@ const LoginSchema = z.object({
 
 const RegisterSchema = z.object({
   name: z.string().min(2).max(80),
-  email: z.string().email(),
+  email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(10, "Valid 10-digit mobile number is required").max(20),
   password: z.string().min(6).max(120),
   role: z.enum(["user", "customer", "vendor", "admin", "USER", "CUSTOMER", "VENDOR", "ADMIN"]).default("user"),
@@ -217,12 +217,21 @@ export async function login(req, res) {
     loginAt: Date.now(),
   }, 604800); // 7 days (matches JWT expiration)
 
-  await redisSetJSON(`auth:user:meta:${normalizedEmail}`, {
+  // Cache user meta by email (if present) and by phone
+  const metaPayload = {
     id: String(user._id),
-    email: user.email,
+    email: user.email || null,
+    phone: user.phone || null,
     role: user.role,
     isPhoneVerified: Boolean(user.isPhoneVerified),
-  }, 3600); // 1 hour
+  };
+  if (user.email) {
+    await redisSetJSON(`auth:user:meta:${user.email.toLowerCase()}`, metaPayload, 3600);
+  }
+  if (user.phone) {
+    const ph = String(user.phone).replace(/\D/g, "").slice(-10);
+    if (ph.length >= 10) await redisSetJSON(`auth:user:meta:phone:${ph}`, metaPayload, 3600);
+  }
 
   const token = signToken({ uid: String(user._id), role: user.role });
   setAuthCookie(res, token);
@@ -275,96 +284,102 @@ export async function register(req, res) {
     });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
+  // Email is optional for customers; vendors must provide one
+  const normalizedEmail = email && email.trim() ? email.trim().toLowerCase() : null;
+  const normalizedRole = String(role || "user").toLowerCase();
 
-  // Prevent concurrent duplicate signup requests (15s distributed lock)
-  const signupLockKey = `auth:signup:lock:${normalizedEmail}`;
+  if (normalizedRole === "vendor" && !normalizedEmail) {
+    return res.status(400).json({
+      ok: false,
+      error: "Email address is required for vendor registration.",
+    });
+  }
+
+  // Lock key: use phone since email is optional
+  const signupLockKey = `auth:signup:lock:${normalizedPhone}`;
   const lockAcquired = await redisAcquireLock(signupLockKey, 15);
   if (!lockAcquired) {
     return res.status(429).json({
       ok: false,
-      error: "A registration request is already being processed for this email. Please wait a moment.",
+      error: "A registration request is already being processed. Please wait a moment.",
     });
   }
 
   try {
     await dbConnect();
-    // Invalidate negative lookup cache
-    await redisDel(`auth:user:notfound:${normalizedEmail}`);
-
-    let user = await User.findOne({ email: normalizedEmail });
-
-  if (user) {
-    if (user.isPhoneVerified) {
-      return res.status(409).json({
-        ok: false,
-        error: "This email is already registered. Please sign in.",
-      });
+    if (normalizedEmail) {
+      await redisDel(`auth:user:notfound:${normalizedEmail}`);
     }
-    // User exists but was never verified — update their info and complete registration
-    user.name = (ownerName || name).trim();
-    user.phone = phone.trim();
-    user.passwordHash = await User.hashPassword(password);
-    user.role = String(role || "user").toLowerCase();
-    if (user.role === "vendor") {
-      user.vendorProfile = {
-        businessName: businessName?.trim() || "",
-        ownerName: (ownerName || name).trim(),
-        vendorType: vendorType || "Individual",
-        address: address?.trim() || "",
-        city: city?.trim() || "",
-        state: state?.trim() || "",
-        pincode: pincode?.trim() || "",
-        profilePhoto: profilePhoto || "",
-        coverPhoto: coverPhoto || "",
-        aadhar: aadhar?.trim() || "",
-        pan: pan?.trim() || "",
-        approved: false,
-        verificationStatus: "profile_incomplete",
+
+    // Check by phone first (primary identifier)
+    let user = await User.findOne({ phone: normalizedPhone });
+
+    if (!user && normalizedEmail) {
+      // Also check by email if provided
+      user = await User.findOne({ email: normalizedEmail });
+    }
+
+    if (user) {
+      if (user.isPhoneVerified) {
+        const conflictMsg =
+          normalizedEmail && user.email === normalizedEmail
+            ? "This email is already registered. Please sign in."
+            : "This mobile number is already registered. Please sign in.";
+        return res.status(409).json({ ok: false, error: conflictMsg });
+      }
+      // User exists but was never verified — update their info and complete registration
+      user.name = (ownerName || name).trim();
+      if (normalizedEmail) user.email = normalizedEmail;
+      user.phone = normalizedPhone;
+      user.passwordHash = await User.hashPassword(password);
+      user.role = normalizedRole;
+      if (normalizedRole === "vendor") {
+        user.vendorProfile = {
+          businessName: businessName?.trim() || "",
+          ownerName: (ownerName || name).trim(),
+          vendorType: vendorType || "Individual",
+          address: address?.trim() || "",
+          city: city?.trim() || "",
+          state: state?.trim() || "",
+          pincode: pincode?.trim() || "",
+          profilePhoto: profilePhoto || "",
+          coverPhoto: coverPhoto || "",
+          aadhar: aadhar?.trim() || "",
+          pan: pan?.trim() || "",
+          approved: false,
+          verificationStatus: "profile_incomplete",
+        };
+      }
+    } else {
+      // Brand new user
+      const passwordHash = await User.hashPassword(password);
+      const userDoc = {
+        name: (ownerName || name).trim(),
+        phone: normalizedPhone,
+        passwordHash,
+        role: normalizedRole,
+        isPhoneVerified: false,
       };
+      if (normalizedEmail) userDoc.email = normalizedEmail;
+      if (normalizedRole === "vendor") {
+        userDoc.vendorProfile = {
+          businessName: businessName?.trim() || "",
+          ownerName: (ownerName || name).trim(),
+          vendorType: vendorType || "Individual",
+          address: address?.trim() || "",
+          city: city?.trim() || "",
+          state: state?.trim() || "",
+          pincode: pincode?.trim() || "",
+          profilePhoto: profilePhoto || "",
+          coverPhoto: coverPhoto || "",
+          aadhar: aadhar?.trim() || "",
+          pan: pan?.trim() || "",
+          approved: false,
+          verificationStatus: "profile_incomplete",
+        };
+      }
+      user = new User(userDoc);
     }
-  } else {
-    // Check if phone number is already verified under another account
-    const phoneInUse = await User.findOne({
-      phone: phone.trim(),
-      isPhoneVerified: true,
-    });
-    if (phoneInUse) {
-      return res.status(409).json({
-        ok: false,
-        error: "This mobile number is already registered and verified with another account.",
-      });
-    }
-
-    const passwordHash = await User.hashPassword(password);
-    const normalizedRole = String(role || "user").toLowerCase();
-    user = new User({
-      name: (ownerName || name).trim(),
-      email: normalizedEmail,
-      phone: phone.trim(),
-      passwordHash,
-      role: normalizedRole,
-      isPhoneVerified: false,
-      vendorProfile:
-        normalizedRole === "vendor"
-          ? {
-              businessName: businessName?.trim() || "",
-              ownerName: (ownerName || name).trim(),
-              vendorType: vendorType || "Individual",
-              address: address?.trim() || "",
-              city: city?.trim() || "",
-              state: state?.trim() || "",
-              pincode: pincode?.trim() || "",
-              profilePhoto: profilePhoto || "",
-              coverPhoto: coverPhoto || "",
-              aadhar: aadhar?.trim() || "",
-              pan: pan?.trim() || "",
-              approved: false,
-              verificationStatus: "profile_incomplete",
-            }
-          : undefined,
-    });
-  }
 
   // OTP verification DISABLED — mark phone as verified immediately
   user.isPhoneVerified = true;
@@ -378,14 +393,15 @@ export async function register(req, res) {
   // DO NOT auto-login — user must sign in manually after registration
   clearAuthCookie(res);
 
-  console.log(`[Register] New user registered: ${user.email} (role: ${user.role})`);
+  console.log(`[Register] New user registered: ${user.phone} / ${user.email || "no-email"} (role: ${user.role})`);
 
   res.status(200).json({
     ok: true,
     requiresVerification: false,
     message: "Account created successfully! Please sign in to continue.",
     data: {
-      email: user.email,
+      phone: user.phone,
+      email: user.email || null,
     },
   });
   } finally {

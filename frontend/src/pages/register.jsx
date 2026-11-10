@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { useRouter } from "@/compat/navigation";
 import Link from "@/compat/Link";
@@ -91,10 +91,10 @@ export default function RegisterPage() {
             {error.toLowerCase().includes("already registered") && (
               <div className="mt-2 pt-2 border-t border-rose-200/60">
                 <Link
-                  href={`/login?email=${encodeURIComponent(form.email)}`}
+                  href={`/login${form.phone ? `?phone=${encodeURIComponent(form.phone)}` : form.email ? `?email=${encodeURIComponent(form.email)}` : ""}`}
                   className="font-bold underline text-rose-800 hover:text-rose-950 inline-flex items-center gap-1"
                 >
-                  <span>Already verified? Click here to Sign In →</span>
+                  <span>Already have an account? Click here to Sign In →</span>
                 </Link>
               </div>
             )}
@@ -329,6 +329,7 @@ export default function RegisterPage() {
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Full Name */}
               <div>
                 <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
                   Full Name *
@@ -342,24 +343,10 @@ export default function RegisterPage() {
                 />
               </div>
 
+              {/* Mobile Number — PRIMARY, required */}
               <div>
                 <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="name@example.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>Mobile Number *</span>
-                  
+                  Mobile Number *
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
@@ -380,9 +367,25 @@ export default function RegisterPage() {
                     className="w-full pl-12 pr-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all font-mono"
                   />
                 </div>
-                
+                <p className="text-xs text-muted mt-1">You can sign in with this mobile number.</p>
               </div>
 
+              {/* Email — OPTIONAL for customers */}
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                  Email
+                  <span className="text-muted font-normal normal-case tracking-normal">(optional — for password reset)</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                />
+              </div>
+
+              {/* Password */}
               <div>
                 <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
                   Password *

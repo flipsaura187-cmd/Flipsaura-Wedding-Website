@@ -34,8 +34,8 @@ export function AuthProvider({ children }) {
     refresh();
   }, [refresh]);
 
-  const login = async (email, password) => {
-    const { data: j } = await api.post("/api/auth/login", { email, password });
+  const login = async (identifier, password) => {
+    const { data: j } = await api.post("/api/auth/login", { identifier, password });
     if (!j.ok) throw new Error(j.error || "Login failed");
 
     if (j.data?.token && typeof window !== "undefined") {

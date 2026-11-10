@@ -8,7 +8,9 @@ export default function LoginPage() {
   const { login, user, logout } = useAuth();
   const router = useRouter();
   const [sp] = useSearchParams();
-  const [email, setEmail] = useState(() => sp?.get("email") || "");
+
+  // Identifier = email OR 10-digit mobile number
+  const [identifier, setIdentifier] = useState(() => sp?.get("email") || sp?.get("phone") || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -16,15 +18,35 @@ export default function LoginPage() {
 
   useEffect(() => {
     const qEmail = sp?.get("email");
-    if (qEmail) setEmail(qEmail);
+    const qPhone = sp?.get("phone");
+    if (qEmail) setIdentifier(qEmail);
+    else if (qPhone) setIdentifier(qPhone);
   }, [sp]);
 
   const submit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Basic client-side validation
+    const val = identifier.trim();
+    if (!val) {
+      setError("Please enter your mobile number or email address.");
+      return;
+    }
+
+    // If looks like phone, validate 10 digits
+    const isLikelyPhone = /^\+?[\d\s\-()]{7,}$/.test(val) && !val.includes("@");
+    if (isLikelyPhone) {
+      const digits = val.replace(/\D/g, "");
+      if (digits.length < 10) {
+        setError("Please enter a valid 10-digit mobile number.");
+        return;
+      }
+    }
+
     setBusy(true);
     try {
-      const u = await login(email, password);
+      const u = await login(val, password);
       const role = String(u?.role || "").toLowerCase();
       const next =
         sp?.get("next") ||
@@ -35,7 +57,7 @@ export default function LoginPage() {
           : "/");
       router.push(next);
     } catch (err) {
-      setError(err.message || "Invalid credentials. Please check your email and password.");
+      setError(err.message || "Invalid credentials. Please check and try again.");
     } finally {
       setBusy(false);
     }
@@ -52,7 +74,7 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="text-muted text-sm">
-            Sign in to your FlipsAura account.
+            Sign in with your mobile number or email.
           </p>
         </div>
 
@@ -63,7 +85,7 @@ export default function LoginPage() {
               <span>✅</span>
               <span>You are already signed in as {user.name}</span>
             </div>
-            <p className="text-xs text-emerald-800 mb-3">{user.email}</p>
+            <p className="text-xs text-emerald-800 mb-3">{user.email || user.phone}</p>
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/"
@@ -88,6 +110,19 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* Success: just registered */}
+        {sp?.get("registered") === "true" && !error && (
+          <div className="p-3.5 rounded-xl mb-5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-medium flex items-start gap-2">
+            <span>🎉</span>
+            <div>
+              <strong>Account created successfully!</strong>
+              <div className="text-xs text-emerald-700 mt-0.5">
+                Please sign in with your mobile number or email to continue.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Success: verified */}
         {sp?.get("verified") === "true" && !error && (
           <div className="p-3.5 rounded-xl mb-5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-medium flex items-start gap-2">
@@ -101,19 +136,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Success: just registered (fallback) */}
-        {sp?.get("registered") === "true" && !sp?.get("verified") && !error && (
-          <div className="p-3.5 rounded-xl mb-5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-medium flex items-start gap-2">
-            <span>🎉</span>
-            <div>
-              <strong>Account created successfully!</strong>
-              <div className="text-xs text-emerald-700 mt-0.5">
-                Please sign in to continue.
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Error */}
         {error && (
           <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl font-medium mb-5">
@@ -122,21 +144,22 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={submit} className="space-y-5">
-          {/* Email */}
+          {/* Mobile / Email identifier */}
           <div>
             <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
-              Email address
+              Mobile Number or Email
             </label>
             <input
-              type="email"
+              type="text"
               required
-              autoComplete="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              placeholder="9876543210  or  name@example.com"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               disabled={busy}
               className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-50 transition-all"
             />
+            <p className="text-xs text-muted mt-1">Enter the mobile number or email used during signup.</p>
           </div>
 
           {/* Password */}
@@ -146,7 +169,7 @@ export default function LoginPage() {
                 Password
               </label>
               <Link
-                href="/forgot-password"
+                href={`/forgot-password${identifier && identifier.includes("@") ? `?email=${encodeURIComponent(identifier)}` : ""}`}
                 className="text-xs text-brand-700 hover:text-brand-900 font-semibold hover:underline"
               >
                 Forgot password?

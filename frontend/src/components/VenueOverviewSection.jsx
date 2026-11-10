@@ -1,6 +1,14 @@
 "use client";
 import React from "react";
 
+const SPACE_ICONS = {
+  Indoor: "🏛️",
+  Outdoor: "🌿",
+  Poolside: "🏊",
+  Terrace: "🌇",
+  Courtyard: "🏕️",
+};
+
 export default function VenueOverviewSection({ item }) {
   if (!item) return null;
 
@@ -12,7 +20,23 @@ export default function VenueOverviewSection({ item }) {
   const vegPlate = item.pricePerPlateVeg || 0;
   const nonVegPlate = item.pricePerPlateNonVeg || 0;
   const spaces = Array.isArray(item.spaceTypes) ? item.spaceTypes : [];
+  const spaceAreas = (item.spaceAreas && typeof item.spaceAreas === "object") ? item.spaceAreas : {};
   const features = Array.isArray(item.venueFeatures) ? item.venueFeatures : [];
+
+  // Build area cards: use per-space details if available, else fall back to global capacity
+  const areaCards = spaces.map((sp) => {
+    const detail = spaceAreas[sp];
+    return {
+      spaceId: sp,
+      icon: SPACE_ICONS[sp] || "🏛️",
+      name: detail?.name || sp,
+      seating: Number(detail?.seating) || 0,
+      floating: Number(detail?.floating) || 0,
+    };
+  });
+
+  // Count areas that have any detail filled
+  const filledAreas = areaCards.filter((a) => a.seating > 0 || a.floating > 0 || a.name !== a.spaceId);
 
   return (
     <div className="space-y-6 pt-4">
@@ -121,24 +145,33 @@ export default function VenueOverviewSection({ item }) {
         </div>
       </div>
 
-      {/* Spaces Breakdown */}
-      {spaces.length > 0 && (
+      {/* Areas Available — per-space breakdown (like Photo 3) */}
+      {areaCards.length > 0 && (
         <div className="bg-white p-5 rounded-3xl border border-brand-100 shadow-xs space-y-3">
           <h3 className="font-serif font-bold text-base text-ink flex items-center gap-2">
-            <span>🏛️</span> Available Spaces & Settings
+            <span>📐</span> Areas Available ({areaCards.length})
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {spaces.map((sp) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {areaCards.map((area) => (
               <div
-                key={sp}
-                className="p-3 rounded-2xl bg-brand-50/50 border border-brand-100 flex items-center gap-2.5"
+                key={area.spaceId}
+                className="flex items-start gap-3 p-3.5 rounded-2xl bg-brand-50/40 border border-brand-100"
               >
-                <span className="text-lg">
-                  {sp === "Indoor" ? "🏛️" : sp === "Outdoor" ? "🌿" : sp === "Poolside" ? "🏊" : "🌇"}
-                </span>
+                <div className="flex flex-col items-center gap-1 w-14 shrink-0">
+                  <span className="text-2xl">{area.icon}</span>
+                  <span className="text-[9px] font-bold text-muted uppercase tracking-wider text-center leading-tight">
+                    {area.spaceId}
+                  </span>
+                </div>
                 <div>
-                  <h4 className="text-xs font-bold text-ink">{sp}</h4>
-                  <span className="text-[10px] text-muted">Ideal for ceremony & dining</span>
+                  {(area.seating > 0 || area.floating > 0) && (
+                    <div className="text-sm font-bold text-ink leading-tight">
+                      {area.seating > 0 && `${area.seating} Seating`}
+                      {area.seating > 0 && area.floating > 0 && " | "}
+                      {area.floating > 0 && `${area.floating} Floating`}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted mt-0.5">{area.name}</div>
                 </div>
               </div>
             ))}

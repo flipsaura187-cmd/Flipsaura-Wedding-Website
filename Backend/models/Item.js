@@ -98,6 +98,7 @@ const ItemSchema = new mongoose.Schema(
     ],
     // Venue-specific fields
     venueType: { type: String, trim: true, index: true },
+    venueTypes: [{ type: String, trim: true }],             // multi-select venue categories
     locality: { type: String, trim: true, index: true },
     guestCapacity: { type: Number, default: 0, min: 0, index: true },
     seatingCapacity: { type: Number, default: 0, min: 0 },
@@ -107,6 +108,7 @@ const ItemSchema = new mongoose.Schema(
     pricePerPlateNonVeg: { type: Number, default: 0, min: 0, index: true },
     rentalPrice: { type: Number, default: 0, min: 0, index: true },
     spaceTypes: [{ type: String, trim: true }],
+    spaceAreas: { type: mongoose.Schema.Types.Mixed, default: {} }, // per-space area details
     venueFeatures: [{ type: String, trim: true }],
     mainCategories: [{ type: String, trim: true, index: true }],
     subcategories: [{ type: String, trim: true, index: true }],

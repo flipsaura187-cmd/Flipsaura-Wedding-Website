@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import api from "@/api/axios";
 import { uploadFile } from "@/lib/uploadHelper";
-import { CATALOGUE_GROUPS } from "@/constants/catalogue";
 
 export const VENUE_PRIMARY_CATEGORIES = [
   {
@@ -118,6 +117,7 @@ export default function AdminVenueFormModal({
   const [form, setForm] = useState({
     title: "",
     venueType: "Banquet Halls",
+    venueTypes: [],           // ← NEW: multi-select venue categories
     mainCategories: [],
     subcategories: [],
     ownerName: "",
@@ -136,6 +136,7 @@ export default function AdminVenueFormModal({
     pricePerPlateVeg: "",
     pricePerPlateNonVeg: "",
     spaceTypes: ["Indoor"],
+    spaceAreas: {},           // ← NEW: { Indoor: { name: "Main Banquet", seating: "", floating: "" }, ... }
     venueFeatures: [
       "In-House Catering Available",
       "Outside Catering Allowed",
@@ -160,8 +161,7 @@ export default function AdminVenueFormModal({
   const [directImageUrl, setDirectImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
-  const [customSubcategoriesMap, setCustomSubcategoriesMap] = useState({});
-  const [customInputs, setCustomInputs] = useState({});
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -175,6 +175,9 @@ export default function AdminVenueFormModal({
       setForm({
         title: initialData.title || "",
         venueType: initialData.venueType || "Banquet Halls",
+        venueTypes: Array.isArray(initialData.venueTypes) && initialData.venueTypes.length > 0
+          ? initialData.venueTypes
+          : initialData.venueType ? [initialData.venueType] : ["Banquet Halls"],
         mainCategories: Array.isArray(initialData.mainCategories) ? initialData.mainCategories : [],
         subcategories: Array.isArray(initialData.subcategories) ? initialData.subcategories : [],
         ownerName: initialData.vendor?.vendorProfile?.ownerName || initialData.vendor?.name || "",
@@ -195,6 +198,9 @@ export default function AdminVenueFormModal({
         spaceTypes: Array.isArray(initialData.spaceTypes) && initialData.spaceTypes.length > 0
           ? initialData.spaceTypes
           : ["Indoor"],
+        spaceAreas: (initialData.spaceAreas && typeof initialData.spaceAreas === "object")
+          ? initialData.spaceAreas
+          : {},
         venueFeatures: Array.isArray(initialData.venueFeatures) && initialData.venueFeatures.length > 0
           ? initialData.venueFeatures
           : [
@@ -212,37 +218,11 @@ export default function AdminVenueFormModal({
         featured: Boolean(initialData.featured),
         sourceUrl: initialData.sourceUrl || "",
       });
-
-      const initialCustomMap =
-        initialData.customSubcategoriesMap && typeof initialData.customSubcategoriesMap === "object"
-          ? { ...initialData.customSubcategoriesMap }
-          : {};
-
-      // Detect any subcategories that are not in default lists and place in custom map
-      const allDefaultSubs = new Set(CATALOGUE_GROUPS.flatMap((g) => g.subcategories));
-      const unmappedSubs = (initialData.subcategories || []).filter((s) => !allDefaultSubs.has(s));
-      if (unmappedSubs.length > 0) {
-        unmappedSubs.forEach((unmapped) => {
-          let found = false;
-          for (const k of Object.keys(initialCustomMap)) {
-            if (Array.isArray(initialCustomMap[k]) && initialCustomMap[k].includes(unmapped)) {
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            const fallbackGroup =
-              (initialData.mainCategories && initialData.mainCategories[0]) || "Additional Facilities";
-            initialCustomMap[fallbackGroup] = [...(initialCustomMap[fallbackGroup] || []), unmapped];
-          }
-        });
-      }
-      setCustomSubcategoriesMap(initialCustomMap);
     } else {
-      setCustomSubcategoriesMap({});
       setForm({
         title: "",
         venueType: "Banquet Halls",
+        venueTypes: ["Banquet Halls"],
         mainCategories: [],
         subcategories: [],
         ownerName: "",
@@ -261,6 +241,7 @@ export default function AdminVenueFormModal({
         pricePerPlateVeg: "",
         pricePerPlateNonVeg: "",
         spaceTypes: ["Indoor"],
+        spaceAreas: {},
         venueFeatures: [
           "In-House Catering Available",
           "Outside Catering Allowed",
@@ -299,8 +280,36 @@ export default function AdminVenueFormModal({
       const next = exists
         ? prev.spaceTypes.filter((s) => s !== spaceId)
         : [...prev.spaceTypes, spaceId];
-      return { ...prev, spaceTypes: next.length > 0 ? next : ["Indoor"] };
+      // Also clean up spaceAreas for removed space
+      const newAreas = { ...prev.spaceAreas };
+      if (exists) delete newAreas[spaceId];
+      return { ...prev, spaceTypes: next.length > 0 ? next : ["Indoor"], spaceAreas: newAreas };
     });
+  };
+
+  const handleVenueTypeToggle = (catId) => {
+    setForm((prev) => {
+      const exists = prev.venueTypes.includes(catId);
+      const next = exists
+        ? prev.venueTypes.filter((v) => v !== catId)
+        : [...prev.venueTypes, catId];
+      // Keep venueType (primary/legacy) = first selected
+      const primary = next.length > 0 ? next[0] : catId;
+      return { ...prev, venueTypes: next.length > 0 ? next : [catId], venueType: primary };
+    });
+  };
+
+  const handleSpaceAreaChange = (spaceId, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      spaceAreas: {
+        ...prev.spaceAreas,
+        [spaceId]: {
+          ...(prev.spaceAreas[spaceId] || {}),
+          [field]: value,
+        },
+      },
+    }));
   };
 
   const handleFeatureToggle = (feature) => {
@@ -408,138 +417,6 @@ export default function AdminVenueFormModal({
     }));
   };
 
-  // Custom Item Handlers
-  const handleAddCustomToGroup = (catName, catKey) => {
-    const val = (customInputs[catKey] || "").trim();
-    if (!val) return;
-
-    setCustomSubcategoriesMap((prev) => {
-      const existing = prev[catName] || [];
-      if (existing.includes(val)) return prev;
-      return { ...prev, [catName]: [...existing, val] };
-    });
-
-    setForm((prev) => {
-      const nextSubs = prev.subcategories.includes(val) ? prev.subcategories : [...prev.subcategories, val];
-      const nextMain = prev.mainCategories.includes(catName) ? prev.mainCategories : [...prev.mainCategories, catName];
-      return {
-        ...prev,
-        subcategories: nextSubs,
-        mainCategories: nextMain,
-      };
-    });
-
-    setCustomInputs((prev) => ({ ...prev, [catKey]: "" }));
-  };
-
-  const handleRemoveCustomFromGroup = (catName, itemName) => {
-    setCustomSubcategoriesMap((prev) => {
-      const existing = prev[catName] || [];
-      return { ...prev, [catName]: existing.filter((item) => item !== itemName) };
-    });
-
-    setForm((prev) => ({
-      ...prev,
-      subcategories: prev.subcategories.filter((s) => s !== itemName),
-    }));
-  };
-
-  // Catalogue toggle helpers
-  const toggleSubcategory = (catName, subName) => {
-    setForm((prev) => {
-      const isSubSelected = prev.subcategories.includes(subName);
-      const nextSubcategories = isSubSelected
-        ? prev.subcategories.filter((s) => s !== subName)
-        : [...prev.subcategories, subName];
-
-      const group = CATALOGUE_GROUPS.find((g) => g.name === catName);
-      const customItems = customSubcategoriesMap[catName] || [];
-      const allKnownGroupSubs = [...(group?.subcategories || []), ...customItems];
-      const anySelectedInGroup = allKnownGroupSubs.some((s) => nextSubcategories.includes(s));
-
-      let nextMainCategories = [...prev.mainCategories];
-      if (anySelectedInGroup && !nextMainCategories.includes(catName)) {
-        nextMainCategories.push(catName);
-      } else if (!anySelectedInGroup && nextMainCategories.includes(catName)) {
-        nextMainCategories = nextMainCategories.filter((c) => c !== catName);
-      }
-
-      // If in Additional Facilities, also sync with venueFeatures
-      let nextFeatures = [...prev.venueFeatures];
-      if (catName === "Additional Facilities") {
-        if (!isSubSelected && !nextFeatures.includes(subName)) {
-          nextFeatures.push(subName);
-        } else if (isSubSelected) {
-          nextFeatures = nextFeatures.filter((f) => f !== subName);
-        }
-      }
-
-      return {
-        ...prev,
-        subcategories: nextSubcategories,
-        mainCategories: nextMainCategories,
-        venueFeatures: nextFeatures,
-      };
-    });
-  };
-
-  const selectAllInGroup = (catName) => {
-    const group = CATALOGUE_GROUPS.find((g) => g.name === catName);
-    if (!group) return;
-    const customItems = customSubcategoriesMap[catName] || [];
-    const allInGroup = [...group.subcategories, ...customItems];
-
-    setForm((prev) => {
-      const combined = Array.from(new Set([...prev.subcategories, ...allInGroup]));
-      const nextMain = Array.from(new Set([...prev.mainCategories, catName]));
-      let nextFeatures = [...prev.venueFeatures];
-      if (catName === "Additional Facilities") {
-        nextFeatures = Array.from(new Set([...nextFeatures, ...allInGroup]));
-      }
-      return {
-        ...prev,
-        subcategories: combined,
-        mainCategories: nextMain,
-        venueFeatures: nextFeatures,
-      };
-    });
-  };
-
-  const clearAllInGroup = (catName) => {
-    const group = CATALOGUE_GROUPS.find((g) => g.name === catName);
-    if (!group) return;
-    const customItems = customSubcategoriesMap[catName] || [];
-    const allInGroup = [...group.subcategories, ...customItems];
-
-    setForm((prev) => {
-      const filtered = prev.subcategories.filter((s) => !allInGroup.includes(s));
-      const nextMain = prev.mainCategories.filter((c) => c !== catName);
-      return {
-        ...prev,
-        subcategories: filtered,
-        mainCategories: nextMain,
-      };
-    });
-  };
-
-  const selectAllCatalogueServices = () => {
-    const allSubs = CATALOGUE_GROUPS.flatMap((g) => g.subcategories);
-    const allCustomSubs = Object.values(customSubcategoriesMap).flat();
-    const allCats = CATALOGUE_GROUPS.map((g) => g.name);
-    setForm((prev) => ({
-      ...prev,
-      subcategories: Array.from(new Set([...prev.subcategories, ...allSubs, ...allCustomSubs])),
-      mainCategories: Array.from(new Set([...prev.mainCategories, ...allCats])),
-    }));
-  };
-
-  const clearAllCatalogueServices = () => {
-    setForm((prev) => ({
-      ...prev,
-      subcategories: [],
-      mainCategories: [],
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -560,10 +437,10 @@ export default function AdminVenueFormModal({
     try {
       const payload = {
         title: form.title.trim(),
-        venueType: form.venueType,
+        venueType: form.venueTypes[0] || form.venueType,       // primary (legacy compat)
+        venueTypes: form.venueTypes.length > 0 ? form.venueTypes : [form.venueType],  // multi
         mainCategories: form.mainCategories,
         subcategories: form.subcategories,
-        customSubcategoriesMap: customSubcategoriesMap,
         ownerName: form.ownerName.trim(),
         contactPhone: form.contactPhone.trim(),
         contactEmail: form.contactEmail.trim(),
@@ -580,6 +457,7 @@ export default function AdminVenueFormModal({
         pricePerPlateVeg: Number(form.pricePerPlateVeg) || 0,
         pricePerPlateNonVeg: Number(form.pricePerPlateNonVeg) || 0,
         spaceTypes: form.spaceTypes,
+        spaceAreas: form.spaceAreas,                           // per-space area details
         venueFeatures: form.venueFeatures,
         about: form.about.trim(),
         description: form.description.trim() || form.about.trim(),
@@ -618,7 +496,7 @@ export default function AdminVenueFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-7xl bg-white rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[95vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4.5 bg-gradient-to-r from-brand-600 to-brand-700 text-white shrink-0">
           <div>
@@ -657,24 +535,24 @@ export default function AdminVenueFormModal({
             </div>
           )}
 
-          {/* STEP 1: Choose Primary Category */}
+          {/* STEP 1: Choose Venue Categories (Multi-Select) */}
           <div className="bg-brand-50/50 p-4 sm:p-5 rounded-2xl border border-brand-100/80">
             <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <span>Step 1: Choose Primary Venue Category</span>
+              <span>Step 1: Choose Venue Category (Select all that apply)</span>
               <span className="text-red-500">*</span>
             </label>
             <p className="text-xs text-muted mb-3">
-              Select the venue type requested by customers to filter banquet halls, marriage lawns, resorts, or small party halls.
+              A venue can appear in multiple categories. Select all that apply — customers will find it under each selected type.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {VENUE_PRIMARY_CATEGORIES.map((cat) => {
-                const isSelected = form.venueType === cat.id;
+                const isSelected = form.venueTypes.includes(cat.id);
                 return (
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, venueType: cat.id }))}
+                    onClick={() => handleVenueTypeToggle(cat.id)}
                     className={`p-3.5 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between cursor-pointer ${
                       isSelected
                         ? "bg-brand-600 text-white border-brand-600 shadow-md shadow-brand-600/20 scale-[1.02]"
@@ -896,8 +774,8 @@ export default function AdminVenueFormModal({
               </div>
             </div>
 
-            {/* Space Type Selector (Multiple) */}
-            <div className="pt-2">
+            {/* Space Type Selector (Multiple) + Per-Space Area Details */}
+            <div className="pt-2 space-y-3">
               <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-2">
                 Space Types Available (Select all that apply)
               </label>
@@ -922,6 +800,64 @@ export default function AdminVenueFormModal({
                   );
                 })}
               </div>
+
+              {/* Per-space area detail inputs — shown for each selected space */}
+              {form.spaceTypes.length > 0 && (
+                <div className="space-y-3 pt-1">
+                  <p className="text-[11px] text-muted font-medium">
+                    📐 Add area name & capacity for each selected space (shown on listing as "Areas Available"):
+                  </p>
+                  {form.spaceTypes.map((spId) => {
+                    const spOpt = SPACE_OPTIONS.find((s) => s.id === spId);
+                    const area = form.spaceAreas[spId] || {};
+                    return (
+                      <div
+                        key={spId}
+                        className="bg-white border border-brand-100 rounded-2xl p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center"
+                      >
+                        <div className="flex items-center gap-2 shrink-0 w-full sm:w-40">
+                          <span className="text-lg">{spOpt?.icon}</span>
+                          <span className="text-xs font-bold text-ink">{spOpt?.label || spId}</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1 w-full">
+                          <div>
+                            <label className="text-[10px] text-muted font-semibold block mb-1">Area / Hall Name</label>
+                            <input
+                              type="text"
+                              placeholder={spId === "Indoor" ? "e.g. Main Banquet" : spId === "Outdoor" ? "e.g. Lawn" : "e.g. Poolside Deck"}
+                              value={area.name || ""}
+                              onChange={(e) => handleSpaceAreaChange(spId, "name", e.target.value)}
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-brand-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-400"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-muted font-semibold block mb-1">Seating Capacity</label>
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="e.g. 200"
+                              value={area.seating || ""}
+                              onChange={(e) => handleSpaceAreaChange(spId, "seating", e.target.value)}
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-brand-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-400"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-muted font-semibold block mb-1">Floating Capacity</label>
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="e.g. 300"
+                              value={area.floating || ""}
+                              onChange={(e) => handleSpaceAreaChange(spId, "floating", e.target.value)}
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-brand-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-400"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -991,169 +927,6 @@ export default function AdminVenueFormModal({
                 </div>
                 <span className="text-[10px] text-rose-800 mt-1 block">Non-Veg catering food budget</span>
               </div>
-            </div>
-          </div>
-
-          {/* STEP: Event Services Catalogue & Equipment Setup */}
-          <div className="space-y-5 bg-sand-50/50 p-5 sm:p-6 rounded-3xl border border-brand-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-200 pb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🎪</span>
-                  <h3 className="font-serif font-bold text-base sm:text-lg text-ink">
-                    Event Services Catalogue & Equipment Setup
-                  </h3>
-                </div>
-                <p className="text-xs text-muted mt-0.5">
-                  Click on services to select or deselect. Selected items appear on customer search and venue profile.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
-                  {form.subcategories.length} Selected
-                </span>
-                <button
-                  type="button"
-                  onClick={selectAllCatalogueServices}
-                  className="px-3 py-1 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-2xs cursor-pointer"
-                >
-                  Select All
-                </button>
-                <button
-                  type="button"
-                  onClick={clearAllCatalogueServices}
-                  className="px-3 py-1 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold cursor-pointer"
-                >
-                  Clear All
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {CATALOGUE_GROUPS.map((group, groupIdx) => {
-                const customGroupItems = customSubcategoriesMap[group.name] || [];
-                const allGroupItems = [...group.subcategories, ...customGroupItems];
-                const groupSelectedCount = allGroupItems.filter((s) =>
-                  form.subcategories.includes(s)
-                ).length;
-                const isAllSelectedInGroup =
-                  groupSelectedCount > 0 && groupSelectedCount === allGroupItems.length;
-
-                return (
-                  <div
-                    key={group.key}
-                    className="p-4 sm:p-5 rounded-2xl bg-white border border-brand-200/90 shadow-2xs space-y-3"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-brand-100/70 pb-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl p-1 bg-sand-100 rounded-lg">{group.icon}</span>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-sm text-ink">
-                              {String.fromCharCode(65 + groupIdx)}. {group.name}
-                            </h4>
-                            <span
-                              className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                                groupSelectedCount > 0
-                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                  : "bg-slate-100 text-slate-500"
-                              }`}
-                            >
-                              {groupSelectedCount} of {allGroupItems.length} selected
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-muted">{group.description}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                        <button
-                          type="button"
-                          onClick={() => selectAllInGroup(group.name)}
-                          className="px-2.5 py-1 text-[11px] font-bold text-brand-700 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer"
-                        >
-                          {isAllSelectedInGroup ? "✓ All Selected" : "+ Select All"}
-                        </button>
-                        {groupSelectedCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => clearAllInGroup(group.name)}
-                            className="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Subcategories Chips Grid */}
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {allGroupItems.map((sub) => {
-                        const isSelected = form.subcategories.includes(sub);
-                        const isCustom = customGroupItems.includes(sub);
-
-                        return (
-                          <div
-                            key={sub}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                              isSelected
-                                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs scale-[1.02]"
-                                : "bg-white text-ink/80 border-brand-200 hover:border-brand-400 hover:bg-brand-50/50"
-                            }`}
-                            onClick={() => toggleSubcategory(group.name, sub)}
-                          >
-                            <span className={isSelected ? "text-white font-bold" : "text-brand-500 font-bold"}>
-                              {isSelected ? "✓" : "+"}
-                            </span>
-                            <span>{sub}</span>
-                            {isCustom && (
-                              <span
-                                role="button"
-                                tabIndex={0}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveCustomFromGroup(group.name, sub);
-                                }}
-                                className="ml-1 text-[10px] px-1 py-0.5 rounded hover:bg-black/20 text-white/90 hover:text-white transition cursor-pointer"
-                                title="Delete custom item"
-                              >
-                                ✕
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Inline Custom Item Input */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-brand-100/60 mt-2">
-                      <input
-                        type="text"
-                        placeholder={`+ Add custom item to ${group.name}...`}
-                        value={customInputs[group.key] || ""}
-                        onChange={(e) =>
-                          setCustomInputs((prev) => ({ ...prev, [group.key]: e.target.value }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddCustomToGroup(group.name, group.key);
-                          }
-                        }}
-                        className="px-3.5 py-1.5 rounded-xl border border-brand-200 text-xs bg-brand-50/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:max-w-xs placeholder:text-muted"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleAddCustomToGroup(group.name, group.key)}
-                        className="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shrink-0 shadow-2xs transition-all cursor-pointer"
-                      >
-                        + Add Custom
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
 

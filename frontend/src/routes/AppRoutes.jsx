@@ -57,6 +57,8 @@ import VendorOnboardingPage from "@/pages/vendor/onboarding";
 import VendorItems from "@/pages/vendor/items";
 import VendorRooms from "@/pages/vendor/rooms";
 import VendorBookings from "@/pages/vendor/bookings";
+import VendorHomeSetupPage from "@/pages/vendor/home-setup";
+import VendorHomeSetupCategoryPage from "@/pages/vendor/home-setup-category";
 
 export default function AppRoutes() {
   return (
@@ -128,6 +130,8 @@ export default function AppRoutes() {
               <Route path="items" element={<VendorItems />} />
               <Route path="rooms" element={<VendorRooms />} />
               <Route path="bookings" element={<VendorBookings />} />
+              <Route path="home-setup" element={<VendorHomeSetupPage />} />
+              <Route path="home-setup/:category" element={<VendorHomeSetupCategoryPage />} />
             </Route>
             <Route path="/portal" element={<Navigate to="/vendor/dashboard" replace />} />
             <Route path="/vendor-portal" element={<Navigate to="/vendor/dashboard" replace />} />

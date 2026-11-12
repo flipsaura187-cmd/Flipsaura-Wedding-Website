@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ItemForm from "@/components/vendor/ItemForm";
 import AdminVenueFormModal from "@/components/admin/AdminVenueFormModal";
 import AdminHotelFormModal from "@/components/admin/AdminHotelFormModal";
@@ -105,6 +106,7 @@ const SERVICE_CATEGORY_CARDS = [
 export default function VendorItems() {
   const [items, setItems] = useState([]);
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+  const navigate = useNavigate();
   const [activeCategoryType, setActiveCategoryType] = useState(null); // 'venue' | 'hotel' | 'photography' | 'mehandi' | 'generic' | null
   const [editingItem, setEditingItem] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -588,7 +590,11 @@ export default function VendorItems() {
                   onClick={() => {
                     setIsCategoryPickerOpen(false);
                     setEditingItem(null);
-                    setActiveCategoryType(cat.type);
+                    if (cat.type === "home-setup") {
+                      navigate("/vendor/home-setup");
+                    } else {
+                      setActiveCategoryType(cat.type);
+                    }
                   }}
                   className={`text-left p-4 sm:p-5 rounded-2xl border-2 border-line/80 bg-gradient-to-br ${cat.bgGradient} ${cat.borderColor} transition-all duration-200 hover:shadow-lg group flex flex-col justify-between cursor-pointer`}
                 >
@@ -639,8 +645,7 @@ export default function VendorItems() {
           initialData={editingItem}
           onClose={closeModal}
           onSaved={() => {
-            closeModal();
-            load();
+            load(); // refresh items list silently in background while popup shows
           }}
         />
       )}

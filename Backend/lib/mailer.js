@@ -160,6 +160,83 @@ export async function sendPasswordResetMail({ to, name, resetUrl }) {
   return sendMail({ to, subject, html, text });
 }
 
+export function vendorLoginCredentialsHtml({ name, email, password, loginUrl }) {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your FlipsAura Vendor Login</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#FAF8F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2D2D2D;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#FAF8F5;padding:40px 10px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);border:1px solid #F0E6DE;" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="background:linear-gradient(135deg,#8B1E3F 0%,#B83258 100%);padding:36px 32px;text-align:center;">
+                <h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:1px;color:#FFFFFF;text-transform:uppercase;">FLIPSAURA</h1>
+                <p style="margin:8px 0 0;font-size:13px;color:#FDE8EE;letter-spacing:0.5px;">Vendor Portal Access</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px 32px;">
+                <h2 style="margin:0 0 16px;font-size:20px;color:#1A1A1A;font-weight:600;">Your vendor login details</h2>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#555555;">
+                  Hello ${name ? name : "Partner"},
+                </p>
+                <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#555555;">
+                  An administrator has created login access for your FlipsAura vendor account. Use the details below to sign in.
+                </p>
+                <div style="background:#FFF9F6;border:1px solid #F0E6DE;border-radius:12px;padding:18px 20px;margin:0 0 24px;">
+                  <p style="margin:0 0 10px;font-size:13px;color:#7A6470;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Email</p>
+                  <p style="margin:0 0 16px;font-size:16px;font-weight:700;color:#1A1A1A;">${email}</p>
+                  <p style="margin:0 0 10px;font-size:13px;color:#7A6470;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Password</p>
+                  <p style="margin:0;font-size:16px;font-weight:700;color:#8B1E3F;font-family:monospace;letter-spacing:0.5px;">${password}</p>
+                </div>
+                <div style="text-align:center;margin:28px 0;">
+                  <a href="${loginUrl}" target="_blank" style="background:#8B1E3F;color:#ffffff;text-decoration:none;padding:14px 32px;font-size:15px;font-weight:600;border-radius:50px;display:inline-block;box-shadow:0 4px 12px rgba(139,30,63,0.3);letter-spacing:0.3px;">
+                    Open Vendor Login
+                  </a>
+                </div>
+                <div style="background:#FFFBEB;border-left:4px solid #D4AF37;padding:14px 18px;border-radius:6px;margin:28px 0;">
+                  <p style="margin:0;font-size:13px;line-height:1.5;color:#855F10;">
+                    <strong>Security:</strong> Please change this password after your first login. Do not share these credentials.
+                  </p>
+                </div>
+                <p style="margin:24px 0 8px;font-size:13px;color:#888888;">
+                  If the button above doesn't work, copy and paste this link into your browser:
+                </p>
+                <p style="margin:0;font-size:12px;color:#8B1E3F;word-break:break-all;">
+                  <a href="${loginUrl}" style="color:#8B1E3F;text-decoration:underline;">${loginUrl}</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="background-color:#FDF9F6;padding:24px 32px;text-align:center;border-top:1px solid #F0E6DE;">
+                <p style="margin:0;font-size:12px;color:#999999;">
+                  &copy; ${new Date().getFullYear()} FlipsAura. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
+  `;
+}
+
+export async function sendVendorLoginMail({ to, name, email, password, loginUrl }) {
+  const subject = "Your FlipsAura vendor login details";
+  const html = vendorLoginCredentialsHtml({ name, email, password, loginUrl });
+  const text = `Hello ${name || "Partner"},\n\nAn administrator has created login access for your FlipsAura vendor account.\n\nEmail: ${email}\nPassword: ${password}\n\nSign in here: ${loginUrl}\n\nPlease change this password after your first login.\n\n— Team FlipsAura`;
+
+  return sendMail({ to, subject, html, text });
+}
+
 export function bookingConfirmationHtml({
   name,
   itemTitle,

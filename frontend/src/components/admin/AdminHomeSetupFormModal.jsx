@@ -27,6 +27,8 @@ export default function AdminHomeSetupFormModal({
 }) {
   const isEdit = Boolean(initialData?._id);
   const [activeTab, setActiveTab] = useState("catalogue"); // 'catalogue' | 'basic' | 'photos'
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [savedItemId, setSavedItemId] = useState(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -489,10 +491,9 @@ export default function AdminHomeSetupFormModal({
 
       if (res.data?.ok) {
         setSuccessMsg(isEdit ? "Home Setup updated successfully!" : "Home Setup created successfully!");
-        setTimeout(() => {
-          if (onSaved) onSaved(res.data.data?.item);
-          onClose();
-        }, 700);
+        setSavedItemId(res.data.data?.item?._id || null);
+        setShowSuccessPopup(true);
+        if (onSaved) onSaved(res.data.data?.item);
       } else {
         throw new Error(res.data?.error || "Failed to save Home Setup listing");
       }
@@ -508,6 +509,83 @@ export default function AdminHomeSetupFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-ink/60 backdrop-blur-sm overflow-y-auto">
+
+      {/* ===== SUCCESS COMPLETION POPUP ===== */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl border border-emerald-200 w-full max-w-md p-8 text-center animate-in fade-in zoom-in-95 duration-300">
+            {/* Celebration Icon */}
+            <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-emerald-50 border-4 border-emerald-200 flex items-center justify-center">
+              <span className="text-4xl">🎉</span>
+            </div>
+
+            <h2 className="font-serif text-2xl font-bold text-emerald-900 mb-2">
+              {isEdit ? "Setup Updated!" : "Home Setup is Live!"}
+            </h2>
+            <p className="text-sm text-emerald-800/80 mb-1">
+              {isEdit
+                ? "Your home setup listing has been updated successfully."
+                : "Your home wedding setup has been published and is now visible to customers!"}
+            </p>
+
+            {/* What was selected summary */}
+            <div className="mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left space-y-2">
+              <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">📋 Services Selected</p>
+              <div className="flex flex-wrap gap-1.5">
+                {form.mainCategories.length > 0 ? (
+                  form.mainCategories.map((cat) => (
+                    <span key={cat} className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-white border border-amber-300 text-amber-900">
+                      ✓ {cat}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-muted">No categories selected</span>
+                )}
+              </div>
+              <p className="text-[11px] text-amber-800/70 pt-1">
+                {form.subcategories.length} equipment options across {form.mainCategories.length} service categories.
+              </p>
+            </div>
+
+            {/* Next steps hint */}
+            {!isEdit && (
+              <div className="mt-4 p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-left">
+                <p className="text-xs font-bold text-blue-900 mb-1.5">💡 Next: Add Photos to Each Service</p>
+                <p className="text-[11px] text-blue-800/80">
+                  Edit your listing and go to <strong>Category Photos</strong> tab to upload real photos for each service category (DJ, Tent, Stage, etc.) — customers love seeing actual work!
+                </p>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              {!isEdit && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSuccessPopup(false);
+                    setActiveTab("photos");
+                    // Re-open in photos tab for newly created item
+                  }}
+                  className="flex-1 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold transition shadow-sm cursor-pointer"
+                >
+                  📷 Add Photos Now
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSuccessPopup(false);
+                  onClose();
+                }}
+                className="flex-1 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition shadow-sm cursor-pointer"
+              >
+                {isEdit ? "Done ✓" : "Go to My Services →"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative w-full max-w-4xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-start sm:items-center justify-between px-4 py-3.5 sm:px-6 sm:py-4.5 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shrink-0 gap-3">
@@ -530,52 +608,59 @@ export default function AdminHomeSetupFormModal({
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center border-b border-line bg-surface/50 px-3 sm:px-6 shrink-0 overflow-x-auto gap-1 sm:gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("catalogue")}
-            className={`py-2.5 sm:py-3 px-3 sm:px-4 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap ${
-              activeTab === "catalogue"
-                ? "border-amber-600 text-amber-900 bg-amber-50/50"
-                : "border-transparent text-muted hover:text-ink"
-            }`}
-          >
-            <span>🎪</span>
-            <span>Catalogue & Equipment</span>
-            <span className="ml-1 text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">
-              {totalSelectedCatalogueCount}
-            </span>
-          </button>
+        {/* Step Indicator */}
+        <div className="shrink-0 px-4 sm:px-6 pt-4 pb-0 bg-white">
+          <div className="flex items-center gap-0">
+            {[
+              { key: "catalogue", step: 1, label: "Select Services", icon: "🎪" },
+              { key: "basic", step: 2, label: "Business Details", icon: "📋" },
+              { key: "photos", step: 3, label: "Add Photos", icon: "📷" },
+            ].map((s, idx, arr) => {
+              const isActive = activeTab === s.key;
+              const isDone =
+                (s.key === "catalogue" && (activeTab === "basic" || activeTab === "photos")) ||
+                (s.key === "basic" && activeTab === "photos");
+              return (
+                <div key={s.key} className="flex items-center flex-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(s.key)}
+                    className={`flex flex-col items-center gap-1 cursor-pointer group transition-all flex-1 py-2 ${isActive ? "" : "opacity-70 hover:opacity-100"}`}
+                  >
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base font-bold border-2 transition-all ${
+                      isDone
+                        ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                        : isActive
+                        ? "bg-amber-600 border-amber-600 text-white shadow-md"
+                        : "bg-gray-100 border-gray-200 text-gray-500 group-hover:border-amber-300"
+                    }`}>
+                      {isDone ? "✓" : s.icon}
+                    </div>
+                    <span className={`text-[10px] sm:text-xs font-semibold text-center leading-tight ${
+                      isActive ? "text-amber-700" : isDone ? "text-emerald-700" : "text-gray-500"
+                    }`}>
+                      {s.label}
+                    </span>
+                  </button>
+                  {idx < arr.length - 1 && (
+                    <div className={`h-0.5 flex-1 mx-1 rounded-full transition-all ${
+                      (s.key === "catalogue" && (activeTab === "basic" || activeTab === "photos")) ||
+                      (s.key === "basic" && activeTab === "photos")
+                        ? "bg-emerald-400"
+                        : "bg-gray-200"
+                    }`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("basic")}
-            className={`py-2.5 sm:py-3 px-3 sm:px-4 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap ${
-              activeTab === "basic"
-                ? "border-amber-600 text-amber-900 bg-amber-50/50"
-                : "border-transparent text-muted hover:text-ink"
-            }`}
-          >
-            <span>📋</span>
-            <span>Details & Rates</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("photos")}
-            className={`py-2.5 sm:py-3 px-3 sm:px-4 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap ${
-              activeTab === "photos"
-                ? "border-amber-600 text-amber-900 bg-amber-50/50"
-                : "border-transparent text-muted hover:text-ink"
-            }`}
-          >
-            <span>📷</span>
-            <span>Category Photos</span>
-            <span className="ml-1 text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
-              {allUniquePhotos.length}
-            </span>
-          </button>
+        {/* Tab Navigation (hidden — step indicator replaces visual tabs, but kept for logic compat) */}
+        <div className="hidden">
+          <button type="button" onClick={() => setActiveTab("catalogue")} />
+          <button type="button" onClick={() => setActiveTab("basic")} />
+          <button type="button" onClick={() => setActiveTab("photos")} />
         </div>
 
         {/* Form Body */}
@@ -771,7 +856,9 @@ export default function AdminHomeSetupFormModal({
 
               <div className="pt-4 flex justify-between items-center">
                 <span className="text-xs text-muted">
-                  Proceed to review setup name and contact details.
+                  {totalSelectedCatalogueCount > 0
+                    ? `✅ ${totalSelectedCatalogueCount} services selected across ${form.mainCategories.length} categories`
+                    : "Select the services you offer to customers."}
                 </span>
                 <button
                   type="button"
@@ -1384,7 +1471,7 @@ export default function AdminHomeSetupFormModal({
                   disabled={submitting}
                   className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  {submitting ? "Saving Listing..." : isEdit ? "Update Home Setup Listing" : "Publish Home Setup Listing"}
+                  {submitting ? "Saving Listing..." : isEdit ? "✓ Update Home Setup" : "🚀 Publish & Complete Setup"}
                 </button>
               </div>
             </div>
@@ -1411,7 +1498,7 @@ export default function AdminHomeSetupFormModal({
               disabled={submitting}
               className="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50 text-center"
             >
-              {submitting ? "Saving..." : isEdit ? "Save Changes" : "Save & Publish Setup"}
+              {submitting ? "Saving..." : isEdit ? "✓ Save Changes" : "🚀 Publish Setup"}
             </button>
           </div>
         </div>

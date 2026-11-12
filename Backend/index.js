@@ -28,6 +28,7 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import roomRoutes from "./routes/roomRoutes.js";
 import whatsappRoutes from "./routes/whatsappRoutes.js";
+import homeSetupV2Routes from "./routes/homeSetupV2Routes.js";
 
 const app = express();
 
@@ -74,6 +75,8 @@ app.use("/api/events", eventRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/vendor/rooms", roomRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api/home-setup-v2", homeSetupV2Routes);
+app.use("/api/vendor/home-setup-v2", homeSetupV2Routes);
 app.get("/whatsapp-connect", (req, res) => res.redirect("/api/whatsapp/connect"));
 
 app.use((req, res) => {

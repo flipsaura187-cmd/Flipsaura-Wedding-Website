@@ -192,6 +192,7 @@ export default function VendorLayout() {
     ...(hasHotelService
       ? [{ href: "/vendor/rooms", label: "Manage Rooms", icon: "🛏️", locked: !user || !isApproved }]
       : []),
+    { href: "/vendor/home-setup", label: "Home Setup Services", icon: "??", locked: !user || !isApproved },
     { href: "/vendor/bookings", label: "Bookings", icon: "📅", locked: !user || !isApproved },
   ];
 

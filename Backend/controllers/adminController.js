@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { dbConnect } from "../lib/db.js";
 import User from "../models/User.js";
 import Item from "../models/Item.js";
@@ -8,6 +9,37 @@ import Review from "../models/Review.js";
 import { calculateVendorCompletion } from "../lib/vendorVerification.js";
 import { syncVendorServicesToItems } from "../lib/vendorSync.js";
 import { autoLinkAdminServicesToVendor } from "./authController.js";
+import { sendVendorLoginMail } from "../lib/mailer.js";
+
+const KNOWN_VENDOR_LOGIN_EMAILS = [
+  { match: (name) => name.includes("saraswati"), email: "hotelsaraswatiinn@gmail.com" },
+  {
+    match: (name) => name.includes("imperial") && name.includes("hotel") && !name.startsWith("test"),
+    email: "reservation@hotelimperial.co.in",
+  },
+];
+
+function vendorDisplayName(vendor) {
+  return String(vendor?.vendorProfile?.businessName || vendor?.name || "").trim();
+}
+
+function resolveKnownVendorEmail(vendor) {
+  const name = vendorDisplayName(vendor).toLowerCase();
+  if (!name) return null;
+  const hit = KNOWN_VENDOR_LOGIN_EMAILS.find((entry) => entry.match(name));
+  return hit?.email || null;
+}
+
+function isPlaceholderEmail(email) {
+  const value = String(email || "").trim().toLowerCase();
+  return !value || value.endsWith("@imported.flipsaura.local");
+}
+
+function generateVendorPassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const bytes = crypto.randomBytes(12);
+  return Array.from(bytes, (byte) => chars[byte % chars.length]).join("");
+}
 
 export async function getAdminStats(req, res) {
   await dbConnect();
@@ -616,6 +648,104 @@ export async function updateAdminVendorStatus(req, res) {
         rejectionReason: vendor.vendorProfile.rejectionReason,
       },
       completion,
+    },
+  });
+}
+
+/**
+ * Admin: generate a random password, email credentials, and unlock the vendor dashboard.
+ */
+export async function sendAdminVendorLogin(req, res) {
+  await dbConnect();
+
+  const { id } = req.params;
+  const vendor = await User.findById(id);
+  if (!vendor || String(vendor.role || "").toLowerCase() !== "vendor") {
+    return res.status(404).json({ ok: false, error: "Vendor not found" });
+  }
+
+  const knownEmail = resolveKnownVendorEmail(vendor);
+  if (knownEmail) {
+    const existing = await User.findOne({
+      email: knownEmail,
+      _id: { $ne: vendor._id },
+    }).select("_id");
+    if (existing) {
+      return res.status(409).json({
+        ok: false,
+        error: `Cannot assign ${knownEmail} because another account already uses this email.`,
+      });
+    }
+    vendor.email = knownEmail;
+  }
+
+  if (isPlaceholderEmail(vendor.email)) {
+    return res.status(400).json({
+      ok: false,
+      error: "This vendor has no real email address. Add a valid email before sending login credentials.",
+    });
+  }
+
+  const plainPassword = generateVendorPassword();
+  vendor.passwordHash = await User.hashPassword(plainPassword);
+
+  if (!vendor.vendorProfile) {
+    vendor.vendorProfile = {};
+  }
+  vendor.vendorProfile.approved = true;
+  vendor.vendorProfile.verificationStatus = "approved";
+  vendor.vendorProfile.rejectionReason = "";
+  vendor.vendorProfile.reviewedAt = new Date();
+  vendor.markModified("vendorProfile");
+  await vendor.save();
+
+  try {
+    await syncVendorServicesToItems(vendor._id);
+  } catch (e) {
+    console.error("Auto-sync vendor services error:", e);
+  }
+
+  const siteUrl = (
+    process.env.FRONTEND_ORIGIN ||
+    process.env.CLIENT_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "http://localhost:5173"
+  ).replace(/\/$/, "");
+  const loginUrl = `${siteUrl}/login`;
+  const destination = String(vendor.email).trim().toLowerCase();
+
+  try {
+    const mailResult = await sendVendorLoginMail({
+      to: destination,
+      name: vendorDisplayName(vendor),
+      email: destination,
+      password: plainPassword,
+      loginUrl,
+    });
+    if (mailResult?.skipped) {
+      return res.status(500).json({
+        ok: false,
+        error: "SMTP is not configured, so the login email was not sent.",
+      });
+    }
+  } catch (err) {
+    return res.status(500).json({
+      ok: false,
+      error: err.message || "Failed to send login email.",
+    });
+  }
+
+  res.json({
+    ok: true,
+    message: `Login credentials sent to ${destination}.`,
+    data: {
+      vendor: {
+        id: String(vendor._id),
+        name: vendor.name,
+        email: destination,
+        approved: true,
+        verificationStatus: "approved",
+      },
     },
   });
 }

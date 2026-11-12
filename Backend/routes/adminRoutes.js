@@ -40,6 +40,7 @@ import {
   reviewAdminVendorDocument,
   reviewAdminVendorBank,
   updateAdminVendorStatus,
+  sendAdminVendorLogin,
 } from "../controllers/adminController.js";
 
 import {
@@ -82,6 +83,7 @@ router.get("/vendors/:id", ...adminOnly, getAdminVendorDetail);
 router.put("/vendors/:id/documents/:docType", ...adminOnly, reviewAdminVendorDocument);
 router.put("/vendors/:id/bank-details", ...adminOnly, reviewAdminVendorBank);
 router.put("/vendors/:id/status", ...adminOnly, updateAdminVendorStatus);
+router.post("/vendors/:id/send-login", ...adminOnly, sendAdminVendorLogin);
 
 // Hotel & Room Management Routes
 router.get("/hotels", ...adminOnly, getAdminHotels);

@@ -149,19 +149,9 @@ export default function AdminVendors() {
     }
   };
 
-  // Quick 1-click vendor approval from table
-  const resolveVendorEmailHint = (vendor) => {
-    const name = String(vendor?.businessName || vendor?.vendorProfile?.businessName || vendor?.name || "").toLowerCase();
-    if (name.includes("saraswati")) return "hotelsaraswatiinn@gmail.com";
-    if (name.includes("imperial") && name.includes("hotel") && !name.startsWith("test")) {
-      return "reservation@hotelimperial.co.in";
-    }
-    return vendor?.email || vendor?.vendor?.email || "";
-  };
-
   const handleSendLoginMail = async (vendorId, vendor = {}) => {
     if (!vendorId || sendingLoginId) return;
-    const emailHint = resolveVendorEmailHint(vendor);
+    const emailHint = vendor?.email || "";
     const label = vendor.businessName || vendor.ownerName || vendor.name || "this vendor";
     const confirmed = window.confirm(
       `A new password will be generated and emailed to ${emailHint || "this vendor"}. Continue for ${label}?`
@@ -187,6 +177,7 @@ export default function AdminVendors() {
     }
   };
 
+  // Quick 1-click vendor approval from table
   const handleQuickApprove = async (vendorId, businessName = "") => {
     setActionBusy(true);
     try {
@@ -460,20 +451,6 @@ export default function AdminVendors() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="px-4 py-2 rounded-xl bg-white hover:bg-brand-50 text-brand-800 border border-brand-200 font-bold text-xs sm:text-sm shadow-sm transition disabled:opacity-50"
-                      disabled={actionBusy || sendingLoginId === selectedVendorId}
-                      onClick={() =>
-                        handleSendLoginMail(selectedVendorId, {
-                          ...vendorDetail.vendor,
-                          businessName: vendorDetail.vendor.vendorProfile?.businessName || vendorDetail.vendor.name,
-                          email: vendorDetail.vendor.email,
-                        })
-                      }
-                    >
-                      {sendingLoginId === selectedVendorId ? "Sending..." : "Send Login Mail"}
-                    </button>
                     {!vendorDetail.vendor.vendorProfile?.approved ? (
                       <button
                         type="button"

@@ -11,28 +11,13 @@ import { syncVendorServicesToItems } from "../lib/vendorSync.js";
 import { autoLinkAdminServicesToVendor } from "./authController.js";
 import { sendVendorLoginMail } from "../lib/mailer.js";
 
-const KNOWN_VENDOR_LOGIN_EMAILS = [
-  { match: (name) => name.includes("saraswati"), email: "hotelsaraswatiinn@gmail.com" },
-  {
-    match: (name) => name.includes("imperial") && name.includes("hotel") && !name.startsWith("test"),
-    email: "reservation@hotelimperial.co.in",
-  },
-];
-
 function vendorDisplayName(vendor) {
   return String(vendor?.vendorProfile?.businessName || vendor?.name || "").trim();
 }
 
-function resolveKnownVendorEmail(vendor) {
-  const name = vendorDisplayName(vendor).toLowerCase();
-  if (!name) return null;
-  const hit = KNOWN_VENDOR_LOGIN_EMAILS.find((entry) => entry.match(name));
-  return hit?.email || null;
-}
-
 function isPlaceholderEmail(email) {
   const value = String(email || "").trim().toLowerCase();
-  return !value || value.endsWith("@imported.flipsaura.local");
+  return !value || value.endsWith("@flipsaura.local") || value.endsWith("@imported.flipsaura.local");
 }
 
 function generateVendorPassword() {
@@ -662,21 +647,6 @@ export async function sendAdminVendorLogin(req, res) {
   const vendor = await User.findById(id);
   if (!vendor || String(vendor.role || "").toLowerCase() !== "vendor") {
     return res.status(404).json({ ok: false, error: "Vendor not found" });
-  }
-
-  const knownEmail = resolveKnownVendorEmail(vendor);
-  if (knownEmail) {
-    const existing = await User.findOne({
-      email: knownEmail,
-      _id: { $ne: vendor._id },
-    }).select("_id");
-    if (existing) {
-      return res.status(409).json({
-        ok: false,
-        error: `Cannot assign ${knownEmail} because another account already uses this email.`,
-      });
-    }
-    vendor.email = knownEmail;
   }
 
   if (isPlaceholderEmail(vendor.email)) {

@@ -599,8 +599,8 @@ export async function forgotPassword(req, res) {
   console.log(`[forgotPassword] Request received for: ${normalizedEmail}`);
 
   // Rate limit: max 3 reset requests per email per hour (wrapped safely — Redis offline shouldn't block)
+  const rateLimitKey = `auth:forgot:attempts:${normalizedEmail}`;
   try {
-    const rateLimitKey = `auth:forgot:attempts:${normalizedEmail}`;
     const attempts = await redisGet(rateLimitKey);
     if (attempts && Number(attempts) >= 3) {
       return res.status(429).json({
@@ -608,7 +608,6 @@ export async function forgotPassword(req, res) {
         error: "Too many reset requests. Please wait a while before trying again.",
       });
     }
-    await redisIncrWithTTL(rateLimitKey, 3600);
   } catch (redisErr) {
     console.warn("[forgotPassword] Redis rate-limit check failed (continuing):", redisErr.message);
   }
@@ -655,11 +654,16 @@ export async function forgotPassword(req, res) {
 
     if (sendResult?.skipped) {
       console.warn("[forgotPassword] SMTP not configured — token for dev:", rawToken);
-      // In dev mode, still return success so UI shows the message
-      return res.json({
-        ok: true,
-        message: "A password reset link has been sent to your email.",
+      return res.status(500).json({
+        ok: false,
+        error: "Email service is not configured. Please contact support or try again later.",
       });
+    }
+
+    try {
+      await redisIncrWithTTL(rateLimitKey, 3600);
+    } catch (redisErr) {
+      console.warn("[forgotPassword] Redis increment failed:", redisErr.message);
     }
 
     console.log(`[forgotPassword] ✅ Reset email sent to ${user.email}`);
@@ -669,9 +673,12 @@ export async function forgotPassword(req, res) {
     });
   } catch (error) {
     console.error("[forgotPassword] ❌ Failed to send email:", error.message);
+    const authFailed = String(error.code || "").toUpperCase() === "EAUTH" || /invalid login|authentication/i.test(error.message || "");
     res.status(500).json({
       ok: false,
-      error: "Failed to send reset email. Please try again in a few moments.",
+      error: authFailed
+        ? "Email service login failed. Please try again later or contact support."
+        : "Failed to send reset email. Please try again in a few moments.",
     });
   }
 }

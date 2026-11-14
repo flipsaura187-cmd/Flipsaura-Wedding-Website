@@ -8,73 +8,90 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: resolve(__dirname, "../.env") });
 
-let transporter;
-
-function getTransporter() {
-  if (transporter) return transporter;
-
-  const host = process.env.SMTP_HOST || process.env.EMAIL_HOST;
-  const port = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
-  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-  // Remove ALL spaces from app password (Gmail app passwords have spaces for readability only)
+function smtpConfig() {
+  const host = (process.env.SMTP_HOST || process.env.EMAIL_HOST || "").trim();
+  const user = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
   const pass = (process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || "")
     .replace(/\s+/g, "")
+    .replace(/^["']|["']$/g, "")
     .trim();
+  const port = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
+  const from =
+    process.env.SMTP_FROM ||
+    process.env.EMAIL_FROM ||
+    (user ? `Beplanr <${user}>` : "");
+  return { host, user, pass, port, from };
+}
 
-  console.log(`[mailer] Connecting to ${host}:${port} as ${user}`);
+function createTransporter({ host, port, user, pass }) {
+  const isGmail = /gmail\.com$/i.test(host) || /gmail\.com$/i.test(user);
+  const base = {
+    auth: { user, pass },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 20000,
+    family: 4,
+    tls: { rejectUnauthorized: false },
+  };
 
-  transporter = nodemailer.createTransport({
-    host,
+  if (isGmail && !host) {
+    return nodemailer.createTransport({ ...base, service: "gmail" });
+  }
+
+  return nodemailer.createTransport({
+    ...base,
+    host: host || "smtp.gmail.com",
     port,
     secure: port === 465,
-    auth: { user, pass },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-    tls: {
-      rejectUnauthorized: false,
-    },
+    requireTLS: port === 587,
   });
+}
 
-  return transporter;
+async function sendWithTransporter(transport, mail) {
+  return transport.sendMail(mail);
 }
 
 export async function sendMail({ to, subject, html, text }) {
-  const host = process.env.SMTP_HOST || process.env.EMAIL_HOST;
-  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || "";
+  const { host, user, pass, port, from } = smtpConfig();
 
-  if (!host || !user || !pass) {
+  if (!user || !pass) {
     console.warn("[mailer] SMTP not configured. host:", host, "user:", user, "pass set:", !!pass);
     return { skipped: true };
   }
 
-  const from =
-    process.env.SMTP_FROM ||
-    process.env.EMAIL_FROM ||
-    `FlipsAura <${user}>`;
-
+  const mail = { from, to, subject, html, text };
   console.log(`[mailer] Attempting to send "${subject}" to ${to} from ${from}`);
 
-  // Reset transporter on each call so it picks up fresh credentials
-  transporter = null;
+  const attempts = [
+    { host: host || "smtp.gmail.com", port: port || 587, user, pass },
+    { host: host || "smtp.gmail.com", port: 465, user, pass },
+  ];
 
-  try {
-    const info = await getTransporter().sendMail({
-      from,
-      to,
-      subject,
-      html,
-      text,
-    });
-
-    console.log(`[mailer] ✅ Email sent successfully to ${to} (MessageId: ${info.messageId})`);
-    return info;
-  } catch (err) {
-    console.error(`[mailer] ❌ Failed to send email to ${to}:`, err.message);
-    console.error(`[mailer] SMTP Error code: ${err.code}, Response: ${err.response}`);
-    throw err;
+  let lastError;
+  for (let i = 0; i < attempts.length; i++) {
+    const cfg = attempts[i];
+    if (i > 0 && cfg.port === attempts[0].port) continue;
+    try {
+      console.log(`[mailer] Connecting to ${cfg.host}:${cfg.port} as ${cfg.user}`);
+      const transport = createTransporter(cfg);
+      const info = await sendWithTransporter(transport, mail);
+      transport.close();
+      console.log(`[mailer] ✅ Email sent successfully to ${to} (MessageId: ${info.messageId})`);
+      return info;
+    } catch (err) {
+      lastError = err;
+      console.error(
+        `[mailer] ❌ Send via ${cfg.host}:${cfg.port} failed:`,
+        err.message,
+        "code:",
+        err.code,
+        "response:",
+        err.response
+      );
+    }
   }
+
+  throw lastError || new Error("Failed to send email");
 }
 
 export function passwordResetHtml({ name, resetUrl }) {

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import api from "@/api/axios";
+import { uploadFile } from "@/lib/uploadHelper";
 
 const PRICING_MODELS = [
   { value: "per_event", label: "Per Event" },
@@ -56,18 +57,15 @@ export default function HomeSetupServiceForm({
     try {
       const uploaded = [];
       for (const file of files) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await api.post("/api/upload", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        if (res.data?.ok && res.data.data?.url) {
-          uploaded.push(res.data.data.url);
+        const url = await uploadFile(file, "flipsaura/homesetup");
+        if (url) {
+          uploaded.push(url);
         }
       }
       setImages((prev) => [...prev, ...uploaded]);
     } catch (err) {
-      setError(err.response?.data?.error || "Image upload failed.");
+      console.error("HomeSetup image upload error:", err);
+      setError(err.response?.data?.error || err.message || "Image upload failed.");
     } finally {
       setUploadingImages(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

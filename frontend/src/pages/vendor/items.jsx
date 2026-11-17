@@ -30,8 +30,8 @@ const SERVICE_CATEGORY_CARDS = [
     icon: "🏛️",
     badge: "Venues Catalogue",
     badgeColor: "bg-amber-100 text-amber-800 border-amber-200",
-    description: "Banquet Halls, Marriage Lawns, Luxury Resorts & Small Function / Party Halls.",
-    highlights: ["Tent & Pandal", "Furniture & Seating", "Stage & Decoration", "DJ & Sound", "Lighting & Special Effects", "Power Backup"],
+    description: "Banquet Halls, Marriage Garden / Lawns, Luxury Resorts & Small Function / Party Halls.",
+    highlights: ["Banquet Halls", "Marriage Garden / Lawns", "Wedding Resorts", "Small Function / Party Halls"],
     bgGradient: "from-amber-500/10 via-rose-500/5 to-transparent",
     borderColor: "hover:border-amber-400 hover:shadow-amber-500/10",
   },
@@ -108,6 +108,7 @@ export default function VendorItems() {
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
   const navigate = useNavigate();
   const [activeCategoryType, setActiveCategoryType] = useState(null); // 'venue' | 'hotel' | 'photography' | 'mehandi' | 'generic' | null
+  const [selectedVenueCategory, setSelectedVenueCategory] = useState("Banquet Halls");
   const [editingItem, setEditingItem] = useState(null);
   const [categories, setCategories] = useState([]);
   const [vendorStatus, setVendorStatus] = useState(null);
@@ -224,8 +225,21 @@ export default function VendorItems() {
     switch (type) {
       case "home-setup":
         return { label: "Home Setup & Pandal", icon: "🎪", color: "bg-amber-50 text-amber-800 border-amber-200" };
-      case "venue":
-        return { label: item.venueType || "Wedding Venue", icon: "🏛️", color: "bg-amber-50 text-amber-700 border-amber-200" };
+      case "venue": {
+        const vIcon =
+          item.venueType === "Marriage Garden / Lawns"
+            ? "🌿"
+            : item.venueType === "Wedding Resorts"
+            ? "🏰"
+            : item.venueType === "Small Function / Party Halls"
+            ? "🎉"
+            : "🏛️";
+        return {
+          label: item.venueType || "Wedding Venue",
+          icon: vIcon,
+          color: "bg-amber-50 text-amber-700 border-amber-200",
+        };
+      }
       case "hotel":
         return { label: "Hotel & Stay", icon: "🏨", color: "bg-blue-50 text-blue-700 border-blue-200" };
       case "photography":
@@ -263,6 +277,9 @@ export default function VendorItems() {
     }
     const type = detectCategory(item);
     setEditingItem(item);
+    if (type === "venue") {
+      setSelectedVenueCategory(item.venueType || "Banquet Halls");
+    }
     setActiveCategoryType(type);
   };
 
@@ -584,14 +601,16 @@ export default function VendorItems() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {SERVICE_CATEGORY_CARDS.map((cat) => (
-                <button
-                  key={cat.type}
-                  type="button"
+                <div
+                  key={cat.title || cat.type}
                   onClick={() => {
                     setIsCategoryPickerOpen(false);
                     setEditingItem(null);
                     if (cat.type === "home-setup") {
                       navigate("/vendor/home-setup");
+                    } else if (cat.type === "venue") {
+                      setSelectedVenueCategory(cat.venueCategory || "Banquet Halls");
+                      setActiveCategoryType("venue");
                     } else {
                       setActiveCategoryType(cat.type);
                     }
@@ -620,7 +639,20 @@ export default function VendorItems() {
                       {cat.highlights.map((h, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/80 text-gray-700 border border-line"
+                          onClick={(e) => {
+                            if (cat.type === "venue") {
+                              e.stopPropagation();
+                              setIsCategoryPickerOpen(false);
+                              setEditingItem(null);
+                              setSelectedVenueCategory(h);
+                              setActiveCategoryType("venue");
+                            }
+                          }}
+                          className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/80 text-gray-700 border border-line ${
+                            cat.type === "venue"
+                              ? "hover:bg-brand-600 hover:text-white hover:border-brand-600 transition cursor-pointer"
+                              : ""
+                          }`}
                         >
                           ✓ {h}
                         </span>
@@ -630,7 +662,7 @@ export default function VendorItems() {
                       Add {cat.title} →
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -656,6 +688,7 @@ export default function VendorItems() {
           isOpen={true}
           isVendor={true}
           initialData={editingItem}
+          initialCategory={selectedVenueCategory}
           onClose={closeModal}
           onSaved={() => {
             closeModal();

@@ -3,13 +3,14 @@ import crypto from "crypto";
 
 export function createUpload(req, res) {
   try {
+    const body = req.body || {};
     // If request contains file or dataUrl, handle as direct upload
-    if (req.body?.file || req.body?.dataUrl) {
+    if (body.file || body.dataUrl) {
       return directUpload(req, res);
     }
     const data = createUploadSignature({
-      folder: req.body.folder || "flipsaura/items",
-      publicId: req.body.publicId,
+      folder: body.folder || "flipsaura/items",
+      publicId: body.publicId,
     });
     res.json({ ok: true, data });
   } catch (error) {

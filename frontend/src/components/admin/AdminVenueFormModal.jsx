@@ -38,6 +38,56 @@ export const SPACE_OPTIONS = [
   { id: "Courtyard", label: "Courtyard / Open Area", icon: "🏕️" },
 ];
 
+export const VENUE_FACILITY_GROUPS = [
+  {
+    group: "CATERING & FOOD",
+    items: [
+      "In-House Catering Available",
+      "Outside Catering Allowed",
+      "Pure Vegetarian Menu Available",
+      "Live Food Counters Permitted",
+    ],
+  },
+  {
+    group: "DECORATION & THEMES",
+    items: [
+      "In-House Decorators Provided",
+      "Outside Decorators Allowed",
+      "Stage & Mandap Setup Included",
+    ],
+  },
+  {
+    group: "MUSIC & ENTERTAINMENT",
+    items: [
+      "DJ & Sound System Allowed",
+      "Late Night Music Permitted",
+      "Live Orchestra / Band Space",
+    ],
+  },
+  {
+    group: "COMFORT & AMENITIES",
+    items: [
+      "Central Air Conditioning (AC)",
+      "24/7 Power Backup Generator",
+      "Bridal Dressing Room Available",
+      "Complimentary Guest Rooms",
+      "Valet Parking Available",
+      "Dedicated Parking Lot (100+ Cars)",
+      "CCTV & Round-the-Clock Security",
+    ],
+  },
+  {
+    group: "RITUALS & POLICIES",
+    items: [
+      "Hawan & Fire Rituals Permitted",
+      "Baraat Allowed with Band",
+      "Firecrackers Permitted",
+      "Overnight Wedding Allowed",
+      "Alcohol License Allowed",
+    ],
+  },
+];
+
 export const ESSENTIAL_VENUE_AMENITIES = [
   { id: "Central Air Conditioning (AC)", label: "Central AC", icon: "❄️" },
   { id: "24/7 Power Backup Generator", label: "24/7 Power Backup", icon: "⚡" },
@@ -1310,45 +1360,55 @@ export default function AdminVenueFormModal({
               </div>
             </div>
 
-            {/* STEP 5: Features & Amenities for active category */}
-            <div className="space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-brand-100">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-brand-100 gap-1">
-                <h4 className="font-serif font-bold text-sm text-ink flex items-center gap-2">
-                  <span>✨</span> Amenities & Policies for {activeCategoryTab}
+            {/* STEP 5: Venue Features, Catering & Facilities */}
+            <div className="space-y-5 bg-white p-4 sm:p-6 rounded-2xl border border-brand-100 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-brand-100 gap-2">
+                <h4 className="font-serif font-bold text-sm sm:text-base text-ink flex items-center gap-2">
+                  <span>✨</span> Venue Features, Catering & Facilities
                 </h4>
-                <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200 self-start sm:self-auto">
-                  {activeForm.venueFeatures.length} Active Amenities
+                <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-3 py-1 rounded-full border border-brand-200 self-start sm:self-auto">
+                  {activeForm.venueFeatures.length} Selected
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                {ESSENTIAL_VENUE_AMENITIES.map((amenity) => {
-                  const isChecked = activeForm.venueFeatures.includes(amenity.id);
-                  return (
-                    <button
-                      key={amenity.id}
-                      type="button"
-                      onClick={() => handleFeatureToggle(amenity.id)}
-                      className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
-                        isChecked
-                          ? "bg-brand-50 border-brand-500 text-brand-900 font-bold shadow-xs scale-[1.01]"
-                          : "bg-white border-brand-200 text-ink/80 hover:bg-brand-50/50 hover:border-brand-300"
-                      }`}
-                    >
-                      <span className="text-sm shrink-0">{amenity.icon}</span>
-                      <span className="truncate flex-1">{amenity.label}</span>
-                      <span className={`text-xs font-bold ${isChecked ? "text-brand-600" : "text-gray-400"}`}>
-                        {isChecked ? "✓" : "+"}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="space-y-5">
+                {VENUE_FACILITY_GROUPS.map((sec) => (
+                  <div key={sec.group} className="space-y-2.5">
+                    <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                      {sec.group}
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                      {sec.items.map((item) => {
+                        const isChecked = activeForm.venueFeatures.includes(item);
+                        return (
+                          <div
+                            key={item}
+                            onClick={() => handleFeatureToggle(item)}
+                            className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-xs font-medium transition cursor-pointer select-none ${
+                              isChecked
+                                ? "bg-rose-50/20 border-rose-400 text-ink font-semibold shadow-2xs"
+                                : "bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50/40"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}} // Click handled on parent container
+                              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer shrink-0"
+                            />
+                            <span className="truncate">{item}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Custom Feature */}
-              <div className="bg-brand-50/40 p-3.5 rounded-2xl border border-brand-100/80 space-y-2">
+              <div className="bg-brand-50/40 p-3.5 rounded-2xl border border-brand-100/80 space-y-2 pt-3">
                 <label className="text-xs font-bold text-brand-900 flex items-center justify-between">
-                  <span>+ Add Custom Facility / Amenity / Policy</span>
+                  <span>+ Add Custom Facility / Policy</span>
                   <span className="text-[10px] text-muted font-normal">Press Enter or click Add</span>
                 </label>
                 <div className="flex gap-2 items-center">
@@ -1373,8 +1433,32 @@ export default function AdminVenueFormModal({
                     + Add Custom
                   </button>
                 </div>
-              </div>
 
+                {/* Show custom-added features if any */}
+                {activeForm.venueFeatures.filter(
+                  (f) => !VENUE_FACILITY_GROUPS.some((g) => g.items.includes(f))
+                ).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1.5">
+                    {activeForm.venueFeatures
+                      .filter((f) => !VENUE_FACILITY_GROUPS.some((g) => g.items.includes(f)))
+                      .map((custom) => (
+                        <span
+                          key={custom}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-100 text-brand-900 border border-brand-300 text-xs font-medium"
+                        >
+                          <span>✓ {custom}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeFeature(custom)}
+                            className="text-brand-500 hover:text-rose-600 font-bold ml-1 cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* STEP 6: About & Description for active category */}

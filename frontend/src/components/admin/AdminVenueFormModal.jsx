@@ -97,6 +97,7 @@ export const getDefaultsForCategory = (catId) => {
         about: "",
         description: "",
         images: [],
+        videos: [],
       };
 
     case "Wedding Resorts":
@@ -129,6 +130,7 @@ export const getDefaultsForCategory = (catId) => {
         about: "",
         description: "",
         images: [],
+        videos: [],
       };
 
     case "Small Function / Party Halls":
@@ -156,6 +158,7 @@ export const getDefaultsForCategory = (catId) => {
         about: "",
         description: "",
         images: [],
+        videos: [],
       };
 
     case "Banquet Halls":
@@ -186,6 +189,7 @@ export const getDefaultsForCategory = (catId) => {
         about: "",
         description: "",
         images: [],
+        videos: [],
       };
   }
 };
@@ -238,6 +242,32 @@ export default function AdminVenueFormModal({
   const [directImageUrl, setDirectImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
+  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [newVideoTitle, setNewVideoTitle] = useState("");
+
+  const handleAddVideo = () => {
+    const url = newVideoUrl.trim();
+    if (!url) return;
+    updateActiveCategory((prev) => ({
+      ...prev,
+      videos: [
+        ...(Array.isArray(prev.videos) ? prev.videos : []),
+        {
+          title: newVideoTitle.trim() || `${activeCategoryTab} Video Tour`,
+          url,
+        },
+      ],
+    }));
+    setNewVideoUrl("");
+    setNewVideoTitle("");
+  };
+
+  const handleRemoveVideo = (idx) => {
+    updateActiveCategory((prev) => ({
+      ...prev,
+      videos: (Array.isArray(prev.videos) ? prev.videos : []).filter((_, i) => i !== idx),
+    }));
+  };
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -295,6 +325,7 @@ export default function AdminVenueFormModal({
           about: initialData.about || "",
           description: initialData.description || "",
           images: Array.isArray(initialData.images) ? initialData.images : [],
+          videos: Array.isArray(initialData.videos) ? initialData.videos : [],
         },
       }));
     } else {
@@ -615,6 +646,7 @@ export default function AdminVenueFormModal({
       about: catData.about.trim(),
       description: catData.description.trim() || catData.about.trim(),
       images: catData.images.length > 0 ? catData.images : ["/images/categories/venues.jpg"],
+      videos: Array.isArray(catData.videos) ? catData.videos : [],
       rating: initialData?.rating || 0,
       reviewsCount: initialData?.reviewsCount || 0,
       active: Boolean(commonInfo.active),
@@ -1343,43 +1375,17 @@ export default function AdminVenueFormModal({
                 </div>
               </div>
 
-              {/* Active Amenities Tag Cloud */}
-              {activeForm.venueFeatures.length > 0 && (
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">
-                    Active Amenities ({activeForm.venueFeatures.length}):
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {activeForm.venueFeatures.map((f) => (
-                      <span
-                        key={f}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-900 border border-brand-200 text-xs font-medium shadow-2xs"
-                      >
-                        <span>✓ {f}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeFeature(f)}
-                          className="text-brand-400 hover:text-red-600 font-bold ml-1 cursor-pointer leading-none"
-                          title="Remove amenity"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* STEP 6: About & Description for active category */}
-            <div className="space-y-3 bg-white p-4 sm:p-5 rounded-2xl border border-brand-100">
+            <div className="space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-brand-100">
               <h4 className="font-serif font-bold text-sm text-ink border-b border-brand-100 pb-2 flex items-center gap-2">
                 <span>📝</span> Description & Highlights for {activeCategoryTab}
               </h4>
 
               <div>
                 <label className="block text-xs font-semibold text-ink mb-1">
-                  Short Overview / About {activeCategoryTab}
+                  About {activeCategoryTab}
                 </label>
                 <textarea
                   rows={2}
@@ -1419,6 +1425,79 @@ export default function AdminVenueFormModal({
                   }
                   className="w-full px-3.5 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm"
                 />
+              </div>
+
+              {/* + Add Video Link Section */}
+              <div className="pt-3 border-t border-brand-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-ink flex items-center gap-1.5">
+                    <span className="text-rose-600 font-bold">▶</span> Videos & Virtual Tour for {activeCategoryTab}
+                  </label>
+                  <span className="text-[11px] text-muted">YouTube, Vimeo, Reel, or Direct MP4 link</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={newVideoTitle}
+                    onChange={(e) => setNewVideoTitle(e.target.value)}
+                    placeholder={`Video Title (e.g. ${activeCategoryTab} Walkthrough)`}
+                    className="sm:w-1/3 px-3.5 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs"
+                  />
+                  <div className="flex-1 flex gap-2">
+                    <input
+                      type="url"
+                      value={newVideoUrl}
+                      onChange={(e) => setNewVideoUrl(e.target.value)}
+                      placeholder="Paste video URL (https://www.youtube.com/watch?v=...)"
+                      className="flex-1 px-3.5 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddVideo}
+                      className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs transition cursor-pointer shadow-xs shrink-0"
+                    >
+                      + Add Video
+                    </button>
+                  </div>
+                </div>
+
+                {/* Video links list */}
+                {Array.isArray(activeForm.videos) && activeForm.videos.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    {activeForm.videos.map((vid, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-brand-200 bg-brand-50/40"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-6 h-6 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center text-xs shrink-0 font-bold">
+                            ▶
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-ink truncate">{vid.title || "Venue Video"}</p>
+                            <a
+                              href={vid.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] text-muted hover:text-brand-600 truncate block"
+                            >
+                              {vid.url}
+                            </a>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVideo(idx)}
+                          className="text-gray-400 hover:text-rose-600 p-1 text-xs font-bold cursor-pointer shrink-0"
+                          title="Remove video"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

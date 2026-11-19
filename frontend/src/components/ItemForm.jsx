@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 
 import api from "@/api/axios";
-import axios from "axios";
+import { uploadFile } from "@/lib/uploadHelper";
 export default function ItemForm({ onSaved, initial }) {
   const [cats, setCats] = useState([]);
   const [form, setForm] = useState(initial || {
@@ -20,28 +20,11 @@ export default function ItemForm({ onSaved, initial }) {
   const upload = async (file) => {
     setUploading(true); setErr("");
     try {
-      // 1) get a short-lived signature from our server
-      const { data: j } = await api.post("/api/upload", {
-        folder: "flipsaura/items",
-      });
-      if (!j.ok) throw new Error(j.error);
-      const { cloudName, apiKey, timestamp, folder, signature, uploadUrl } = j.data;
-
-      // 2) upload the file directly to Cloudinary
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("api_key", apiKey);
-      fd.append("timestamp", String(timestamp));
-      fd.append("folder", folder);
-      fd.append("signature", signature);
-
-      const { data: upJson } = await axios.post(uploadUrl, fd);
-      if (!upJson.secure_url) throw new Error(upJson.error?.message || "Cloudinary upload failed");
-
-      // store the optimized delivery URL (auto format + quality)
-      const optimized = upJson.secure_url.replace("/upload/", "/upload/f_auto,q_auto/");
-      setForm(f => ({ ...f, images: [...f.images, optimized] }));
-    } catch (e) { setErr(e.message); }
+      const url = await uploadFile(file, "flipsaura/items");
+      if (url) {
+        setForm(f => ({ ...f, images: [...f.images, url] }));
+      }
+    } catch (e) { setErr(e.message || "Failed to upload image"); }
     finally { setUploading(false); }
   };
 

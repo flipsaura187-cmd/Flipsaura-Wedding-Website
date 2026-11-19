@@ -1,4 +1,4 @@
-export default function PrivacyPolicy() {
+﻿export default function PrivacyPolicy() {
     return (
         <section className="py-12 md:py-16 bg-white min-h-[75vh]">
             <div className="max-w-[860px] mx-auto px-4 sm:px-6">
@@ -8,11 +8,11 @@ export default function PrivacyPolicy() {
 
                 <div className="text-muted text-base leading-relaxed space-y-4">
                     <p>
-                        At Flipsaura, we value your privacy and are committed to protecting your personal information with the highest standards of security and transparency. This Privacy Policy explains how we collect, use, store and safeguard your data when you access or use our platform.
+                        At Beplanr, we value your privacy and are committed to protecting your personal information with the highest standards of security and transparency. This Privacy Policy explains how we collect, use, store and safeguard your data when you access or use our platform.
                     </p>
 
                     <p>
-                        Flipsaura is designed as a digital marketplace that connects users with event and wedding service providers. In order to deliver a smooth and personalized experience, we may collect certain personal details such as your name, phone number, email address, and service preferences when you interact with our website, submit inquiries, or make bookings. This information helps us understand your requirements and connect you with the most relevant vendors available on our platform.
+                        Beplanr is designed as a digital marketplace that connects users with event and wedding service providers. In order to deliver a smooth and personalized experience, we may collect certain personal details such as your name, phone number, email address, and service preferences when you interact with our website, submit inquiries, or make bookings. This information helps us understand your requirements and connect you with the most relevant vendors available on our platform.
                     </p>
 
                     <p>
@@ -20,7 +20,7 @@ export default function PrivacyPolicy() {
                     </p>
 
                     <p>
-                        Flipsaura takes reasonable and appropriate security measures to protect your data against unauthorized access, misuse, or disclosure. While we strive to use commercially acceptable means to safeguard your information, no digital platform can guarantee absolute security, and users are encouraged to use the platform responsibly.
+                        Beplanr takes reasonable and appropriate security measures to protect your data against unauthorized access, misuse, or disclosure. While we strive to use commercially acceptable means to safeguard your information, no digital platform can guarantee absolute security, and users are encouraged to use the platform responsibly.
                     </p>
 
                     <p>
@@ -32,7 +32,7 @@ export default function PrivacyPolicy() {
                     </p>
 
                     <p>
-                        Flipsaura may update this Privacy Policy from time to time to reflect changes in our practices, technology, or legal requirements. Any updates will be posted on this page with a revised effective date. Continued use of the platform after such updates indicates your acceptance of the revised policy.
+                        Beplanr may update this Privacy Policy from time to time to reflect changes in our practices, technology, or legal requirements. Any updates will be posted on this page with a revised effective date. Continued use of the platform after such updates indicates your acceptance of the revised policy.
                     </p>
 
                     <p>
@@ -40,12 +40,12 @@ export default function PrivacyPolicy() {
                     </p>
 
                     <address className="not-italic bg-brand-50 p-4 rounded-xl border border-brand-100 text-ink font-medium my-4">
-                        Email: <a href="mailto:info.flipsaura@gmail.com" className="text-brand-700 underline font-semibold">info.flipsaura@gmail.com</a><br />
+                        Email: <a href="mailto:info.Beplanr@gmail.com" className="text-brand-700 underline font-semibold">info.Beplanr@gmail.com</a><br />
                         Phone: 8210342541
                     </address>
 
                     <p>
-                        By using Flipsaura, you acknowledge that you have read and understood this Privacy Policy and agree to its terms.
+                        By using Beplanr, you acknowledge that you have read and understood this Privacy Policy and agree to its terms.
                     </p>
                 </div>
             </div>

@@ -167,7 +167,7 @@ export default function AdminUsers() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted">
-            Complete database of all registered Customers, Vendors, and Administrators on FlipsAura.
+            Complete database of all registered Customers, Vendors, and Administrators on Beplanr.
           </p>
         </div>
 
@@ -325,10 +325,10 @@ export default function AdminUsers() {
 
                   const regDate = u.createdAt
                     ? new Date(u.createdAt).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
                     : "—";
 
                   return (
@@ -375,13 +375,12 @@ export default function AdminUsers() {
                         <select
                           value={role}
                           onChange={(e) => handleUpdate(u._id, { role: e.target.value })}
-                          className={`text-xs font-bold px-2.5 py-1.5 rounded-xl border focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer ${
-                            role === "admin"
+                          className={`text-xs font-bold px-2.5 py-1.5 rounded-xl border focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer ${role === "admin"
                               ? "bg-amber-50 text-amber-900 border-amber-200"
                               : role === "vendor"
-                              ? "bg-purple-50 text-purple-900 border-purple-200"
-                              : "bg-blue-50 text-blue-900 border-blue-200"
-                          }`}
+                                ? "bg-purple-50 text-purple-900 border-purple-200"
+                                : "bg-blue-50 text-blue-900 border-blue-200"
+                            }`}
                         >
                           <option value="user">User (Customer)</option>
                           <option value="vendor">Vendor</option>
@@ -394,11 +393,10 @@ export default function AdminUsers() {
                         {role === "vendor" ? (
                           <div className="space-y-1">
                             <span
-                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                u.vendorProfile?.approved
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${u.vendorProfile?.approved
                                   ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                   : "bg-amber-100 text-amber-800 border border-amber-200"
-                              }`}
+                                }`}
                             >
                               {u.vendorProfile?.approved ? "Approved Vendor" : "Pending KYC"}
                             </span>
@@ -465,7 +463,7 @@ export default function AdminUsers() {
           <span>
             Showing <b>{filteredUsers.length}</b> of <b>{users.length}</b> users
           </span>
-          <span>FlipsAura Platform Directory</span>
+          <span>Beplanr Platform Directory</span>
         </div>
       </div>
 
@@ -573,11 +571,10 @@ export default function AdminUsers() {
                   handleUpdate(selectedUser._id, { isPhoneVerified: toggled });
                   setSelectedUser({ ...selectedUser, isPhoneVerified: toggled });
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
-                  selectedUser.isPhoneVerified
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${selectedUser.isPhoneVerified
                     ? "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
                     : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
-                }`}
+                  }`}
               >
                 {selectedUser.isPhoneVerified ? "Mark Phone as Unverified" : "✓ Mark Phone as Verified"}
               </button>

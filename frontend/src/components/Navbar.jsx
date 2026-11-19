@@ -40,7 +40,7 @@ export default function Navbar() {
         <Link href={isVendor ? "/vendor/dashboard" : "/"} className="flex items-center group flex-shrink-0 py-1">
           <Image
             src="/Beplanr_logo_full_transparent.png"
-            alt="FlipsAura Logo"
+            alt="Beplanr Logo"
             width={2088}
             height={922}
             className="h-12 sm:h-14 md:h-16 w-auto object-contain transition-transform duration-200 group-hover:scale-105"

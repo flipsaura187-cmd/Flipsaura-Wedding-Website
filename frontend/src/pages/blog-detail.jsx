@@ -89,9 +89,9 @@ export default function BlogDetail() {
         <div className="flex items-center gap-3 text-muted text-xs md:text-sm pb-6 border-b border-brand-100 mb-8 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 rounded-full bg-wine text-white inline-flex items-center justify-center font-bold text-xs">
-              {(blog.author || "F")[0]}
+              {(blog.author || "B")[0]}
             </span>
-            <span className="font-semibold text-ink">{blog.author || "FlipsAura Team"}</span>
+            <span className="font-semibold text-ink">{blog.author || "Beplanr Team"}</span>
           </div>
           <span>•</span>
           <span>
@@ -150,14 +150,14 @@ export default function BlogDetail() {
             Planning your dream wedding?
           </h3>
           <p className="text-muted text-sm max-w-md mx-auto">
-            Discover trusted venues, decorators, photographers, and makeup artists on FlipsAura.
+            Discover trusted venues, decorators, photographers, and makeup artists on Beplanr.
           </p>
           <div className="pt-2">
             <Link
               href="/"
               className="inline-block bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-all"
             >
-              Explore FlipsAura Marketplace
+              Explore Beplanr Marketplace
             </Link>
           </div>
         </div>

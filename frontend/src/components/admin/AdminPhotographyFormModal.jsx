@@ -823,7 +823,7 @@ export default function AdminPhotographyFormModal({
                     className="w-4 h-4 text-brand-600 rounded border-brand-300 focus:ring-brand-500"
                   />
                   <label htmlFor="photoActive" className="text-xs font-semibold text-ink">
-                    Active (Visible to customers on FlipsAura)
+                    Active (Visible to customers on Beplanr)
                   </label>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1011,7 +1011,7 @@ export default function AdminPhotographyFormModal({
           {activeTab === "packages" && (
             <div className="space-y-6">
               <div className="p-3 bg-brand-50 rounded-xl border border-brand-100 text-xs text-brand-800">
-                💡 <b>FlipsAura Tiered Packages:</b> Configure pricing and deliverables for <b>Basic</b>, <b>Standard</b>, <b>Premium</b>, and <b>Luxury</b> tiers. Use quick-add chips or add custom deliverables to each package.
+                💡 <b>Beplanr Tiered Packages:</b> Configure pricing and deliverables for <b>Basic</b>, <b>Standard</b>, <b>Premium</b>, and <b>Luxury</b> tiers. Use quick-add chips or add custom deliverables to each package.
               </div>
 
               {["basic", "standard", "premium", "luxury"].map((pkgKey) => {

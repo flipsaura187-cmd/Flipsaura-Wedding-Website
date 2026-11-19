@@ -105,7 +105,7 @@ export default function VenueDetailPage() {
 
   const handleSendWhatsAppInquiry = (e) => {
     e.preventDefault();
-    const msg = `Hello! I am inquiring about ${venue?.title || "Venue"} on FlipsAura.
+    const msg = `Hello! I am inquiring about ${venue?.title || "Venue"} on Beplanr.
 Name: ${inquiryName || "Guest"}
 Contact: ${inquiryPhone || "N/A"}
 Event Date: ${inquiryDate || "To be decided"}
@@ -199,7 +199,7 @@ Please share availability and final quote.`;
                 if (navigator.share) {
                   navigator.share({
                     title: venue.title,
-                    text: `Check out ${venue.title} on FlipsAura!`,
+                    text: `Check out ${venue.title} on Beplanr!`,
                     url: window.location.href,
                   });
                 } else {
@@ -569,7 +569,7 @@ Please share availability and final quote.`;
             {/* TRUST BADGE */}
             <div className="bg-brand-50/50 p-4 rounded-2xl border border-brand-100 text-xs text-ink/80 space-y-2">
               <div className="font-bold text-brand-900 flex items-center gap-1.5">
-                <span>🛡️</span> FlipsAura Booking Guarantee
+                <span>🛡️</span> Beplanr Booking Guarantee
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
                 Direct vendor pricing with zero commission markup. 100% verified property photos & genuine customer ratings.

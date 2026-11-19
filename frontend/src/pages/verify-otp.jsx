@@ -210,7 +210,7 @@ export default function VerifyOtpPage() {
 
         {fromLogin && (
           <div className="mt-2 mb-4 p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl text-left">
-            ⚠️ <strong>Verification required:</strong> Please verify your phone number to sign in to your FlipsAura account.
+            ⚠️ <strong>Verification required:</strong> Please verify your phone number to sign in to your Beplanr account.
           </div>
         )}
 

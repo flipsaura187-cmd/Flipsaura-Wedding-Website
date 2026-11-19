@@ -93,8 +93,8 @@ export default function VendorDashboard() {
           </div>
           <p className="mt-1.5 text-sm text-muted">
             {isApproved
-              ? "Your services are active and visible to couples on FlipsAura. Manage listings, rooms, and bookings below."
-              : "Welcome to FlipsAura! Review your services and complete profile verification to unlock more features."}
+              ? "Your services are active and visible to couples on Beplanr. Manage listings, rooms, and bookings below."
+              : "Welcome to Beplanr! Review your services and complete profile verification to unlock more features."}
           </p>
         </div>
 
@@ -220,7 +220,7 @@ export default function VendorDashboard() {
             </h3>
             <p className="text-muted text-xs sm:text-sm max-w-md mx-auto mb-5">
               {cleanPhone
-                ? `When FlipsAura Admin adds a venue, hotel, or photography service with contact number +91 ${cleanPhone}, it will automatically appear here.`
+                ? `When Beplanr Admin adds a venue, hotel, or photography service with contact number +91 ${cleanPhone}, it will automatically appear here.`
                 : "You have not listed any services yet."}
             </p>
             <Link

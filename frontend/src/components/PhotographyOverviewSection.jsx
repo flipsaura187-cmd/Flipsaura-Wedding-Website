@@ -161,7 +161,7 @@ export default function PhotographyOverviewSection({
                     {phone && (
                       <a
                         href={`https://wa.me/${phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
-                          `Hello, I would like to book or inquire about the ${label} Package (₹${data.price ? Number(data.price).toLocaleString("en-IN") : "On Request"}) of ${item.title} on FlipsAura.`
+                          `Hello, I would like to book or inquire about the ${label} Package (₹${data.price ? Number(data.price).toLocaleString("en-IN") : "On Request"}) of ${item.title} on Beplanr.`
                         )}`}
                         target="_blank"
                         rel="noreferrer"

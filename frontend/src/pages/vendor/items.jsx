@@ -9,6 +9,8 @@ import AdminMehandiFormModal from "@/components/admin/AdminMehandiFormModal";
 import AdminHomeSetupFormModal from "@/components/admin/AdminHomeSetupFormModal";
 import AdminPlanningDecorFormModal from "@/components/admin/AdminPlanningDecorFormModal";
 import AdminCateringFormModal from "@/components/admin/AdminCateringFormModal";
+import AdminMakeupFormModal from "@/components/admin/AdminMakeupFormModal";
+import AdminPanditFormModal from "@/components/admin/AdminPanditFormModal";
 import Link from "@/compat/Link";
 import api from "@/api/axios";
 
@@ -89,6 +91,28 @@ const SERVICE_CATEGORY_CARDS = [
     highlights: ["Veg & Non-Veg Menus", "North Indian & Mughlai", "Live Chaat & Dosa Counters", "Desserts & Live Jalebi", "Royal Crockery & Waiters"],
     bgGradient: "from-orange-500/10 via-amber-500/5 to-transparent",
     borderColor: "hover:border-orange-400 hover:shadow-orange-500/10",
+  },
+  {
+    type: "makeup",
+    title: "Bridal Makeup & Grooming",
+    icon: "💄",
+    badge: "HD & Airbrush Bridal",
+    badgeColor: "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200",
+    description: "Certified bridal makeup artists, HD & Airbrush packages, reception looks, hairstyling, saree draping & family makeover.",
+    highlights: ["Bridal HD & Airbrush", "Engagement & Reception Look", "Party / Guest Makeup", "Hair Styling & Draping", "At-Venue & Studio Available"],
+    bgGradient: "from-fuchsia-500/10 via-pink-500/5 to-transparent",
+    borderColor: "hover:border-fuchsia-400 hover:shadow-fuchsia-500/10",
+  },
+  {
+    type: "pandit",
+    title: "Pandit / Priest & Vedic Rituals",
+    icon: "🕉️",
+    badge: "Vedic Vivah Vidhi",
+    badgeColor: "bg-amber-100 text-amber-900 border-amber-300",
+    description: "Experienced Vedic pandits & priests for authentic wedding ceremonies, sacred hawan, Vivah Vidhi, Roka puja, Griha Pravesh & muhurat consultation.",
+    highlights: ["Vedic Wedding (Vivah Sanskar)", "Hawan & Griha Pravesh", "Roka & Sagai Pooja", "Kundali & Shubh Muhurat", "Samagri Included Option"],
+    bgGradient: "from-amber-600/10 via-yellow-500/5 to-transparent",
+    borderColor: "hover:border-amber-500 hover:shadow-amber-500/10",
   },
   {
     type: "generic",
@@ -217,6 +241,27 @@ export default function VendorItems() {
       return "catering";
     }
 
+    if (
+      slug === "makeup-grooming" ||
+      slug.includes("makeup") ||
+      name.includes("makeup") ||
+      name.includes("grooming")
+    ) {
+      return "makeup";
+    }
+
+    if (
+      slug === "pandit-priest" ||
+      slug.includes("pandit") ||
+      slug.includes("priest") ||
+      name.includes("pandit") ||
+      name.includes("priest") ||
+      name.includes("pooja") ||
+      name.includes("vedic")
+    ) {
+      return "pandit";
+    }
+
     return "generic";
   };
 
@@ -250,6 +295,10 @@ export default function VendorItems() {
         return { label: "Planning & Decor", icon: "🎨", color: "bg-rose-50 text-rose-800 border-rose-200" };
       case "catering":
         return { label: "Food / Catering", icon: "🍽️", color: "bg-orange-50 text-orange-800 border-orange-200" };
+      case "makeup":
+        return { label: "Makeup & Grooming", icon: "💄", color: "bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200" };
+      case "pandit":
+        return { label: "Pandit & Vedic Rituals", icon: "🕉️", color: "bg-amber-50 text-amber-900 border-amber-300" };
       default:
         return { label: item.category?.name || "Service", icon: "✨", color: "bg-gray-100 text-gray-700 border-gray-200" };
     }
@@ -371,7 +420,7 @@ export default function VendorItems() {
           <p className="text-muted text-xs sm:text-sm max-w-md mx-auto mb-6">
             {isApproved
               ? "Click '+ New Service Item' to choose your category (Venues, Hotels, Photography, Mehndi, Home Setup, Decor, Catering) and showcase your services."
-              : "Services will appear here once your vendor account is verified by FlipsAura administrators."}
+              : "Services will appear here once your vendor account is verified by Beplanr administrators."}
           </p>
           {isApproved && (
             <button
@@ -767,7 +816,35 @@ export default function VendorItems() {
         />
       )}
 
-      {/* 7. Generic Item Form Modal */}
+      {/* 7. Makeup & Grooming Form Modal (Bridal Packages, Cosmetics Brands & Portfolio) */}
+      {activeCategoryType === "makeup" && (
+        <AdminMakeupFormModal
+          isOpen={true}
+          isVendor={true}
+          initialData={editingItem}
+          onClose={closeModal}
+          onSaved={() => {
+            closeModal();
+            load();
+          }}
+        />
+      )}
+
+      {/* 8. Pandit & Vedic Rituals Form Modal (Vivah Vidhi, Havans & Samagri) */}
+      {activeCategoryType === "pandit" && (
+        <AdminPanditFormModal
+          isOpen={true}
+          isVendor={true}
+          initialData={editingItem}
+          onClose={closeModal}
+          onSaved={() => {
+            closeModal();
+            load();
+          }}
+        />
+      )}
+
+      {/* 9. Generic Item Form Modal */}
       {activeCategoryType === "generic" && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"

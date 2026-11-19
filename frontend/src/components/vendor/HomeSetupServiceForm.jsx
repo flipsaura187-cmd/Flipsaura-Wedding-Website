@@ -65,7 +65,7 @@ export default function HomeSetupServiceForm({
       setImages((prev) => [...prev, ...uploaded]);
     } catch (err) {
       console.error("HomeSetup image upload error:", err);
-      setError(err.response?.data?.error || err.message || "Image upload failed.");
+      setError(err.response?.data?.error || err.message || "Image upload failed. Please try again.");
     } finally {
       setUploadingImages(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

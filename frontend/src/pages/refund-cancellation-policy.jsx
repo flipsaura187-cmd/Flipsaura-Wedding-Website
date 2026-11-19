@@ -1,4 +1,4 @@
-import Link from "@/compat/Link";
+﻿import Link from "@/compat/Link";
 
 export default function RefundCancellationPolicy() {
     return (
@@ -14,7 +14,7 @@ export default function RefundCancellationPolicy() {
                     </p>
 
                     <p>
-                        When a user makes a booking through Flipsaura, the confirmation and execution of the service are handled by the respective vendor. Therefore, cancellation policies may vary depending on the type of service, vendor terms, and the nature of the booking. Users are advised to carefully review all details, pricing, and vendor-specific conditions before confirming any booking.
+                        When a user makes a booking through Beplanr, the confirmation and execution of the service are handled by the respective vendor. Therefore, cancellation policies may vary depending on the type of service, vendor terms, and the nature of the booking. Users are advised to carefully review all details, pricing, and vendor-specific conditions before confirming any booking.
                     </p>
 
                     <p>
@@ -22,7 +22,7 @@ export default function RefundCancellationPolicy() {
                     </p>
 
                     <p>
-                        Refunds, if applicable, are processed based on the vendor’s approval and the terms agreed upon during the booking. If the payment has been made through Flipsaura, we will initiate the refund process after confirmation from the vendor. The refunded amount will typically be credited back to the original payment method within 7–10 business days, although timelines may vary depending on banking processes.
+                        Refunds, if applicable, are processed based on the vendor’s approval and the terms agreed upon during the booking. If the payment has been made through Beplanr, we will initiate the refund process after confirmation from the vendor. The refunded amount will typically be credited back to the original payment method within 7–10 business days, although timelines may vary depending on banking processes.
                     </p>
 
                     <p>
@@ -30,7 +30,7 @@ export default function RefundCancellationPolicy() {
                     </p>
 
                     <p>
-                        Flipsaura may assist users in communicating with vendors and resolving issues related to cancellations or refunds; however, we do not guarantee refunds and are not liable for decisions made by vendors. Any disputes arising between users and vendors should be resolved mutually, and Flipsaura will act only as a supportive intermediary where possible.
+                        Beplanr may assist users in communicating with vendors and resolving issues related to cancellations or refunds; however, we do not guarantee refunds and are not liable for decisions made by vendors. Any disputes arising between users and vendors should be resolved mutually, and Beplanr will act only as a supportive intermediary where possible.
                     </p>
 
                     <p>

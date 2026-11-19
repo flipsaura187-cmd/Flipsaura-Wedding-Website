@@ -233,6 +233,7 @@ export async function createAdminVenue(req, res) {
       about = "",
       description = "",
       images = [],
+      videos = [],
       rating = 0,
       reviewsCount = 0,
       active = true,
@@ -352,6 +353,14 @@ export async function createAdminVenue(req, res) {
       cleanImages.push("/images/categories/venues.jpg");
     }
 
+    const cleanVideos = (Array.isArray(videos) ? videos : [])
+      .map((v) =>
+        typeof v === "string"
+          ? { title: "Venue Video Tour", url: v.trim() }
+          : { title: v?.title?.trim() || "Venue Video Tour", url: v?.url?.trim() || "" }
+      )
+      .filter((v) => Boolean(v.url));
+
     const cleanSpaces = (Array.isArray(spaceTypes) ? spaceTypes : [])
       .map((s) => String(s).trim())
       .filter(Boolean);
@@ -409,6 +418,7 @@ export async function createAdminVenue(req, res) {
       description: description.trim() || about.trim(),
       facilities: formattedFacilities,
       images: cleanImages,
+      videos: cleanVideos,
       rating: Math.min(5, Math.max(0, Number(rating) || 0)),
       reviewsCount: Math.max(0, Number(reviewsCount) || 0),
       active: active !== undefined ? Boolean(active) : true,
@@ -486,6 +496,7 @@ export async function updateAdminVenue(req, res) {
       about,
       description,
       images,
+      videos,
       rating,
       reviewsCount,
       active,
@@ -586,6 +597,16 @@ export async function updateAdminVenue(req, res) {
       venue.images = (Array.isArray(images) ? images : [])
         .map((img) => String(img).trim())
         .filter(Boolean);
+    }
+
+    if (videos !== undefined) {
+      venue.videos = (Array.isArray(videos) ? videos : [])
+        .map((v) =>
+          typeof v === "string"
+            ? { title: "Venue Video Tour", url: v.trim() }
+            : { title: v?.title?.trim() || "Venue Video Tour", url: v?.url?.trim() || "" }
+        )
+        .filter((v) => Boolean(v.url));
     }
 
     await venue.save();

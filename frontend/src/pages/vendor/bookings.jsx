@@ -91,7 +91,7 @@ export default function VendorBookings() {
           <p className="text-muted text-xs sm:text-sm max-w-md mx-auto">
             {isApproved
               ? "New bookings and client inquiries will appear here as couples book your wedding services."
-              : "Bookings will appear here once your vendor account is verified and public on FlipsAura."}
+              : "Bookings will appear here once your vendor account is verified and public on Beplanr."}
           </p>
         </div>
       ) : (

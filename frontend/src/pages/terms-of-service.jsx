@@ -1,4 +1,4 @@
-import Link from "@/compat/Link";
+﻿import Link from "@/compat/Link";
 
 export default function TermsOfService() {
     return (
@@ -9,11 +9,11 @@ export default function TermsOfService() {
                 </div>
 
                 <div className="text-muted text-base leading-relaxed space-y-4">
-                    <p>Welcome to Flipsaura. These Terms of Service ("Terms") govern your access to and use of our website, platform, and services. By accessing or using Flipsaura, you agree to comply with and be legally bound by these Terms. If you do not agree with any part of these Terms, you should not use our platform.</p>
+                    <p>Welcome to Beplanr. These Terms of Service ("Terms") govern your access to and use of our website, platform, and services. By accessing or using Beplanr, you agree to comply with and be legally bound by these Terms. If you do not agree with any part of these Terms, you should not use our platform.</p>
 
                     <h2>1. Introduction</h2>
-                    <p>Flipsaura is an online marketplace that connects users with service providers (vendors) offering event and wedding-related services, including but not limited to venue booking, decoration, catering, photography, makeup, transportation and entertainment services.</p>
-                    <p>Flipsaura acts solely as an intermediary platform to facilitate connections between users and vendors.</p>
+                    <p>Beplanr is an online marketplace that connects users with service providers (vendors) offering event and wedding-related services, including but not limited to venue booking, decoration, catering, photography, makeup, transportation and entertainment services.</p>
+                    <p>Beplanr acts solely as an intermediary platform to facilitate connections between users and vendors.</p>
 
                     <h2>2. Eligibility</h2>
                     <p>By using this website, you confirm that:</p>
@@ -30,10 +30,10 @@ export default function TermsOfService() {
                         <li>Maintain the confidentiality of your login credentials</li>
                         <li>Accept responsibility for all activities that occur under your account</li>
                     </ul>
-                    <p>Flipsaura reserves the right to suspend or terminate accounts found to contain false information or suspicious activity.</p>
+                    <p>Beplanr reserves the right to suspend or terminate accounts found to contain false information or suspicious activity.</p>
 
                     <h2>4. Services and Platform Usage</h2>
-                    <p>Flipsaura provides a digital platform where users can:</p>
+                    <p>Beplanr provides a digital platform where users can:</p>
                     <ul>
                         <li>Browse and select vendors</li>
                         <li>Request quotations</li>
@@ -42,20 +42,20 @@ export default function TermsOfService() {
                     </ul>
                     <p><strong>Important:</strong></p>
                     <ul>
-                        <li>Flipsaura does not directly provide the services listed</li>
+                        <li>Beplanr does not directly provide the services listed</li>
                         <li>All services are delivered by independent vendors</li>
                     </ul>
                     <p>We do not guarantee the quality, reliability, or suitability of any vendor or service listed on the platform.</p>
 
                     <h2>5. Vendor Responsibility</h2>
-                    <p>All vendors listed on Flipsaura are independent service providers. Vendors are solely responsible for:</p>
+                    <p>All vendors listed on Beplanr are independent service providers. Vendors are solely responsible for:</p>
                     <ul>
                         <li>Service quality and execution</li>
                         <li>Pricing and quotations</li>
                         <li>Timely delivery of services</li>
                         <li>Compliance with applicable laws</li>
                     </ul>
-                    <p>Flipsaura is not responsible for any failure, delay, or deficiency in services provided by vendors.</p>
+                    <p>Beplanr is not responsible for any failure, delay, or deficiency in services provided by vendors.</p>
 
                     <h2>6. Bookings and Payments</h2>
                     <ul>
@@ -63,7 +63,7 @@ export default function TermsOfService() {
                         <li>Pricing may vary based on vendor policies</li>
                         <li>Payments may be processed directly with vendors or through the platform (if applicable)</li>
                     </ul>
-                    <p>Flipsaura is not liable for:</p>
+                    <p>Beplanr is not liable for:</p>
                     <ul>
                         <li>Payment disputes between users and vendors</li>
                         <li>Any financial losses arising from vendor-related issues</li>
@@ -75,7 +75,7 @@ export default function TermsOfService() {
                     <ul>
                         <li>Users must follow the vendor's cancellation terms</li>
                         <li>Refund eligibility is determined by the vendor</li>
-                        <li>Flipsaura may assist in communication but does not guarantee refunds</li>
+                        <li>Beplanr may assist in communication but does not guarantee refunds</li>
                     </ul>
                     <p>For platform-processed payments, refunds (if applicable) may take 7–10 business days.</p>
 
@@ -90,7 +90,7 @@ export default function TermsOfService() {
                     <p>Violation of these rules may result in immediate account suspension or legal action.</p>
 
                     <h2>9. Intellectual Property</h2>
-                    <p>All content on the Flipsaura website, including:</p>
+                    <p>All content on the Beplanr website, including:</p>
                     <ul>
                         <li>Text</li>
                         <li>Graphics</li>
@@ -98,11 +98,11 @@ export default function TermsOfService() {
                         <li>Images</li>
                         <li>Website design</li>
                     </ul>
-                    <p>is the property of Flipsaura and protected under applicable intellectual property laws.</p>
+                    <p>is the property of Beplanr and protected under applicable intellectual property laws.</p>
                     <p>You may not copy, reproduce, or distribute any content without prior written permission.</p>
 
                     <h2>10. Limitation of Liability</h2>
-                    <p>To the maximum extent permitted by law, Flipsaura shall not be liable for:</p>
+                    <p>To the maximum extent permitted by law, Beplanr shall not be liable for:</p>
                     <ul>
                         <li>Any indirect, incidental, or consequential damages</li>
                         <li>Service failures by vendors</li>
@@ -111,7 +111,7 @@ export default function TermsOfService() {
                     <p>Use of the platform is at your own risk.</p>
 
                     <h2>11. Indemnification</h2>
-                    <p>You agree to indemnify and hold Flipsaura harmless from any claims, damages, losses, or liabilities arising from:</p>
+                    <p>You agree to indemnify and hold Beplanr harmless from any claims, damages, losses, or liabilities arising from:</p>
                     <ul>
                         <li>Your use of the platform</li>
                         <li>Your violation of these Terms</li>
@@ -119,7 +119,7 @@ export default function TermsOfService() {
                     </ul>
 
                     <h2>12. Third-Party Links</h2>
-                    <p>Flipsaura may contain links to third-party websites or services. We are not responsible for:</p>
+                    <p>Beplanr may contain links to third-party websites or services. We are not responsible for:</p>
                     <ul>
                         <li>Content on third-party platforms</li>
                         <li>Their privacy practices</li>
@@ -128,7 +128,7 @@ export default function TermsOfService() {
                     <p>Users access third-party services at their own risk.</p>
 
                     <h2>13. Account Termination</h2>
-                    <p>Flipsaura reserves the right to:</p>
+                    <p>Beplanr reserves the right to:</p>
                     <ul>
                         <li>Suspend or terminate accounts</li>
                         <li>Restrict access to the platform</li>

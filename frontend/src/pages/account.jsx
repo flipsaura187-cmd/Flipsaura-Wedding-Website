@@ -106,7 +106,7 @@ export default function AccountPage() {
                 return (
                   <a
                     href={`https://wa.me/91${cleanVendorPhone}?text=${encodeURIComponent(
-                      `Hi ${confirmedBooking?.item?.title || "Hotel/Vendor"}! I just paid and confirmed booking #${newBookingId} on FlipsAura for date ${
+                      `Hi ${confirmedBooking?.item?.title || "Hotel/Vendor"}! I just paid and confirmed booking #${newBookingId} on Beplanr for date ${
                         confirmedBooking?.eventDate || "my event date"
                       }.`
                     )}`}
@@ -122,7 +122,7 @@ export default function AccountPage() {
 
               <a
                 href={`https://wa.me/916202442499?text=${encodeURIComponent(
-                  `Hi FlipsAura! I just paid and confirmed booking #${newBookingId} for ${
+                  `Hi Beplanr! I just paid and confirmed booking #${newBookingId} for ${
                     confirmedBooking?.item?.title || "service"
                   } on date ${confirmedBooking?.eventDate || "my event date"}.`
                 )}`}
@@ -144,7 +144,7 @@ export default function AccountPage() {
                 WhatsApp Number Verified Successfully!
               </h3>
               <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">
-                Welcome to FlipsAura, <strong>{user.name}</strong>! Your account is active and you are signed in.
+                Welcome to Beplanr, <strong>{user.name}</strong>! Your account is active and you are signed in.
               </p>
             </div>
           </div>
@@ -237,7 +237,7 @@ export default function AccountPage() {
                           <div className="inline-flex items-center gap-1.5 justify-end">
                             <a
                               href={`https://wa.me/91${cleanItemPhone}?text=${encodeURIComponent(
-                                `Hi ${b.item?.title || "Team"}! Regarding my FlipsAura booking #${b._id} on date ${b.eventDate || "my event"}:`
+                                `Hi ${b.item?.title || "Team"}! Regarding my Beplanr booking #${b._id} on date ${b.eventDate || "my event"}:`
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"

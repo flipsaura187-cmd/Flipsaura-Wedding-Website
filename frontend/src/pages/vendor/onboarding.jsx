@@ -808,7 +808,7 @@ export default function VendorOnboardingPage() {
             <h3 className="font-serif text-lg md:text-xl font-bold text-wine">
               Business & Contact Information
             </h3>
-            <p className="text-xs text-muted mt-0.5">Primary information displayed on your FlipsAura profile.</p>
+            <p className="text-xs text-muted mt-0.5">Primary information displayed on your Beplanr profile.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -2326,7 +2326,7 @@ export default function VendorOnboardingPage() {
               Verification Checklist & Submission
             </h3>
             <p className="text-xs text-muted mt-0.5">
-              Ensure all requirements below are completed. Once submitted, your profile will be sent to the FlipsAura verification team for final review.
+              Ensure all requirements below are completed. Once submitted, your profile will be sent to the Beplanr verification team for final review.
             </p>
           </div>
 

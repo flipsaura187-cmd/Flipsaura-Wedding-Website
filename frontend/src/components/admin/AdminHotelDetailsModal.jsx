@@ -24,7 +24,7 @@ export default function AdminHotelDetailsModal({
     (r) => String(r.hotelId || r.hotel?._id || r.hotel) === String(hotel._id)
   );
 
-  const vendorName = hotel.vendor?.name || hotel.vendorName || "FlipsAura Hotel Partner";
+  const vendorName = hotel.vendor?.name || hotel.vendorName || "Beplanr Hotel Partner";
   const vendorPhone = hotel.vendorPhone || hotel.contactPhone || hotel.vendor?.phone || "";
   const vendorEmail = hotel.vendorEmail || hotel.contactEmail || hotel.vendor?.email || "";
 

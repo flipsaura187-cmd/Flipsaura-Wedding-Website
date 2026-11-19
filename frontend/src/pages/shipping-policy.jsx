@@ -1,4 +1,4 @@
-import Link from "@/compat/Link";
+﻿import Link from "@/compat/Link";
 
 export default function ShippingPolicy() {
     return (
@@ -10,7 +10,7 @@ export default function ShippingPolicy() {
 
                 <div className="text-muted text-base leading-relaxed space-y-4">
                     <p>
-                        At Flipsaura, our primary focus is to connect users with reliable event and wedding service providers. While most services offered on our platform are service-based and do not involve physical delivery, certain categories such as invitation cards, gifts, or customized event materials may require shipping.
+                        At Beplanr, our primary focus is to connect users with reliable event and wedding service providers. While most services offered on our platform are service-based and do not involve physical delivery, certain categories such as invitation cards, gifts, or customized event materials may require shipping.
                     </p>
 
                     <p>
@@ -26,19 +26,19 @@ export default function ShippingPolicy() {
                     </p>
 
                     <p>
-                        Once the order is shipped, tracking details (if available) will be shared with the user to help monitor the delivery status. Users are advised to ensure that accurate shipping details are provided at the time of placing the order, as Flipsaura and the vendor will not be responsible for delays or losses caused by incorrect information.
+                        Once the order is shipped, tracking details (if available) will be shared with the user to help monitor the delivery status. Users are advised to ensure that accurate shipping details are provided at the time of placing the order, as Beplanr and the vendor will not be responsible for delays or losses caused by incorrect information.
                     </p>
 
                     <p>
-                        In the event that an order is damaged, defective, or lost during transit, users are requested to report the issue within 48 hours of delivery (or expected delivery date). Flipsaura will coordinate with the vendor to investigate the issue and provide a suitable resolution where applicable.
+                        In the event that an order is damaged, defective, or lost during transit, users are requested to report the issue within 48 hours of delivery (or expected delivery date). Beplanr will coordinate with the vendor to investigate the issue and provide a suitable resolution where applicable.
                     </p>
 
                     <p>
-                        Since shipping is handled by third-party logistics providers or vendors, Flipsaura does not take direct responsibility for delivery delays or damages but will make reasonable efforts to support users in resolving such issues.
+                        Since shipping is handled by third-party logistics providers or vendors, Beplanr does not take direct responsibility for delivery delays or damages but will make reasonable efforts to support users in resolving such issues.
                     </p>
 
                     <p>
-                        Flipsaura continuously works with vendors to ensure a reliable and efficient delivery experience, and we appreciate your understanding and cooperation.
+                        Beplanr continuously works with vendors to ensure a reliable and efficient delivery experience, and we appreciate your understanding and cooperation.
                     </p>
                 </div>
             </div>

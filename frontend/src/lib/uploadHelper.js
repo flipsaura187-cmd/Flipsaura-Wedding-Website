@@ -18,26 +18,28 @@ export async function uploadFile(file, folder = "flipsaura/documents") {
 
   // Attempt 1: Signed direct-to-Cloudinary upload
   try {
-    const { data: sigData } = await api.post("/api/upload", { folder });
-    if (sigData.ok && sigData.data) {
+    const { data: sigData } = await api.post("/api/upload", { folder: folder || "flipsaura/items" });
+    if (sigData?.ok && sigData?.data) {
       const { signature, timestamp, apiKey, cloudName } = sigData.data;
-      const cloudForm = new FormData();
-      cloudForm.append("file", file);
-      cloudForm.append("api_key", apiKey);
-      cloudForm.append("timestamp", timestamp);
-      cloudForm.append("signature", signature);
-      cloudForm.append("folder", folder);
+      if (signature && timestamp && apiKey && cloudName) {
+        const cloudForm = new FormData();
+        cloudForm.append("file", file);
+        cloudForm.append("api_key", apiKey);
+        cloudForm.append("timestamp", timestamp);
+        cloudForm.append("signature", signature);
+        cloudForm.append("folder", folder || "flipsaura/items");
 
-      const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
-      const resourceType = isPdf ? "auto" : "image";
+        const isPdf = file.type === "application/pdf" || (file.name && file.name.endsWith(".pdf"));
+        const resourceType = isPdf ? "auto" : "image";
 
-      const { data: uploadData } = await axios.post(
-        `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
-        cloudForm
-      );
+        const { data: uploadData } = await axios.post(
+          `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+          cloudForm
+        );
 
-      if (uploadData.secure_url || uploadData.url) {
-        return uploadData.secure_url || uploadData.url;
+        if (uploadData?.secure_url || uploadData?.url) {
+          return uploadData.secure_url || uploadData.url;
+        }
       }
     }
   } catch (signedErr) {
@@ -48,9 +50,9 @@ export async function uploadFile(file, folder = "flipsaura/documents") {
   try {
     const { data: directData } = await api.post("/api/upload/direct", {
       dataUrl,
-      folder,
+      folder: folder || "flipsaura/documents",
     });
-    if (directData.ok && directData.data?.url) {
+    if (directData?.ok && directData?.data?.url) {
       return directData.data.url;
     }
   } catch (directErr) {

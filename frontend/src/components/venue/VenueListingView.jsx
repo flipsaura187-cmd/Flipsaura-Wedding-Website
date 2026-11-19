@@ -256,7 +256,7 @@ export default function VenueListingView() {
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-xs font-bold uppercase tracking-widest text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
-                FlipsAura Curated Venues
+                Beplanr Curated Venues
               </span>
               <span className="text-xs text-muted font-medium">
                 • {totalCount} {totalCount === 1 ? "venue" : "venues"} available
@@ -939,7 +939,7 @@ export default function VenueListingView() {
                             {venue.contactPhone && (
                               <a
                                 href={`https://wa.me/${venue.contactPhone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
-                                  `Hello, I saw ${venue.title} on FlipsAura and would like to inquire about wedding availability and pricing.`
+                                  `Hello, I saw ${venue.title} on Beplanr and would like to inquire about wedding availability and pricing.`
                                 )}`}
                                 target="_blank"
                                 rel="noreferrer"

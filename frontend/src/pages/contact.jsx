@@ -180,7 +180,7 @@ export default function ContactPage() {
                                 style={{ border: 0 }}
                                 allowFullScreen
                                 loading="lazy"
-                                title="FlipsAura location"
+                                title="Beplanr location"
                             />
                         </div>
                     </div>

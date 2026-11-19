@@ -38,7 +38,7 @@ const indianWeddingImages = [
 const reviews = [
   [
     "Aisha & Rahul",
-    "FlipsAura made venue booking a breeze. Stunning decor, smooth process.",
+    "Beplanr made venue booking a breeze. Stunning decor, smooth process.",
   ],
   [
     "Priya & Karan",
@@ -260,7 +260,7 @@ export default function HomePage() {
               Inspiration
             </span>
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-ink">
-              From real FlipsAura weddings
+              From real Beplanr weddings
             </h2>
           </div>
 
@@ -346,12 +346,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* About FlipsAura Section */}
+      {/* About Beplanr Section */}
       <section id="about" className="py-16 bg-white border-t border-brand-100">
         <div className="max-w-[860px] mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-1.5 block">
-              About FlipsAura
+              About Beplanr
             </span>
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-ink">
               Your Trusted Partner For Seamless Event Planning
@@ -360,11 +360,11 @@ export default function HomePage() {
 
           <div className="text-muted text-base leading-relaxed space-y-4">
             <p>
-              Welcome to <strong className="text-ink">FlipsAura</strong> — your trusted platform for seamless event and wedding planning solutions.
-              Launched in <strong className="text-ink">May 2026</strong>, FlipsAura was created with a clear vision to simplify how couples and families plan their dream celebrations, uniting trusted venues, planners, caterers, and decorators onto one reliable platform.
+              Welcome to <strong className="text-ink">Beplanr</strong> — your trusted platform for seamless event and wedding planning solutions.
+              Launched in <strong className="text-ink">May 2026</strong>, Beplanr was created with a clear vision to simplify how couples and families plan their dream celebrations, uniting trusted venues, planners, caterers, and decorators onto one reliable platform.
             </p>
             <p>
-              Founded by <strong className="text-ink">Abhishek Kumar</strong>, FlipsAura is built with a strong entrepreneurial spirit to transform the event services industry, especially across <strong className="text-ink">North India</strong>. The idea behind FlipsAura is simple — to eliminate the stress of managing multiple vendors by providing a curated, verified one-stop solution.
+              Founded by <strong className="text-ink">Abhishek Kumar</strong>, Beplanr is built with a strong entrepreneurial spirit to transform the event services industry, especially across <strong className="text-ink">North India</strong>. The idea behind Beplanr is simple — to eliminate the stress of managing multiple vendors by providing a curated, verified one-stop solution.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6">
@@ -379,7 +379,7 @@ export default function HomePage() {
 
               <div className="p-6 bg-brand-50 rounded-2xl border border-brand-100">
                 <h4 className="text-wine font-bold text-base mb-2 flex items-center gap-2">
-                  <span>🌟</span> Why Choose FlipsAura
+                  <span>🌟</span> Why Choose Beplanr
                 </h4>
                 <p className="text-sm text-muted m-0">
                   Curated venues, verified vendors, upfront pricing, dedicated support, and end-to-end coordination for unforgettable celebrations.

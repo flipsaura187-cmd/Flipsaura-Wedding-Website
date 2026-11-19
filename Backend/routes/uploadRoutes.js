@@ -4,7 +4,7 @@ import { createUpload, directUpload } from "../controllers/uploadController.js";
 
 const router = express.Router();
 
-router.post("/", requireAuth, requireRole("admin", "vendor"), createUpload);
-router.post("/direct", requireAuth, requireRole("admin", "vendor"), directUpload);
+router.post("/", requireAuth, requireRole("admin", "vendor", "user"), createUpload);
+router.post("/direct", requireAuth, requireRole("admin", "vendor", "user"), directUpload);
 
 export default router;

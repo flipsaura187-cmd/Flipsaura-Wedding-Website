@@ -106,6 +106,10 @@ const ItemSchema = new mongoose.Schema(
     roomCount: { type: Number, default: 0, min: 0, index: true },
     pricePerPlateVeg: { type: Number, default: 0, min: 0, index: true },
     pricePerPlateNonVeg: { type: Number, default: 0, min: 0, index: true },
+    vegMenu: [{ type: String, trim: true }],
+    nonVegMenu: [{ type: String, trim: true }],
+    vegMenuDescription: { type: String, trim: true, default: "" },
+    nonVegMenuDescription: { type: String, trim: true, default: "" },
     rentalPrice: { type: Number, default: 0, min: 0, index: true },
     spaceTypes: [{ type: String, trim: true }],
     spaceAreas: { type: mongoose.Schema.Types.Mixed, default: {} }, // per-space area details

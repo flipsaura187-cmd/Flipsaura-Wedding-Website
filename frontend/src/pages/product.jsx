@@ -10,6 +10,9 @@ import MehandiOverviewSection from "@/components/MehandiOverviewSection";
 import HomeSetupOverviewSection from "@/components/HomeSetupOverviewSection";
 import api from "@/api/axios";
 import { fetchItemDetail, selectItemDetail, selectItemDetailLoading } from "@/store/listingsSlice";
+
+const WHATSAPP_ADMIN_PHONE = import.meta.env.VITE_WHATSAPP_ADMIN_PHONE || "916202442499";
+
 export default function ProductPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -329,14 +332,16 @@ export default function ProductPage() {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                  {item.contactPhone && (
-                    <a
-                      href={`tel:${item.contactPhone}`}
-                      className="py-2.5 px-4 rounded-xl text-ink font-semibold text-xs md:text-sm bg-white hover:bg-brand-50 border border-brand-200 shadow-xs inline-flex items-center gap-1.5 transition-all"
-                    >
-                      📞 Front Desk: {item.contactPhone}
-                    </a>
-                  )}
+                  <a
+                    href={`https://wa.me/${WHATSAPP_ADMIN_PHONE.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                      `Hello Beplanr! I am inquiring about room booking and tariffs for ${item?.title || "Hotel"}.`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2.5 px-4 rounded-xl text-emerald-800 font-semibold text-xs md:text-sm bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    💬 Concierge Assistance
+                  </a>
                   <button
                     type="button"
                     onClick={() => {
@@ -445,14 +450,16 @@ export default function ProductPage() {
                         </div>
                       </div>
 
-                      {item.contactPhone && (
-                        <a
-                          href={`tel:${item.contactPhone}`}
-                          className="px-4 py-2.5 rounded-xl text-ink font-semibold text-xs sm:text-sm bg-brand-50 hover:bg-brand-100/80 border border-brand-200 transition-all inline-flex items-center justify-center gap-2 shrink-0"
-                        >
-                          📞 Call Front Desk ({item.contactPhone})
-                        </a>
-                      )}
+                      <a
+                        href={`https://wa.me/${WHATSAPP_ADMIN_PHONE.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                          `Hello Beplanr! I would like to book a stay at ${item?.title || "Hotel"}.`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2.5 rounded-xl text-emerald-800 font-semibold text-xs sm:text-sm bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                      >
+                        💬 Chat with Concierge
+                      </a>
                     </div>
 
 
@@ -652,28 +659,18 @@ export default function ProductPage() {
                         : "Login to Book →"}
                     </button>
 
-                    {item.contactPhone && (
-                      <a
-                        href={`https://wa.me/${item.contactPhone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
-                          selectedPackage
-                            ? `Hello, I saw ${item.title} on FlipsAura and would like to book the ${selectedPackage.title || `${selectedPackage.label} Package`} (₹${effectivePrice.toLocaleString("en-IN")}).`
-                            : `Hello, I saw ${item.title} on FlipsAura and would like to inquire about wedding availability and booking.`
-                        )}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-full py-3 px-4 rounded-xl text-emerald-800 font-bold text-sm bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-center flex items-center justify-center gap-2 transition-all cursor-pointer"
-                      >
-                        <span>💬</span> Chat on WhatsApp
-                      </a>
-                    )}
-                    {item.contactPhone && (
-                      <a
-                        href={`tel:${item.contactPhone}`}
-                        className="w-full py-3 px-4 rounded-xl text-ink font-semibold text-sm bg-white hover:bg-brand-50 border border-brand-200 text-center block transition-all"
-                      >
-                        📞 Call Vendor ({item.contactPhone})
-                      </a>
-                    )}
+                    <a
+                      href={`https://wa.me/${WHATSAPP_ADMIN_PHONE.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                        selectedPackage
+                          ? `Hello Beplanr! I would like to book the ${selectedPackage.title || `${selectedPackage.label} Package`} for ${item.title} (₹${effectivePrice.toLocaleString("en-IN")}).`
+                          : `Hello Beplanr! I would like to inquire about wedding availability and booking for ${item.title}.`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full py-3 px-4 rounded-xl text-emerald-800 font-bold text-sm bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-center flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    >
+                      <span>💬</span> Chat on WhatsApp
+                    </a>
                   </div>
 
                   <div className="text-center text-xs text-muted pt-2 border-t border-brand-50">
@@ -825,21 +822,19 @@ export default function ProductPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {item.contactPhone && (
-              <a
-                href={`https://wa.me/${item.contactPhone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
-                  selectedPackage
-                    ? `Hello, I saw ${item.title} on FlipsAura and would like to book the ${selectedPackage.title || `${selectedPackage.label} Package`} (₹${effectivePrice.toLocaleString("en-IN")}).`
-                    : `Hello, I saw ${item.title} on FlipsAura and would like to inquire about wedding availability and booking.`
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center text-lg active:scale-95 transition-transform"
-                title="Chat on WhatsApp"
-              >
-                💬
-              </a>
-            )}
+            <a
+              href={`https://wa.me/${WHATSAPP_ADMIN_PHONE.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                selectedPackage
+                  ? `Hello Beplanr! I would like to book the ${selectedPackage.title || `${selectedPackage.label} Package`} for ${item.title} (₹${effectivePrice.toLocaleString("en-IN")}).`
+                  : `Hello Beplanr! I would like to inquire about wedding availability and booking for ${item.title}.`
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center text-lg active:scale-95 transition-transform"
+              title="Chat on WhatsApp"
+            >
+              💬
+            </a>
 
             <button
               type="button"

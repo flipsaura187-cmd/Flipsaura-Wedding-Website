@@ -190,6 +190,78 @@ export default function AdminVenueDetailsModal({
             </div>
           </div>
 
+          {/* FOOD & CATERING MENU INCLUSIONS */}
+          {((Array.isArray(venue.vegMenu) && venue.vegMenu.length > 0) ||
+            (Array.isArray(venue.nonVegMenu) && venue.nonVegMenu.length > 0) ||
+            venue.vegMenuDescription ||
+            venue.nonVegMenuDescription) && (
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <span>🍽️</span> Food & Catering Menu Inclusions
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Veg Menu */}
+                <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
+                      Veg Menu {vegPlate > 0 ? `(₹${vegPlate}/plate)` : ""}
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      {(venue.vegMenu || []).length} items
+                    </span>
+                  </div>
+                  {venue.vegMenuDescription && (
+                    <p className="text-[11px] text-emerald-900 font-medium italic">
+                      "{venue.vegMenuDescription}"
+                    </p>
+                  )}
+                  {Array.isArray(venue.vegMenu) && venue.vegMenu.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {venue.vegMenu.map((item, idx) => (
+                        <span key={idx} className="text-xs px-2.5 py-1 rounded-lg bg-white border border-emerald-200 text-emerald-900 font-medium">
+                          🥦 {item}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted italic">No specific dishes listed.</p>
+                  )}
+                </div>
+
+                {/* Non-Veg Menu */}
+                <div className="p-3.5 rounded-xl bg-rose-50/60 border border-rose-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-rose-950 flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block"></span>
+                      Non-Veg Menu {nonVegPlate > 0 ? `(₹${nonVegPlate}/plate)` : ""}
+                    </span>
+                    <span className="text-[10px] font-semibold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-full">
+                      {(venue.nonVegMenu || []).length} items
+                    </span>
+                  </div>
+                  {venue.nonVegMenuDescription && (
+                    <p className="text-[11px] text-rose-900 font-medium italic">
+                      "{venue.nonVegMenuDescription}"
+                    </p>
+                  )}
+                  {Array.isArray(venue.nonVegMenu) && venue.nonVegMenu.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {venue.nonVegMenu.map((item, idx) => (
+                        <span key={idx} className="text-xs px-2.5 py-1 rounded-lg bg-white border border-rose-200 text-rose-900 font-medium">
+                          🍗 {item}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted italic">No specific dishes listed.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* SPACES & SETTINGS */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">

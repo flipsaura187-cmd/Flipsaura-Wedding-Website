@@ -129,6 +129,10 @@ export async function getAdminVenues(req, res) {
       rentalPrice: v.rentalPrice || v.price || 0,
       pricePerPlateVeg: v.pricePerPlateVeg || 0,
       pricePerPlateNonVeg: v.pricePerPlateNonVeg || 0,
+      vegMenu: Array.isArray(v.vegMenu) ? v.vegMenu : [],
+      nonVegMenu: Array.isArray(v.nonVegMenu) ? v.nonVegMenu : [],
+      vegMenuDescription: v.vegMenuDescription || "",
+      nonVegMenuDescription: v.nonVegMenuDescription || "",
       spaceTypes: Array.isArray(v.spaceTypes) ? v.spaceTypes : [],
       venueFeatures: Array.isArray(v.venueFeatures) ? v.venueFeatures : [],
     }));
@@ -224,6 +228,10 @@ export async function createAdminVenue(req, res) {
       rentalPrice = 0,
       pricePerPlateVeg = 0,
       pricePerPlateNonVeg = 0,
+      vegMenu = [],
+      nonVegMenu = [],
+      vegMenuDescription = "",
+      nonVegMenuDescription = "",
       mainCategories = [],
       subcategories = [],
       customSubcategoriesMap = {},
@@ -377,6 +385,14 @@ export async function createAdminVenue(req, res) {
       .map((s) => String(s).trim())
       .filter(Boolean);
 
+    const cleanVegMenu = (Array.isArray(vegMenu) ? vegMenu : (typeof vegMenu === "string" ? vegMenu.split(/[\n,]+/) : []))
+      .map((s) => String(s).trim())
+      .filter(Boolean);
+
+    const cleanNonVegMenu = (Array.isArray(nonVegMenu) ? nonVegMenu : (typeof nonVegMenu === "string" ? nonVegMenu.split(/[\n,]+/) : []))
+      .map((s) => String(s).trim())
+      .filter(Boolean);
+
     const numericRental = Math.max(0, Number(rentalPrice) || 0);
     const numericVegPlate = Math.max(0, Number(pricePerPlateVeg) || 0);
     const numericNonVegPlate = Math.max(0, Number(pricePerPlateNonVeg) || 0);
@@ -404,6 +420,10 @@ export async function createAdminVenue(req, res) {
       rentalPrice: numericRental,
       pricePerPlateVeg: numericVegPlate,
       pricePerPlateNonVeg: numericNonVegPlate,
+      vegMenu: cleanVegMenu,
+      nonVegMenu: cleanNonVegMenu,
+      vegMenuDescription: String(vegMenuDescription || "").trim(),
+      nonVegMenuDescription: String(nonVegMenuDescription || "").trim(),
       guestCapacity: numericGuests,
       capacity: numericGuests,
       seatingCapacity: numericSeating,
@@ -487,6 +507,10 @@ export async function updateAdminVenue(req, res) {
       rentalPrice,
       pricePerPlateVeg,
       pricePerPlateNonVeg,
+      vegMenu,
+      nonVegMenu,
+      vegMenuDescription,
+      nonVegMenuDescription,
       mainCategories,
       subcategories,
       customSubcategoriesMap,
@@ -534,6 +558,23 @@ export async function updateAdminVenue(req, res) {
     }
     if (pricePerPlateNonVeg !== undefined) {
       venue.pricePerPlateNonVeg = Math.max(0, Number(pricePerPlateNonVeg) || 0);
+    }
+
+    if (vegMenu !== undefined) {
+      venue.vegMenu = (Array.isArray(vegMenu) ? vegMenu : (typeof vegMenu === "string" ? vegMenu.split(/[\n,]+/) : []))
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    }
+    if (nonVegMenu !== undefined) {
+      venue.nonVegMenu = (Array.isArray(nonVegMenu) ? nonVegMenu : (typeof nonVegMenu === "string" ? nonVegMenu.split(/[\n,]+/) : []))
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    }
+    if (vegMenuDescription !== undefined) {
+      venue.vegMenuDescription = String(vegMenuDescription || "").trim();
+    }
+    if (nonVegMenuDescription !== undefined) {
+      venue.nonVegMenuDescription = String(nonVegMenuDescription || "").trim();
     }
 
     const rent = venue.rentalPrice || 0;

@@ -57,7 +57,8 @@ export default function PhotographyOverviewSection({
     },
   ].filter((p) => p.data && (p.data.price > 0 || p.data.deliverables?.length > 0));
 
-  const phone = item.contactPhone || item.vendor?.phone || "";
+  const WHATSAPP_ADMIN_PHONE =
+    import.meta.env.VITE_WHATSAPP_ADMIN_PHONE || "916202442499";
 
   return (
     <div className="space-y-10 pt-4">
@@ -158,19 +159,17 @@ export default function PhotographyOverviewSection({
                       {isSelected ? "✓ Selected Plan" : `Select ${label} Plan`}
                     </button>
 
-                    {phone && (
-                      <a
-                        href={`https://wa.me/${phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
-                          `Hello, I would like to book or inquire about the ${label} Package (₹${data.price ? Number(data.price).toLocaleString("en-IN") : "On Request"}) of ${item.title} on Beplanr.`
-                        )}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-full sm:w-auto py-2.5 px-3 rounded-xl text-center text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 whitespace-nowrap transition-all cursor-pointer"
-                      >
-                        💬 WhatsApp
-                      </a>
-                    )}
+                    <a
+                      href={`https://wa.me/${WHATSAPP_ADMIN_PHONE.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                        `Hello Beplanr! I would like to book or inquire about the ${label} Package (₹${data.price ? Number(data.price).toLocaleString("en-IN") : "On Request"}) of ${item.title}.`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full sm:w-auto py-2.5 px-3 rounded-xl text-center text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 whitespace-nowrap transition-all cursor-pointer"
+                    >
+                      💬 WhatsApp
+                    </a>
                   </div>
                 </div>
               );

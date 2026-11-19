@@ -130,6 +130,10 @@ export const getDefaultsForCategory = (catId) => {
         rentalPrice: "",
         pricePerPlateVeg: "",
         pricePerPlateNonVeg: "",
+        vegMenu: [],
+        nonVegMenu: [],
+        vegMenuDescription: "",
+        nonVegMenuDescription: "",
         spaceTypes: ["Outdoor"],
         spaceAreas: {
           Outdoor: { name: "Royal Wedding Lawn", seating: "", floating: "" },
@@ -160,6 +164,10 @@ export const getDefaultsForCategory = (catId) => {
         rentalPrice: "",
         pricePerPlateVeg: "",
         pricePerPlateNonVeg: "",
+        vegMenu: [],
+        nonVegMenu: [],
+        vegMenuDescription: "",
+        nonVegMenuDescription: "",
         spaceTypes: ["Outdoor", "Indoor", "Poolside"],
         spaceAreas: {
           Outdoor: { name: "Resort Central Lawn", seating: "", floating: "" },
@@ -193,6 +201,10 @@ export const getDefaultsForCategory = (catId) => {
         rentalPrice: "",
         pricePerPlateVeg: "",
         pricePerPlateNonVeg: "",
+        vegMenu: [],
+        nonVegMenu: [],
+        vegMenuDescription: "",
+        nonVegMenuDescription: "",
         spaceTypes: ["Indoor"],
         spaceAreas: {
           Indoor: { name: "Celebration Party Hall", seating: "", floating: "" },
@@ -222,6 +234,10 @@ export const getDefaultsForCategory = (catId) => {
         rentalPrice: "",
         pricePerPlateVeg: "",
         pricePerPlateNonVeg: "",
+        vegMenu: [],
+        nonVegMenu: [],
+        vegMenuDescription: "",
+        nonVegMenuDescription: "",
         spaceTypes: ["Indoor"],
         spaceAreas: {
           Indoor: { name: "Main AC Banquet Hall", seating: "", floating: "" },
@@ -319,6 +335,47 @@ export default function AdminVenueFormModal({
     }));
   };
 
+  const [vegItemInput, setVegItemInput] = useState("");
+  const [nonVegItemInput, setNonVegItemInput] = useState("");
+
+  const handleAddVegItem = () => {
+    const raw = vegItemInput.trim();
+    if (!raw) return;
+    const items = raw.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+    if (!items.length) return;
+    updateActiveCategory((prev) => ({
+      ...prev,
+      vegMenu: [...(Array.isArray(prev.vegMenu) ? prev.vegMenu : []), ...items],
+    }));
+    setVegItemInput("");
+  };
+
+  const handleRemoveVegItem = (idx) => {
+    updateActiveCategory((prev) => ({
+      ...prev,
+      vegMenu: (Array.isArray(prev.vegMenu) ? prev.vegMenu : []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleAddNonVegItem = () => {
+    const raw = nonVegItemInput.trim();
+    if (!raw) return;
+    const items = raw.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+    if (!items.length) return;
+    updateActiveCategory((prev) => ({
+      ...prev,
+      nonVegMenu: [...(Array.isArray(prev.nonVegMenu) ? prev.nonVegMenu : []), ...items],
+    }));
+    setNonVegItemInput("");
+  };
+
+  const handleRemoveNonVegItem = (idx) => {
+    updateActiveCategory((prev) => ({
+      ...prev,
+      nonVegMenu: (Array.isArray(prev.nonVegMenu) ? prev.nonVegMenu : []).filter((_, i) => i !== idx),
+    }));
+  };
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -358,6 +415,10 @@ export default function AdminVenueFormModal({
           rentalPrice: initialData.rentalPrice || initialData.price || "",
           pricePerPlateVeg: initialData.pricePerPlateVeg || "",
           pricePerPlateNonVeg: initialData.pricePerPlateNonVeg || "",
+          vegMenu: Array.isArray(initialData.vegMenu) ? initialData.vegMenu : [],
+          nonVegMenu: Array.isArray(initialData.nonVegMenu) ? initialData.nonVegMenu : [],
+          vegMenuDescription: initialData.vegMenuDescription || "",
+          nonVegMenuDescription: initialData.nonVegMenuDescription || "",
           spaceTypes: Array.isArray(initialData.spaceTypes) && initialData.spaceTypes.length > 0
             ? initialData.spaceTypes
             : [vType === "Marriage Garden / Lawns" ? "Outdoor" : "Indoor"],
@@ -690,6 +751,10 @@ export default function AdminVenueFormModal({
       rentalPrice: Number(catData.rentalPrice) || 0,
       pricePerPlateVeg: Number(catData.pricePerPlateVeg) || 0,
       pricePerPlateNonVeg: Number(catData.pricePerPlateNonVeg) || 0,
+      vegMenu: Array.isArray(catData.vegMenu) ? catData.vegMenu : [],
+      nonVegMenu: Array.isArray(catData.nonVegMenu) ? catData.nonVegMenu : [],
+      vegMenuDescription: catData.vegMenuDescription || "",
+      nonVegMenuDescription: catData.nonVegMenuDescription || "",
       spaceTypes: catData.spaceTypes,
       spaceAreas: catData.spaceAreas,
       venueFeatures: catData.venueFeatures,
@@ -1356,6 +1421,204 @@ export default function AdminVenueFormModal({
                     />
                   </div>
                   <span className="text-[10px] text-rose-800 mt-1 block">Non-Veg catering food budget</span>
+                </div>
+              </div>
+
+              {/* FOOD & CATERING MENU BUILDER (VEG & NON-VEG) */}
+              <div className="pt-4 border-t border-brand-100 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div>
+                    <h5 className="text-xs sm:text-sm font-bold text-ink flex items-center gap-1.5 font-serif">
+                      <span>🍽️</span> Food & Catering Menu Inclusions
+                    </h5>
+                    <p className="text-[11px] text-muted">
+                      Add items/dishes included in your per plate pricing (e.g. what food is served in ₹{activeForm.pricePerPlateVeg || "600"} Veg or ₹{activeForm.pricePerPlateNonVeg || "850"} Non-Veg).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* VEG MENU BUILDER */}
+                  <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/90 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
+                        <span className="text-xs font-bold text-emerald-950">
+                          Veg Menu {activeForm.pricePerPlateVeg ? `(Items for ₹${activeForm.pricePerPlateVeg}/plate)` : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {Array.isArray(activeForm.vegMenu) && activeForm.vegMenu.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => updateActiveCategory((prev) => ({ ...prev, vegMenu: [] }))}
+                            className="text-[10px] text-rose-600 hover:underline cursor-pointer"
+                          >
+                            Clear all
+                          </button>
+                        )}
+                        <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          {(activeForm.vegMenu || []).length} items
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Add Item Input */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={vegItemInput}
+                        onChange={(e) => setVegItemInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddVegItem();
+                          }
+                        }}
+                        placeholder="Add veg dish (e.g. Dal Makhani, Paneer Tikka...) - Press Enter or +Add"
+                        className="flex-1 px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddVegItem}
+                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shrink-0 cursor-pointer shadow-xs"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                    {/* Veg Items Badges */}
+                    {Array.isArray(activeForm.vegMenu) && activeForm.vegMenu.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-white/80 rounded-xl border border-emerald-100 scrollbar-thin">
+                        {activeForm.vegMenu.map((item, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-medium"
+                          >
+                            <span>🥦 {item}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveVegItem(idx)}
+                              className="text-emerald-600 hover:text-rose-600 font-bold cursor-pointer text-xs ml-0.5"
+                              title="Remove item"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-emerald-700/80 italic bg-white/60 px-3 py-2 rounded-xl border border-dashed border-emerald-200">
+                        No veg food items added yet. Type dish name above and click <b>+ Add</b>.
+                      </p>
+                    )}
+
+                    {/* Veg Notes / Summary */}
+                    <div>
+                      <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                        Veg Menu Summary / Notes (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        name="vegMenuDescription"
+                        value={activeForm.vegMenuDescription || ""}
+                        onChange={handleActiveFieldChange}
+                        placeholder="e.g. Welcome drink, 2 starters, 3 main course, breads, 2 desserts"
+                        className="w-full px-3 py-1.5 rounded-xl border border-emerald-200 bg-white text-xs text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* NON-VEG MENU BUILDER */}
+                  <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-200/90 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block"></span>
+                        <span className="text-xs font-bold text-rose-950">
+                          Non-Veg Menu {activeForm.pricePerPlateNonVeg ? `(Items for ₹${activeForm.pricePerPlateNonVeg}/plate)` : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {Array.isArray(activeForm.nonVegMenu) && activeForm.nonVegMenu.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => updateActiveCategory((prev) => ({ ...prev, nonVegMenu: [] }))}
+                            className="text-[10px] text-rose-600 hover:underline cursor-pointer"
+                          >
+                            Clear all
+                          </button>
+                        )}
+                        <span className="text-[10px] font-semibold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-full">
+                          {(activeForm.nonVegMenu || []).length} items
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Add Item Input */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={nonVegItemInput}
+                        onChange={(e) => setNonVegItemInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddNonVegItem();
+                          }
+                        }}
+                        placeholder="Add non-veg dish (e.g. Chicken Starter, Mutton Curry...) - Press Enter or +Add"
+                        className="flex-1 px-3 py-2 rounded-xl border border-rose-300 bg-white text-xs text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddNonVegItem}
+                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shrink-0 cursor-pointer shadow-xs"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                    {/* Non-Veg Items Badges */}
+                    {Array.isArray(activeForm.nonVegMenu) && activeForm.nonVegMenu.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-white/80 rounded-xl border border-rose-100 scrollbar-thin">
+                        {activeForm.nonVegMenu.map((item, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-900 border border-rose-200 text-xs font-medium"
+                          >
+                            <span>🍗 {item}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveNonVegItem(idx)}
+                              className="text-rose-600 hover:text-rose-800 font-bold cursor-pointer text-xs ml-0.5"
+                              title="Remove item"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-rose-700/80 italic bg-white/60 px-3 py-2 rounded-xl border border-dashed border-rose-200">
+                        No non-veg food items added yet. Type dish name above and click <b>+ Add</b>.
+                      </p>
+                    )}
+
+                    {/* Non-Veg Notes / Summary */}
+                    <div>
+                      <label className="text-[10px] font-bold text-rose-900 block mb-1">
+                        Non-Veg Menu Summary / Notes (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        name="nonVegMenuDescription"
+                        value={activeForm.nonVegMenuDescription || ""}
+                        onChange={handleActiveFieldChange}
+                        placeholder="e.g. 2 Non-veg starters, chicken curry, mutton rogan josh, desserts"
+                        className="w-full px-3 py-1.5 rounded-xl border border-rose-200 bg-white text-xs text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

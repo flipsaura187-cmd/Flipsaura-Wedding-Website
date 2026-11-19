@@ -101,18 +101,21 @@ export default function VenueDetailPage() {
     ? venue.facilities
     : [];
 
-  const vendorPhone = venue?.contactPhone || venue?.vendor?.phone || "919876543210";
+  const WHATSAPP_ADMIN_PHONE =
+    import.meta.env.VITE_WHATSAPP_ADMIN_PHONE || "916202442499";
 
   const handleSendWhatsAppInquiry = (e) => {
-    e.preventDefault();
-    const msg = `Hello! I am inquiring about ${venue?.title || "Venue"} on Beplanr.
-Name: ${inquiryName || "Guest"}
-Contact: ${inquiryPhone || "N/A"}
-Event Date: ${inquiryDate || "To be decided"}
-Expected Guests: ${inquiryGuests || guestCap || "100-500"}
-Please share availability and final quote.`;
+    if (e && e.preventDefault) e.preventDefault();
+    const details = [];
+    if (inquiryName.trim()) details.push(`Name: ${inquiryName.trim()}`);
+    if (inquiryPhone.trim()) details.push(`Contact: ${inquiryPhone.trim()}`);
+    if (inquiryDate) details.push(`Event Date: ${inquiryDate}`);
+    if (inquiryGuests) details.push(`Expected Guests: ${inquiryGuests}`);
 
-    const cleanPhone = vendorPhone.replace(/[^\d]/g, "");
+    const detailsText = details.length > 0 ? `\n${details.join("\n")}\n` : "\n";
+    const msg = `Hello Beplanr! I am inquiring about ${venue?.title || "Venue"} (${venue?.locality ? `${venue.locality}, ` : ""}${venue?.city || ""}).${detailsText}Please assist with booking & best pricing.`;
+
+    const cleanPhone = WHATSAPP_ADMIN_PHONE.replace(/[^\d]/g, "");
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
     setInquirySent(true);
   };
@@ -402,6 +405,119 @@ Please share availability and final quote.`;
               )}
             </div>
 
+            {/* FOOD & CATERING MENU (VEG & NON-VEG) */}
+            {((Array.isArray(venue.vegMenu) && venue.vegMenu.length > 0) ||
+              (Array.isArray(venue.nonVegMenu) && venue.nonVegMenu.length > 0) ||
+              venue.vegMenuDescription ||
+              venue.nonVegMenuDescription) && (
+              <div id="catering-menu" className="bg-white p-6 sm:p-7 rounded-3xl border border-brand-100 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-brand-100 pb-3">
+                  <div>
+                    <h3 className="font-serif text-xl font-bold text-ink flex items-center gap-2">
+                      <span>🍽️</span> Food & Catering Menu (Included per Plate)
+                    </h3>
+                    <p className="text-xs text-muted mt-0.5">
+                      Curated dishes served per plate for wedding feasts, receptions & dinner buffets.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+                  {/* VEG MENU CARD */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-white border border-emerald-200/90 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-emerald-600 inline-block ring-2 ring-emerald-200"></span>
+                        <h4 className="font-serif font-bold text-base text-emerald-950">
+                          Pure Veg Menu
+                        </h4>
+                      </div>
+                      {vegPlate > 0 && (
+                        <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-full border border-emerald-200">
+                          ₹{vegPlate} / plate
+                        </span>
+                      )}
+                    </div>
+
+                    {venue.vegMenuDescription && (
+                      <p className="text-xs text-emerald-900 bg-white/70 p-2.5 rounded-xl border border-emerald-100 italic">
+                        "{venue.vegMenuDescription}"
+                      </p>
+                    )}
+
+                    {Array.isArray(venue.vegMenu) && venue.vegMenu.length > 0 ? (
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900/80 block">
+                          Included Dishes ({venue.vegMenu.length}):
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {venue.vegMenu.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 p-2 rounded-xl bg-white border border-emerald-100 text-xs font-medium text-emerald-950 shadow-2xs"
+                            >
+                              <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] shrink-0 font-bold">
+                                ✓
+                              </span>
+                              <span className="truncate">{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted italic">In-house chef prepares customized veg menu on request.</p>
+                    )}
+                  </div>
+
+                  {/* NON-VEG MENU CARD */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-rose-50/70 to-white border border-rose-200/90 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-rose-600 inline-block ring-2 ring-rose-200"></span>
+                        <h4 className="font-serif font-bold text-base text-rose-950">
+                          Non-Veg Menu
+                        </h4>
+                      </div>
+                      {nonVegPlate > 0 && (
+                        <span className="text-xs font-bold text-rose-800 bg-rose-100/80 px-2.5 py-1 rounded-full border border-rose-200">
+                          ₹{nonVegPlate} / plate
+                        </span>
+                      )}
+                    </div>
+
+                    {venue.nonVegMenuDescription && (
+                      <p className="text-xs text-rose-900 bg-white/70 p-2.5 rounded-xl border border-rose-100 italic">
+                        "{venue.nonVegMenuDescription}"
+                      </p>
+                    )}
+
+                    {Array.isArray(venue.nonVegMenu) && venue.nonVegMenu.length > 0 ? (
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-rose-900/80 block">
+                          Included Dishes ({venue.nonVegMenu.length}):
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {venue.nonVegMenu.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 p-2 rounded-xl bg-white border border-rose-100 text-xs font-medium text-rose-950 shadow-2xs"
+                            >
+                              <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-[10px] shrink-0 font-bold">
+                                ✓
+                              </span>
+                              <span className="truncate">{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted italic">Non-veg catering and specialized dishes available upon request.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* SPACES & LAYOUT */}
             {spaces.length > 0 && (
               <div className="bg-white p-6 sm:p-7 rounded-3xl border border-brand-100 shadow-xs space-y-4">
@@ -474,12 +590,35 @@ Please share availability and final quote.`;
                 </div>
               </div>
 
+              {/* PRIMARY BOOKING BUTTON AT TOP */}
+              <button
+                type="button"
+                onClick={handleSendWhatsAppInquiry}
+                className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-700/20 hover:shadow-emerald-700/30 transition-all flex items-center justify-center gap-2 cursor-pointer transform active:scale-98"
+              >
+                <span className="text-base">💬</span> Inquire on WhatsApp
+              </button>
+
+              {inquirySent && (
+                <p className="text-center text-xs font-semibold text-emerald-700 bg-emerald-50 py-2 rounded-xl border border-emerald-200">
+                  ✓ WhatsApp chat opened with Beplanr Concierge!
+                </p>
+              )}
+
               {/* Plate Pricing preview */}
               {(vegPlate > 0 || nonVegPlate > 0) && (
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">
-                    Food & Catering Packages
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">
+                      Food & Catering Packages
+                    </span>
+                    {((Array.isArray(venue.vegMenu) && venue.vegMenu.length > 0) ||
+                      (Array.isArray(venue.nonVegMenu) && venue.nonVegMenu.length > 0)) && (
+                      <a href="#catering-menu" className="text-[10px] font-bold text-brand-600 hover:underline">
+                        View Menu Items ↓
+                      </a>
+                    )}
+                  </div>
                   <div className="flex items-center justify-between font-bold">
                     <span className="text-emerald-800 flex items-center gap-1">
                       <span>🥦 Veg:</span> ₹{vegPlate}/plate
@@ -490,80 +629,78 @@ Please share availability and final quote.`;
                       </span>
                     )}
                   </div>
+                  {((Array.isArray(venue.vegMenu) && venue.vegMenu.length > 0) ||
+                    (Array.isArray(venue.nonVegMenu) && venue.nonVegMenu.length > 0)) && (
+                    <div className="text-[10px] text-muted flex items-center gap-2 pt-1 border-t border-slate-200/60 font-medium">
+                      {Array.isArray(venue.vegMenu) && venue.vegMenu.length > 0 && (
+                        <span>• {venue.vegMenu.length} Veg Dishes</span>
+                      )}
+                      {Array.isArray(venue.nonVegMenu) && venue.nonVegMenu.length > 0 && (
+                        <span>• {venue.nonVegMenu.length} Non-Veg Dishes</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* QUICK INQUIRY FORM */}
-              <form onSubmit={handleSendWhatsAppInquiry} className="space-y-3 pt-2">
-                <div>
-                  <label className="text-[11px] font-bold text-muted block mb-1">Your Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={inquiryName}
-                    onChange={(e) => setInquiryName(e.target.value)}
-                    placeholder="e.g. Rahul Sharma"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-brand-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-muted block mb-1">WhatsApp Mobile Number</label>
-                  <input
-                    type="tel"
-                    required
-                    value={inquiryPhone}
-                    onChange={(e) => setInquiryPhone(e.target.value)}
-                    placeholder="e.g. 9876543210"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-brand-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
+              {/* OPTIONAL QUICK INQUIRY DETAILS */}
+              <div className="pt-2 border-t border-brand-100">
+                <p className="text-[11px] font-semibold text-muted mb-2.5">
+                  Want to share specific event details? (Optional)
+                </p>
+                <form onSubmit={handleSendWhatsAppInquiry} className="space-y-3">
                   <div>
-                    <label className="text-[11px] font-bold text-muted block mb-1">Event Date</label>
+                    <label className="text-[11px] font-bold text-muted block mb-1">Your Full Name</label>
                     <input
-                      type="date"
-                      value={inquiryDate}
-                      onChange={(e) => setInquiryDate(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                      type="text"
+                      value={inquiryName}
+                      onChange={(e) => setInquiryName(e.target.value)}
+                      placeholder="e.g. Rahul Sharma"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
+
                   <div>
-                    <label className="text-[11px] font-bold text-muted block mb-1">Guests</label>
+                    <label className="text-[11px] font-bold text-muted block mb-1">WhatsApp Mobile Number</label>
                     <input
-                      type="number"
-                      value={inquiryGuests}
-                      onChange={(e) => setInquiryGuests(e.target.value)}
-                      placeholder="e.g. 400"
-                      className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                      type="tel"
+                      value={inquiryPhone}
+                      onChange={(e) => setInquiryPhone(e.target.value)}
+                      placeholder="e.g. 9876543210"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
-                </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>💬</span> Inquire on WhatsApp
-                </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-bold text-muted block mb-1">Event Date</label>
+                      <input
+                        type="date"
+                        value={inquiryDate}
+                        onChange={(e) => setInquiryDate(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-muted block mb-1">Guests</label>
+                      <input
+                        type="number"
+                        value={inquiryGuests}
+                        onChange={(e) => setInquiryGuests(e.target.value)}
+                        placeholder="e.g. 400"
+                        className="w-full px-3 py-2 rounded-xl border border-brand-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                      />
+                    </div>
+                  </div>
 
-                {inquirySent && (
-                  <p className="text-center text-xs font-semibold text-emerald-700">
-                    WhatsApp chat opened with venue!
-                  </p>
-                )}
-              </form>
-
-              {/* Call Venue Direct */}
-              {vendorPhone && (
-                <a
-                  href={`tel:${vendorPhone}`}
-                  className="w-full py-2.5 rounded-2xl bg-white border border-brand-200 hover:bg-brand-50 text-brand-700 font-bold text-xs transition flex items-center justify-center gap-2 text-center"
-                >
-                  <span>📞</span> Call Venue: {vendorPhone}
-                </a>
-              )}
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-ink/80 font-semibold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>💬</span> Send Details on WhatsApp
+                  </button>
+                </form>
+              </div>
             </div>
 
             {/* TRUST BADGE */}

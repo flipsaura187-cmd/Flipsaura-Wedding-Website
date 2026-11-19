@@ -376,7 +376,9 @@ export default function AdminVenueFormModal({
     }));
   };
 
-  const [submitting, setSubmitting] = useState(false);
+  const [savingCategory, setSavingCategory] = useState(false);
+  const [fullSubmitting, setFullSubmitting] = useState(false);
+  const isBusy = savingCategory || fullSubmitting;
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -710,28 +712,17 @@ export default function AdminVenueFormModal({
     setTimeout(() => setSuccessMsg(""), 3500);
   };
 
-  // Save the currently active category listing
-  // addAnother = true: save this category and smoothly advance to next available category
-  // addAnother = false: save this category and finish/close
-  const handleSaveCurrent = async (addAnother = false) => {
-    setError("");
-    setSuccessMsg("");
-
-    if (!commonInfo.city.trim()) {
-      setError("City / District is required.");
-      return;
+  // Save a specific category data to database
+  const saveCategoryData = async (catId) => {
+    if (!commonInfo.city?.trim()) {
+      throw new Error("City / District is required.");
+    }
+    const catData = categoryForms[catId];
+    if (!catData?.title?.trim()) {
+      throw new Error(`Please enter a Listing / Venue Name for ${catId}.`);
     }
 
-    if (!activeForm.title?.trim()) {
-      setError(`Please enter a Listing / Venue Name for ${activeCategoryTab}.`);
-      return;
-    }
-
-    setSubmitting(true);
     const endpoint = isVendor ? `/api/vendor/venues` : `/api/admin/venues`;
-    const catId = activeCategoryTab;
-    const catData = activeForm;
-
     const payload = {
       title: catData.title.trim(),
       venueType: catId,
@@ -769,50 +760,79 @@ export default function AdminVenueFormModal({
       sourceUrl: commonInfo.sourceUrl.trim(),
     };
 
+    const existingSavedId = isEdit ? initialData._id : savedCategoryMap[catId];
+    let res;
+    if (existingSavedId) {
+      res = await api.put(`${endpoint}/${existingSavedId}`, payload);
+    } else {
+      res = await api.post(endpoint, payload);
+    }
+
+    if (!res.data?.ok) {
+      throw new Error(res.data?.error || `Failed to save ${catId}`);
+    }
+
+    const savedVenue = res.data.data?.venue;
+    const newVenueId = savedVenue?._id || existingSavedId;
+
+    setSavedCategoryMap((prev) => ({
+      ...prev,
+      [catId]: newVenueId,
+    }));
+
+    if (onSaved) onSaved(savedVenue);
+    return savedVenue;
+  };
+
+  // Action 1: Save ONLY the currently active subcategory (modal remains open, user can switch to other tabs)
+  const handleSaveCurrentOnly = async () => {
+    setError("");
+    setSuccessMsg("");
+    setSavingCategory(true);
+
     try {
-      const existingSavedId = isEdit ? initialData._id : savedCategoryMap[catId];
-      let res;
-      if (existingSavedId) {
-        // Update already saved listing
-        res = await api.put(`${endpoint}/${existingSavedId}`, payload);
-      } else {
-        // Create new listing
-        res = await api.post(endpoint, payload);
-      }
-
-      if (res.data?.ok) {
-        const savedVenue = res.data.data?.venue;
-        const newVenueId = savedVenue?._id || existingSavedId;
-
-        // Mark this category as saved in database
-        setSavedCategoryMap((prev) => ({
-          ...prev,
-          [catId]: newVenueId,
-        }));
-
-        if (onSaved) onSaved(savedVenue);
-
-        if (addAnother && nextAvailableCategory) {
-          setSuccessMsg(`✓ ${catId} saved & published successfully! Now choose/fill ${nextAvailableCategory} below.`);
-          setActiveCategoryTab(nextAvailableCategory);
-          // Scroll to top of modal smoothly
-          const modalBody = document.getElementById("venue-form-scrollable-body");
-          if (modalBody) modalBody.scrollTo({ top: 0, behavior: "smooth" });
-          setTimeout(() => setSuccessMsg(""), 4500);
-        } else {
-          setSuccessMsg(`✓ ${catId} saved & published successfully!`);
-          setTimeout(() => {
-            onClose();
-          }, 800);
-        }
-      } else {
-        throw new Error(res.data?.error || `Failed to save ${catId}`);
-      }
+      await saveCategoryData(activeCategoryTab);
+      setSuccessMsg(`✓ "${activeCategoryTab}" successfully save ho gaya hai! Ab aap oopar doosra subcategory tab select karke use bhi bhar sakte hain.`);
+      setTimeout(() => setSuccessMsg(""), 6000);
     } catch (err) {
-      console.error("Save venue error:", err);
-      setError(err.response?.data?.error || err.message || `Failed to save ${catId}`);
+      console.error("Save category error:", err);
+      setError(err.response?.data?.error || err.message || `Failed to save ${activeCategoryTab}`);
     } finally {
-      setSubmitting(false);
+      setSavingCategory(false);
+    }
+  };
+
+  // Action 2: Final Full Submit (closes modal)
+  const handleFullSubmit = async () => {
+    setError("");
+    setSuccessMsg("");
+    setFullSubmitting(true);
+
+    try {
+      // If currently active category is filled with a title but not saved yet, save it
+      if (activeForm.title?.trim() && !savedCategoryMap[activeCategoryTab]) {
+        await saveCategoryData(activeCategoryTab);
+      }
+
+      const totalCount =
+        Object.keys(savedCategoryMap).length +
+        (activeForm.title?.trim() && !savedCategoryMap[activeCategoryTab] ? 1 : 0);
+
+      if (totalCount === 0) {
+        throw new Error(
+          "Kripya kam se kam ek category ki details bhar kar 'Save Subcategory' karein."
+        );
+      }
+
+      setSuccessMsg(`🎉 All saved categories (${totalCount}) submitted successfully!`);
+      setTimeout(() => {
+        onClose();
+      }, 800);
+    } catch (err) {
+      console.error("Full submit error:", err);
+      setError(err.response?.data?.error || err.message || "Failed to submit venues.");
+    } finally {
+      setFullSubmitting(false);
     }
   };
 
@@ -843,7 +863,7 @@ export default function AdminVenueFormModal({
               </h2>
             </div>
             <p className="text-xs text-brand-100 mt-0.5">
-              Fill details for each venue subcategory, click <strong>"Save & Add Another"</strong> to publish it and move to the next. Add as many venues as you offer!
+              Ek category bharein aur <strong>"Save Category"</strong> karein, phir doosra choose karke save karein. Aakhiri me <strong>"Full Submit"</strong> karein!
             </p>
           </div>
           <button
@@ -860,7 +880,7 @@ export default function AdminVenueFormModal({
           id="venue-form-scrollable-body"
           onSubmit={(e) => {
             e.preventDefault();
-            handleSaveCurrent(false);
+            handleSaveCurrentOnly();
           }}
           className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6"
         >
@@ -897,7 +917,7 @@ export default function AdminVenueFormModal({
               </div>
             </div>
             <p className="text-xs text-muted mb-3">
-              Jo jo category details aap bharte jaayenge, use <strong>"Save & Add Another"</strong> karke save karein aur agla subcategory choose karein.
+              Jo jo category aapko add karni hai, uski details bharein aur neeche <strong>"Save Category"</strong> click karein. Phir doosra category choose karke save karein. Aakhiri me neeche <strong>"Full Submit & Finish"</strong> karein.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -914,7 +934,7 @@ export default function AdminVenueFormModal({
                       isCurrentActive
                         ? "bg-brand-600 text-white border-brand-600 shadow-md shadow-brand-600/20 scale-[1.01]"
                         : isSaved
-                        ? "bg-emerald-50 text-emerald-950 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-100/60"
+                        ? "bg-emerald-50/80 text-emerald-950 border-emerald-400 hover:border-emerald-500 hover:bg-emerald-100/70"
                         : "bg-white text-ink border-brand-200 hover:border-brand-400 hover:bg-brand-50/50"
                     }`}
                   >
@@ -923,14 +943,22 @@ export default function AdminVenueFormModal({
                         <div className="text-2xl">{cat.icon}</div>
                         <div
                           className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase transition ${
-                            isCurrentActive
+                            isCurrentActive && isSaved
+                              ? "bg-white/30 text-white"
+                              : isCurrentActive
                               ? "bg-white/25 text-white"
                               : isSaved
-                              ? "bg-emerald-200 text-emerald-800"
+                              ? "bg-emerald-200 text-emerald-900 border border-emerald-300"
                               : "bg-brand-100/70 text-brand-700"
                           }`}
                         >
-                          {isSaved ? "✓ Saved" : isCurrentActive ? "Active" : "+ Select"}
+                          {isCurrentActive && isSaved
+                            ? "✓ Saved & Editing"
+                            : isSaved
+                            ? "✓ Saved"
+                            : isCurrentActive
+                            ? "Editing"
+                            : "+ Select"}
                         </div>
                       </div>
                       <div className={`font-bold text-sm ${isCurrentActive ? "text-white" : "text-ink"}`}>
@@ -943,8 +971,8 @@ export default function AdminVenueFormModal({
 
                     <div className="mt-2.5 text-[10px] font-bold">
                       {isSaved ? (
-                        <span className={isCurrentActive ? "text-white" : "text-emerald-700"}>
-                          ✓ Saved & Live (Click to edit)
+                        <span className={isCurrentActive ? "text-white" : "text-emerald-700 flex items-center gap-1"}>
+                          <span>✓</span> Saved & Ready (Click to edit)
                         </span>
                       ) : isCurrentActive ? (
                         <span className="text-white">Editing Form Below ↓</span>
@@ -1943,47 +1971,72 @@ export default function AdminVenueFormModal({
 
         {/* Footer Buttons */}
         <div className="px-6 py-4 bg-surface border-t border-brand-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={handleFinish}
-            className="px-5 py-2.5 rounded-xl border border-brand-200 text-ink hover:bg-brand-50 text-xs font-bold transition-colors cursor-pointer w-full sm:w-auto"
-          >
-            {savedCategoryIds.length > 0 ? `Done / Close (${savedCategoryIds.length} Saved)` : "Cancel"}
-          </button>
-
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            {/* Primary Action 1: Save current venue & choose/move to next subcategory */}
-            {!isEdit && nextAvailableCategory && (
-              <button
-                type="button"
-                onClick={() => handleSaveCurrent(true)}
-                disabled={submitting || uploadingImage}
-                className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-md shadow-amber-600/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
-              >
-                <span>Save this & Add {nextAvailableCategory} →</span>
-              </button>
-            )}
-
-            {/* Primary Action 2: Save current venue & finish */}
             <button
               type="button"
-              onClick={() => handleSaveCurrent(false)}
-              disabled={submitting || uploadingImage}
-              className="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-md shadow-brand-600/20 transition-all cursor-pointer flex items-center justify-center gap-2 w-full sm:w-auto"
+              onClick={handleFinish}
+              className="px-4 py-2.5 rounded-xl border border-brand-200 text-ink hover:bg-brand-50 text-xs font-bold transition-colors cursor-pointer w-full sm:w-auto"
             >
-              {submitting ? (
+              {savedCategoryIds.length > 0 ? "Done / Close" : "Cancel"}
+            </button>
+
+            {savedCategoryIds.length > 0 && (
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-300 flex items-center gap-1 shadow-2xs">
+                <span>✓</span>
+                <span>{savedCategoryIds.length} Category Saved</span>
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+            {/* ONLY SAVE THIS ACTIVE SUBCATEGORY */}
+            <button
+              type="button"
+              onClick={handleSaveCurrentOnly}
+              disabled={isBusy || uploadingImage}
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto ${
+                isCurrentSaved
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+                  : "bg-brand-600 hover:bg-brand-700 text-white shadow-brand-600/20"
+              }`}
+            >
+              {savingCategory ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  <span>Saving...</span>
+                  <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span>Saving {activeCategoryTab}...</span>
                 </>
               ) : (
-                <span>
-                  {isEdit
-                    ? "Update Venue ✓"
-                    : isCurrentSaved
-                    ? "Update & Finish ✓"
-                    : "Save & Finish ✓"}
-                </span>
+                <>
+                  <span>💾</span>
+                  <span>
+                    {isCurrentSaved
+                      ? `✓ Update ${activeCategoryTab}`
+                      : `Save ${activeCategoryTab} Only`}
+                  </span>
+                </>
+              )}
+            </button>
+
+            {/* FULL SUBMIT & CLOSE */}
+            <button
+              type="button"
+              onClick={handleFullSubmit}
+              disabled={isBusy || uploadingImage}
+              className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 w-full sm:w-auto"
+            >
+              {fullSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span>Submitting All...</span>
+                </>
+              ) : (
+                <>
+                  <span>🚀</span>
+                  <span>
+                    Full Submit & Close
+                    {savedCategoryIds.length > 0 ? ` (${savedCategoryIds.length} Saved)` : ""} ✓
+                  </span>
+                </>
               )}
             </button>
           </div>

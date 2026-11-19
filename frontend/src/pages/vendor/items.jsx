@@ -740,7 +740,6 @@ export default function VendorItems() {
           initialCategory={selectedVenueCategory}
           onClose={closeModal}
           onSaved={() => {
-            closeModal();
             load();
           }}
         />

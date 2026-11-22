@@ -46,6 +46,7 @@ export default function AdminHotelFormModal({
   onSaved,
   initialData = null,
   isVendor = false,
+  initialLocation = null,
 }) {
   const isEdit = Boolean(initialData?._id);
 
@@ -115,10 +116,10 @@ export default function AdminHotelFormModal({
         ownerName: "",
         contactPhone: "",
         contactEmail: "",
-        address: "",
-        city: "Daudnagar",
-        state: "Bihar",
-        pincode: "",
+        address: initialLocation?.localities || "",
+        city: initialLocation?.city || "Daudnagar",
+        state: initialLocation?.state || "Bihar",
+        pincode: initialLocation?.pincode || "",
         price: "",
         about: "",
         description: "",
@@ -135,7 +136,7 @@ export default function AdminHotelFormModal({
         featured: false,
       });
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, initialLocation]);
 
   if (!isOpen) return null;
 
@@ -247,12 +248,18 @@ export default function AdminHotelFormModal({
     setSubmitting(true);
 
     try {
+      const addressValue =
+        form.address.trim() ||
+        initialLocation?.localities?.trim() ||
+        form.city.trim() ||
+        "";
+
       const payload = {
         title: form.title.trim(),
         ownerName: form.ownerName.trim(),
         contactPhone: form.contactPhone.trim(),
         contactEmail: form.contactEmail.trim(),
-        address: form.address.trim(),
+        address: addressValue,
         city: form.city.trim(),
         state: form.state.trim() || "Bihar",
         pincode: form.pincode.trim(),
@@ -299,19 +306,19 @@ export default function AdminHotelFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-line flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+      <div className="relative w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-line flex flex-col max-h-[95vh] sm:max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 border-b border-line bg-surface/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center text-xl shadow-2xs">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4.5 border-b border-line bg-surface/50 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
               🏨
             </div>
-            <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-wine leading-tight">
+            <div className="min-w-0">
+              <h2 className="font-serif text-lg sm:text-2xl font-bold text-wine leading-tight truncate">
                 {isEdit ? "Edit Hotel Vendor & Property" : "Add New Hotel (Manual Entry)"}
               </h2>
-              <p className="text-xs text-muted">
+              <p className="text-[11px] sm:text-xs text-muted truncate">
                 {isEdit
                   ? "Update property address, vendor contact information, and public listing attributes."
                   : "Quickly enter details collected from public listings (MakeMyTrip, Google, brochures)."}
@@ -321,14 +328,14 @@ export default function AdminHotelFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center text-sm font-bold transition cursor-pointer"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center text-sm font-bold transition cursor-pointer shrink-0 ml-2"
           >
             ✕
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6 flex-1">
+        <form onSubmit={handleSubmit} className="overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1">
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-medium flex items-center gap-2">
               <span>⚠️</span>
@@ -350,8 +357,8 @@ export default function AdminHotelFormModal({
               1. Hotel Identity & Rates
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-ink mb-1">
                   Hotel Name / Property Title <span className="text-rose-500">*</span>
                 </label>
@@ -415,7 +422,7 @@ export default function AdminHotelFormModal({
               2. Vendor & Contact Information
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
               <div>
                 <label className="block text-xs font-semibold text-ink mb-1">
                   Contact Person / Owner Name
@@ -467,22 +474,17 @@ export default function AdminHotelFormModal({
               3. Location & Address
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="sm:col-span-4">
-                <label className="block text-xs font-semibold text-ink mb-1">
-                  Full Street Address / Landmark
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={form.address}
-                  onChange={handleChange}
-                  placeholder="Near Bus Stand, Main Road, Daudnagar"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500"
-                />
+            {(initialLocation?.localities || form.address) && (
+              <div className="text-xs text-brand-700 bg-brand-50/70 border border-brand-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
+                <span>📍</span>
+                <span>
+                  Locality / Area: <strong>{initialLocation?.localities || form.address}</strong>
+                </span>
               </div>
+            )}
 
-              <div className="sm:col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              <div className="sm:col-span-2 md:col-span-1">
                 <label className="block text-xs font-semibold text-ink mb-1">
                   City / District <span className="text-rose-500">*</span>
                 </label>
@@ -581,7 +583,7 @@ export default function AdminHotelFormModal({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               {POPULAR_HOTEL_AMENITIES.map((amenity) => {
                 const isSelected = form.facilities.includes(amenity);
                 return (
@@ -738,7 +740,7 @@ export default function AdminHotelFormModal({
           </div>
 
           {/* Section 7: Status Toggles */}
-          <div className="pt-2 border-t border-line flex items-center gap-6">
+          <div className="pt-2 border-t border-line flex flex-wrap items-center gap-4 sm:gap-6">
             <label className="relative flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -764,12 +766,12 @@ export default function AdminHotelFormModal({
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-line bg-surface/50 flex items-center justify-end gap-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-line bg-surface/50 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-5 py-2.5 rounded-xl border border-line hover:bg-gray-100 text-ink font-semibold text-sm transition"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-line hover:bg-gray-100 text-ink font-semibold text-sm transition text-center cursor-pointer"
           >
             Cancel
           </button>
@@ -778,7 +780,7 @@ export default function AdminHotelFormModal({
             type="button"
             onClick={handleSubmit}
             disabled={submitting || uploadingImage}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             {submitting ? (
               <>

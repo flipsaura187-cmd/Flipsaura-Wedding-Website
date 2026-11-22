@@ -3,10 +3,8 @@ import Booking from "../models/Booking.js";
 import Item from "../models/Item.js";
 import { getRazorpay, verifyRazorpaySignature } from "../lib/razorpay.js";
 import { sendMail, bookingConfirmationHtml, adminBookingAlertHtml, vendorBookingAlertHtml } from "../lib/mailer.js";
-import {
-  sendBookingWhatsAppNotifications,
-  sendPaymentWhatsAppNotifications,
-} from "../lib/whatsapp.js";
+import { sendBookingWhatsAppNotifications, sendPaymentWhatsAppNotifications } from "../lib/whatsapp.js";
+import { isItemHotel, validateStayAvailability } from "../lib/hotelAvailability.js";
 
 export async function createOrder(req, res) {
   const { bookingId } = req.body;
@@ -17,6 +15,31 @@ export async function createOrder(req, res) {
   if (!booking) return res.status(404).json({ ok: false, error: "Booking not found" });
   if (String(booking.user) !== req.user.id) {
     return res.status(403).json({ ok: false, error: "Forbidden" });
+  }
+
+  // Revalidate availability for hotel reservations before initiating payment order
+  if (booking.checkInDate || booking.roomId) {
+    const item = await Item.findById(booking.item).lean();
+    if (await isItemHotel(item)) {
+      const reval = await validateStayAvailability({
+        hotelId: booking.item,
+        roomId: booking.roomId,
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate,
+        roomsCount: booking.roomsCount,
+        excludeBookingId: booking._id,
+      });
+
+      if (!reval.ok) {
+        return res.status(400).json({
+          ok: false,
+          error: "Your reservation hold has expired and the selected dates are no longer available. Please choose different dates.",
+        });
+      }
+
+      // Refresh 15-minute hold during payment processing
+      booking.holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    }
   }
 
   const order = await getRazorpay().orders.create({
@@ -73,6 +96,7 @@ export async function verifyPayment(req, res) {
   }
 
   booking.status = "paid";
+  booking.holdExpiresAt = null; // Booking permanently confirmed
   booking.payment = {
     provider: "razorpay",
     orderId: razorpay_order_id,

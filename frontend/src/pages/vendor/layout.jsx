@@ -14,6 +14,24 @@ export default function VendorLayout() {
   const [vendorStatus, setVendorStatus] = useState(null);
   const [loggingInDemo, setLoggingInDemo] = useState(false);
   const [localHasHotel, setLocalHasHotel] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile navigation drawer whenever the active route or query changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname, location.search]);
+
+  // Prevent background scrolling when mobile menu drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   const fetchStatus = () => {
     if (!loading && user && (String(user.role || "").toLowerCase() === "vendor" || String(user.role || "").toLowerCase() === "admin")) {
@@ -192,14 +210,181 @@ export default function VendorLayout() {
     ...(hasHotelService
       ? [{ href: "/vendor/rooms", label: "Manage Rooms", icon: "🛏️", locked: !user || !isApproved }]
       : []),
-    { href: "/vendor/home-setup", label: "Home Setup Services", icon: "??", locked: !user || !isApproved },
+    { href: "/vendor/home-setup", label: "Home Setup Services", icon: "🎪", locked: !user || !isApproved },
     { href: "/vendor/bookings", label: "Bookings", icon: "📅", locked: !user || !isApproved },
   ];
 
+  const currentTab = new URLSearchParams(location.search).get("tab") || "profile";
+  const activeLink = navLinks.find((link) => {
+    const linkTab = link.href.includes("tab=") ? link.href.split("tab=")[1] : "";
+    return (
+      (location.pathname + location.search) === link.href ||
+      (link.href.startsWith("/vendor/onboarding") && location.pathname === "/vendor/onboarding" && linkTab === currentTab)
+    );
+  }) || navLinks[0];
+
   return (
     <div className="min-h-[85vh] bg-surface flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-line p-5 md:p-6 flex-shrink-0">
+      {/* ============================================================ */}
+      {/* MOBILE TOP NAVIGATION BAR (Visible on mobile/tablet < md)   */}
+      {/* Shows My Services & Add Service directly; ☰ More for rest   */}
+      {/* ============================================================ */}
+      <div className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-line shadow-2xs px-3.5 py-2.5 flex items-center justify-between gap-2">
+        {/* Left: Quick Access to My Services */}
+        <div className="flex items-center gap-2 min-w-0">
+          <Link
+            href="/vendor/items"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs ${
+              location.pathname === "/vendor/items"
+                ? "bg-brand-50 text-brand-700 border border-brand-200"
+                : "bg-surface border border-line text-ink hover:text-brand-600 hover:border-brand-300"
+            }`}
+          >
+            <span className="text-sm">📦</span>
+            <span>My Services</span>
+          </Link>
+        </div>
+
+        {/* Right: + Add Service Button & ☰ More Menu for remaining links */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/vendor/items?add=true"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-wine hover:from-brand-700 hover:to-brand-800 text-white text-xs font-bold transition shadow-2xs active:scale-95"
+          >
+            <span className="text-sm font-bold leading-none">+</span>
+            <span>Add Service</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface border border-line hover:border-brand-300 text-ink text-xs font-bold transition shadow-2xs active:scale-95 cursor-pointer"
+            aria-label="Open More Vendor Menu"
+            title="More Options"
+          >
+            <span className="text-sm leading-none">☰</span>
+            <span className="text-[11px] font-medium text-muted">More</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* MOBILE SLIDE-OVER DRAWER (Opens on clicking ☰ Menu button)  */}
+      {/* ============================================================ */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative w-[290px] max-w-[85vw] bg-white h-full z-10 flex flex-col shadow-2xl animate-in slide-in-from-left duration-200">
+            {/* Header */}
+            <div className="p-4 border-b border-line bg-gradient-to-br from-brand-50/70 via-white to-surface flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center text-lg shrink-0 shadow-2xs">
+                  🏪
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-serif font-bold text-sm text-wine truncate">
+                    {user?.vendorProfile?.businessName || user?.name || "Vendor Portal"}
+                  </h3>
+                  <p className="text-[10px] text-muted truncate">
+                    {user?.email || "Vendor Account"}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold transition cursor-pointer"
+                aria-label="Close Menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Verification Status Pill in Drawer */}
+            <div className="px-4 py-2 bg-surface/70 border-b border-line flex items-center justify-between">
+              <span className="text-xs text-muted font-medium">Account Status</span>
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                  isApproved
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : status === "under_review"
+                    ? "bg-sky-50 text-sky-700 border border-sky-200"
+                    : status === "rejected"
+                    ? "bg-rose-50 text-rose-700 border border-rose-200"
+                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                }`}
+              >
+                <span className="text-[9px]">
+                  {isApproved ? "🟢" : status === "under_review" ? "🔵" : status === "rejected" ? "🔴" : "🟡"}
+                </span>
+                {isApproved
+                  ? "Approved Vendor"
+                  : status === "under_review"
+                  ? "Under Review"
+                  : status === "rejected"
+                  ? "Rejected"
+                  : "Profile Incomplete"}
+              </span>
+            </div>
+
+            {/* Navigation Links inside Drawer */}
+            <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+              {navLinks.map((link) => {
+                const linkTab = link.href.includes("tab=") ? link.href.split("tab=")[1] : "";
+                const isActive =
+                  (location.pathname + location.search) === link.href ||
+                  (link.href.startsWith("/vendor/onboarding") && location.pathname === "/vendor/onboarding" && linkTab === currentTab);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-brand-50 text-brand-600 font-bold border border-brand-200 shadow-2xs"
+                        : "text-ink/80 hover:bg-gray-50 hover:text-ink"
+                    } ${link.locked ? "opacity-60 cursor-not-allowed" : ""}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-base">{link.icon}</span>
+                      <span>{link.label}</span>
+                    </div>
+                    {link.locked && (
+                      <span title="Locked until admin approval" className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                        🔒
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Drawer Footer Links */}
+            <div className="p-3 border-t border-line bg-surface/50 space-y-2">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white border border-line text-xs font-semibold text-ink hover:text-brand-600 transition"
+              >
+                <span>←</span> Back to Main Website
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* DESKTOP SIDEBAR (Visible only on md: screens and above)      */}
+      {/* ============================================================ */}
+      <aside className="hidden md:block w-64 bg-white border-r border-line p-5 md:p-6 flex-shrink-0">
         <div className="pb-5 mb-5 border-b border-line">
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-brand-600 animate-pulse" />
@@ -236,7 +421,6 @@ export default function VendorLayout() {
 
         <nav className="flex flex-col gap-1.5">
           {navLinks.map((link) => {
-            const currentTab = new URLSearchParams(location.search).get("tab") || "profile";
             const linkTab = link.href.includes("tab=") ? link.href.split("tab=")[1] : "";
             const isActive =
               (location.pathname + location.search) === link.href ||
@@ -267,7 +451,7 @@ export default function VendorLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-5 md:p-8 overflow-y-auto">
+      <main className="flex-1 p-3.5 sm:p-5 md:p-8 overflow-y-auto">
         {/* Guest Preview Mode Banner on Onboarding */}
         {!user && isOnboarding && (
           <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs md:text-sm shadow-xs">

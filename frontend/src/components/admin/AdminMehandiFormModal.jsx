@@ -688,7 +688,7 @@ export default function AdminMehandiFormModal({
           {/* TAB 1: BASIC & CONTACT */}
           {activeTab === "basic" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
                     Artist / Studio Name *
@@ -717,7 +717,7 @@ export default function AdminMehandiFormModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
                     Contact Mobile Number *
@@ -762,7 +762,7 @@ export default function AdminMehandiFormModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5">
                     Locality / Area

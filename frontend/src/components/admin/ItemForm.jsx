@@ -257,7 +257,7 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Title *</label>
           <input
@@ -411,7 +411,7 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
           </div>
 
           {/* Locality & Stay Rooms Count */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Locality / Area / Landmark</label>
               <input
@@ -437,7 +437,7 @@ export default function ItemForm({ onSaved, initialData = null, categories }) {
           </div>
 
           {/* Pricing: Rental & Food Price per Plate */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200">
               <label className="block text-xs font-bold text-amber-950 mb-1">
                 Venue Rental Cost (₹ / day)

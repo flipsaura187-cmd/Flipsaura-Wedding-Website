@@ -126,86 +126,106 @@ export default function VendorDashboard() {
 
       {/* Auto-Linked Active Services Notification Banner */}
       {vendorItems.length > 0 && (
-        <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl mt-0.5">🎉</span>
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-2xs">
+          <div className="flex items-start gap-2.5 sm:gap-3">
+            <span className="text-xl sm:text-2xl mt-0.5 shrink-0">🎉</span>
             <div>
-              <h3 className="font-bold text-sm md:text-base text-emerald-900">
+              <h3 className="font-bold text-xs sm:text-base text-emerald-900 leading-snug">
                 {vendorItems.length} {vendorItems.length === 1 ? "Service Listing" : "Service Listings"} Linked to Your Mobile Number
               </h3>
-              <p className="text-xs md:text-sm text-emerald-800/90 mt-0.5">
+              <p className="text-[11px] sm:text-sm text-emerald-800/90 mt-0.5">
                 All venues and services matching <b className="font-bold">+91 {cleanPhone || "your phone"}</b> are automatically synced with your vendor portal.
               </p>
             </div>
           </div>
           <Link
             href="/vendor/items"
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-2xs flex-shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-2xs flex-shrink-0 w-full sm:w-auto text-center"
           >
             Manage Services →
           </Link>
         </div>
       )}
 
-      {/* Active Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-white p-6 rounded-2xl border border-line shadow-2xs hover:shadow-xs transition-shadow">
-          <span className="text-xs font-semibold text-muted uppercase tracking-wider block mb-1">
-            Listed Services
-          </span>
-          <b className="text-3xl font-serif font-bold text-wine">
-            {vendorItems.length || stats?.items || 0}
-          </b>
-          <p className="mt-2 text-xs text-muted">Active items and wedding packages</p>
+      {/* Active Stats Grid - Responsive 3-col on mobile & desktop to prevent vertical stacking */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-5">
+        <div className="bg-white p-3 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl border border-line shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] sm:text-xs font-semibold text-muted uppercase tracking-wider block mb-0.5 sm:mb-1 truncate">
+              Listed Services
+            </span>
+            <b className="text-lg sm:text-2xl md:text-3xl font-serif font-bold text-wine block">
+              {vendorItems.length || stats?.items || 0}
+            </b>
+          </div>
+          <p className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-muted hidden sm:block">
+            Active items and wedding packages
+          </p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-line shadow-2xs hover:shadow-xs transition-shadow">
-          <span className="text-xs font-semibold text-muted uppercase tracking-wider block mb-1">
-            Client Bookings
-          </span>
-          <b className="text-3xl font-serif font-bold text-wine">{stats?.bookings || 0}</b>
-          <p className="mt-2 text-xs text-muted">Total inquiries and confirmed dates</p>
+        <div className="bg-white p-3 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl border border-line shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] sm:text-xs font-semibold text-muted uppercase tracking-wider block mb-0.5 sm:mb-1 truncate">
+              Client Bookings
+            </span>
+            <b className="text-lg sm:text-2xl md:text-3xl font-serif font-bold text-wine block">
+              {stats?.bookings || 0}
+            </b>
+          </div>
+          <p className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-muted hidden sm:block">
+            Total inquiries and confirmed dates
+          </p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-line shadow-2xs hover:shadow-xs transition-shadow">
-          <span className="text-xs font-semibold text-muted uppercase tracking-wider block mb-1">
-            Total Revenue
-          </span>
-          <b className="text-3xl font-serif font-bold text-wine">
-            ₹{(stats?.revenue || 0).toLocaleString("en-IN")}
-          </b>
-          <p className="mt-2 text-xs text-muted">Cumulative gross revenue earned</p>
+        <div className="bg-white p-3 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl border border-line shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] sm:text-xs font-semibold text-muted uppercase tracking-wider block mb-0.5 sm:mb-1 truncate">
+              Total Revenue
+            </span>
+            <b className="text-base sm:text-2xl md:text-3xl font-serif font-bold text-wine block truncate">
+              ₹{(stats?.revenue || 0).toLocaleString("en-IN")}
+            </b>
+          </div>
+          <p className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-muted hidden sm:block">
+            Cumulative gross revenue earned
+          </p>
         </div>
       </div>
 
       {/* ============================================================ */}
       {/* VENDOR'S SERVICES & VENUES SECTION (LINKED BY PHONE NUMBER) */}
       {/* ============================================================ */}
-      <div className="bg-white rounded-2xl border border-line p-6 md:p-8 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line">
+      <div className="bg-white rounded-2xl border border-line p-4 sm:p-6 md:p-8 shadow-xs space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-line">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xl">🏪</span>
-              <h2 className="font-serif text-xl md:text-2xl font-bold text-wine">
+              <span className="text-lg sm:text-xl">🏪</span>
+              <h2 className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-wine">
                 My Listed Services & Venues
               </h2>
             </div>
-            <p className="mt-1 text-xs sm:text-sm text-muted">
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted">
               {cleanPhone
                 ? `Services and listings linked to your mobile number +91 ${cleanPhone}`
                 : "All services and venue listings managed under your vendor account."}
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 flex-wrap">
+            <span className="px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
               {vendorItems.length} {vendorItems.length === 1 ? "Service" : "Services"} Listed
             </span>
             <Link
               href="/vendor/items"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs transition-colors shadow-2xs"
+              className="inline-flex items-center gap-1 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-white border border-line hover:border-brand-600 text-ink text-xs font-semibold transition-colors shadow-2xs"
             >
-              <span>+</span> Manage All Services
+              <span>📦</span> Manage
+            </Link>
+            <Link
+              href="/vendor/items?add=true"
+              className="inline-flex items-center gap-1 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-colors shadow-2xs"
+            >
+              <span className="text-sm font-bold leading-none">+</span> Add Service
             </Link>
           </div>
         </div>
@@ -231,7 +251,7 @@ export default function VendorDashboard() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
             {vendorItems.map((item) => {
               const categoryName = item.category?.name || "Wedding Service";
               const locationStr = [item.villageLocality || item.locality, item.city, item.state]
@@ -251,7 +271,7 @@ export default function VendorDashboard() {
                 >
                   <div>
                     {/* Thumbnail Image */}
-                    <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
+                    <div className="relative h-44 sm:h-48 w-full bg-gray-100 overflow-hidden">
                       {item.images?.[0] ? (
                         <img
                           src={item.images[0]}
@@ -287,12 +307,12 @@ export default function VendorDashboard() {
                     </div>
 
                     {/* Details */}
-                    <div className="p-4 space-y-2.5">
+                    <div className="p-3.5 sm:p-4 space-y-2 sm:space-y-2.5">
                       <div>
-                        <h4 className="font-bold text-ink text-base group-hover:text-brand-600 transition-colors line-clamp-1">
+                        <h4 className="font-bold text-ink text-sm sm:text-base group-hover:text-brand-600 transition-colors line-clamp-1">
                           {item.title}
                         </h4>
-                        <p className="text-xs text-muted flex items-center gap-1 mt-1">
+                        <p className="text-xs text-muted flex items-center gap-1 mt-0.5 sm:mt-1">
                           <span>📍</span>
                           <span className="line-clamp-1">{locationStr}</span>
                         </p>
@@ -328,23 +348,23 @@ export default function VendorDashboard() {
                   </div>
 
                   {/* Action Buttons Footer */}
-                  <div className="p-3 bg-surface/50 border-t border-line flex items-center gap-2">
+                  <div className="p-2.5 sm:p-3 bg-surface/50 border-t border-line flex items-center gap-1.5 sm:gap-2">
                     <Link
                       href={`/venues/${item._id}`}
-                      className="flex-1 py-2 px-3 rounded-xl bg-white border border-line hover:border-brand-600 text-ink hover:text-brand-600 text-xs font-semibold text-center transition-colors shadow-2xs"
+                      className="flex-1 py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-xl bg-white border border-line hover:border-brand-600 text-ink hover:text-brand-600 text-[11px] sm:text-xs font-semibold text-center transition-colors shadow-2xs truncate"
                     >
                       View Live ↗
                     </Link>
                     <Link
                       href="/vendor/items"
-                      className="py-2 px-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold text-center transition-colors shadow-2xs"
+                      className="py-1.5 sm:py-2 px-3 sm:px-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-[11px] sm:text-xs font-semibold text-center transition-colors shadow-2xs shrink-0"
                     >
                       Manage ✏️
                     </Link>
                     {isHotel && (
                       <Link
                         href="/vendor/rooms"
-                        className="py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold text-center transition-colors shadow-2xs"
+                        className="py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[11px] sm:text-xs font-semibold text-center transition-colors shadow-2xs shrink-0"
                         title="Manage Stay Rooms"
                       >
                         Rooms 🛏️

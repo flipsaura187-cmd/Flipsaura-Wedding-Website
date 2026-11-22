@@ -163,7 +163,7 @@ export function ListingProvider({ children }) {
         try {
           const params = new URLSearchParams({
             category: slug,
-            limit: "12",
+            limit: "20",
             ...paramsObj,
           });
 

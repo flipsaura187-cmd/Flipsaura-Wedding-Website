@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "@/compat/navigation";
 import Script from "@/compat/Script";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/api/axios";
+import HotelAvailabilityCalendar from "@/components/HotelAvailabilityCalendar";
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -217,6 +218,8 @@ export default function CheckoutPageCom() {
   const packageKey = sp.get("package") || "";
   const packageName = sp.get("packageName") || "";
   const queryPrice = sp.get("price") ? Number(sp.get("price")) : null;
+  const initialCheckIn = sp.get("checkIn") || "";
+  const initialCheckOut = sp.get("checkOut") || "";
 
   const [item, setItem] = useState(null);
   const [error, setError] = useState("");
@@ -227,8 +230,8 @@ export default function CheckoutPageCom() {
     name: "",
     email: "",
     phone: "",
-    date: "",
-    secondaryDate: "",
+    date: initialCheckIn,
+    secondaryDate: initialCheckOut,
     time: "",
     address: "",
     secondaryAddress: "",
@@ -398,7 +401,7 @@ export default function CheckoutPageCom() {
       const bookingNotes = notesParts.join(" • ");
 
       // 2. Create booking
-      const { data: j1 } = await api.post("/api/bookings", {
+      const bookingPayload = {
         itemId,
         amount: payableAmount,
         name: form.name.trim(),
@@ -407,7 +410,20 @@ export default function CheckoutPageCom() {
         eventDate: form.date,
         address: resolvedAddress,
         notes: bookingNotes,
-      });
+      };
+
+      if (categoryType === "hotel") {
+        bookingPayload.checkInDate = form.date;
+        bookingPayload.checkOutDate = form.secondaryDate || form.date;
+        if (roomId) bookingPayload.roomId = roomId;
+        bookingPayload.roomsCount = 1;
+        bookingPayload.eventDate =
+          form.secondaryDate && form.secondaryDate !== form.date
+            ? `${form.date} to ${form.secondaryDate}`
+            : form.date;
+      }
+
+      const { data: j1 } = await api.post("/api/bookings", bookingPayload);
 
       if (!j1.ok) throw new Error(j1.error || "Could not create booking");
       const booking = j1.data.booking;
@@ -493,6 +509,24 @@ export default function CheckoutPageCom() {
                   Quick, category-tailored booking details for a smooth wedding experience.
                 </p>
               </div>
+
+              {/* HOTEL AVAILABILITY CALENDAR: Interactive calendar before customer booking form (Hotel bookings only) */}
+              {categoryType === "hotel" && (
+                <HotelAvailabilityCalendar
+                  hotelId={itemId}
+                  roomId={roomId}
+                  roomName={roomName}
+                  selectedCheckIn={form.date}
+                  selectedCheckOut={form.secondaryDate}
+                  onSelectDates={({ checkIn, checkOut }) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      date: checkIn,
+                      secondaryDate: checkOut,
+                    }));
+                  }}
+                />
+              )}
 
               {!user && (
                 <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
@@ -585,56 +619,102 @@ export default function CheckoutPageCom() {
                     2. {config.title} Details
                   </div>
 
-                  {/* Primary Date (& optional Secondary Date / Time) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-ink mb-1">
-                        {config.dateLabel}
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        min={todayStr}
-                        value={form.date}
-                        onChange={(e) => setForm({ ...form, date: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                      />
-                      {config.dateHelp && (
-                        <p className="text-[11px] text-muted mt-1">{config.dateHelp}</p>
+                  {/* Date Selection: For Hotels, manual date inputs are removed and replaced by auto-populated selection from the interactive calendar */}
+                  {categoryType === "hotel" ? (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50/70 to-indigo-50/70 border border-blue-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>🏨</span>
+                          <span>Selected Stay Dates</span>
+                        </span>
+                        {form.date ? (
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300">
+                            ✓ Dates Auto-Populated
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-300 animate-pulse">
+                            ⚠️ Select on Calendar Above
+                          </span>
+                        )}
+                      </div>
+
+                      {form.date ? (
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <span className="bg-white px-3 py-1.5 rounded-lg border border-blue-200 text-blue-900 font-bold text-xs sm:text-sm">
+                            Check-in: {form.date}
+                          </span>
+                          <span className="text-muted">➔</span>
+                          <span className="bg-white px-3 py-1.5 rounded-lg border border-blue-200 text-blue-900 font-bold text-xs sm:text-sm">
+                            Check-out: {form.secondaryDate || form.date}
+                          </span>
+                          {form.secondaryDate && form.secondaryDate !== form.date && (
+                            <span className="text-xs text-indigo-700 font-bold bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200">
+                              {Math.round(
+                                (new Date(form.secondaryDate) - new Date(form.date)) /
+                                  (1000 * 60 * 60 * 24)
+                              )}{" "}
+                              Night(s) Stay
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted">
+                          Please select your check-in and check-out dates using the interactive availability calendar above.
+                        </p>
                       )}
                     </div>
-
-                    {config.showCheckOut && (
+                  ) : (
+                    /* Non-Hotel Categories: Original manual date input strictly preserved */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-ink mb-1">
-                          {config.checkOutLabel}
+                          {config.dateLabel}
                         </label>
                         <input
                           type="date"
-                          min={form.date || todayStr}
-                          value={form.secondaryDate}
-                          onChange={(e) => setForm({ ...form, secondaryDate: e.target.value })}
+                          required
+                          min={todayStr}
+                          value={form.date}
+                          onChange={(e) => setForm({ ...form, date: e.target.value })}
                           className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                         />
-                        <p className="text-[11px] text-muted mt-1">Optional departure date</p>
+                        {config.dateHelp && (
+                          <p className="text-[11px] text-muted mt-1">{config.dateHelp}</p>
+                        )}
                       </div>
-                    )}
 
-                    {config.showTime && (
-                      <div>
-                        <label className="block text-xs font-semibold text-ink mb-1">
-                          {config.timeLabel}
-                        </label>
-                        <input
-                          type="text"
-                          value={form.time}
-                          onChange={(e) => setForm({ ...form, time: e.target.value })}
-                          placeholder={config.timePlaceholder}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                        />
-                      </div>
-                    )}
-                  </div>
+                      {config.showCheckOut && (
+                        <div>
+                          <label className="block text-xs font-semibold text-ink mb-1">
+                            {config.checkOutLabel}
+                          </label>
+                          <input
+                            type="date"
+                            min={form.date || todayStr}
+                            value={form.secondaryDate}
+                            onChange={(e) => setForm({ ...form, secondaryDate: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                          />
+                          <p className="text-[11px] text-muted mt-1">Optional departure date</p>
+                        </div>
+                      )}
+
+                      {config.showTime && (
+                        <div>
+                          <label className="block text-xs font-semibold text-ink mb-1">
+                            {config.timeLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={form.time}
+                            onChange={(e) => setForm({ ...form, time: e.target.value })}
+                            placeholder={config.timePlaceholder}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-white text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Primary Category Pill Selector */}
                   {config.options?.length > 0 && (
@@ -752,13 +832,15 @@ export default function CheckoutPageCom() {
                 {/* Submit button */}
                 <button
                   type="submit"
-                  disabled={busy}
-                  className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm sm:text-base bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-lg shadow-brand-500/25 disabled:opacity-50 transition-all cursor-pointer mt-4"
+                  disabled={busy || (categoryType === "hotel" && !form.date)}
+                  className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm sm:text-base bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 shadow-lg shadow-brand-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer mt-4"
                 >
                   {busy
                     ? "Processing Payment…"
                     : !user
                     ? "Sign In to Pay with Razorpay →"
+                    : categoryType === "hotel" && !form.date
+                    ? "Select Stay Dates on Calendar Above ↑"
                     : `Pay ₹${payableAmount.toLocaleString("en-IN")} with Razorpay`}
                 </button>
               </form>
@@ -815,9 +897,15 @@ export default function CheckoutPageCom() {
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-ink">Requested Date:</span>
+                  <span className="font-medium text-ink">
+                    {categoryType === "hotel" ? "Stay Dates:" : "Requested Date:"}
+                  </span>
                   <span className="font-semibold text-brand-700">
-                    {form.date ? form.date : "Not selected yet"}
+                    {form.date
+                      ? categoryType === "hotel" && form.secondaryDate && form.secondaryDate !== form.date
+                        ? `${form.date} to ${form.secondaryDate}`
+                        : form.date
+                      : "Not selected yet"}
                   </span>
                 </div>
                 {form.categoryOption && form.categoryOption !== packageName && (

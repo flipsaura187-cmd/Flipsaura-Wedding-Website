@@ -79,7 +79,7 @@ export default function CategoryPage() {
   });
 
   const queryParams = useMemo(() => {
-    const p = { page: String(page) };
+    const p = { page: String(page), limit: "20" };
     if (filters.q?.trim()) p.q = filters.q.trim();
     if (filters.district?.trim()) p.district = filters.district.trim();
     if (filters.minPrice !== "") p.minPrice = filters.minPrice;
@@ -87,6 +87,11 @@ export default function CategoryPage() {
     if (filters.sort && filters.sort !== "newest") p.sort = filters.sort;
     return p;
   }, [page, filters]);
+
+  // Scroll smoothly to top on page change so user sees start of next page
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
 
   // ── Redux selectors (instant from store, 0ms) ──────────────────────────
   const cachedData = useSelector(selectCategoryItems(slug, queryParams));
@@ -477,7 +482,7 @@ export default function CategoryPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
             {items.map((it) => (
               <ItemCard key={it._id} item={it} />
             ))}

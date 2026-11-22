@@ -73,7 +73,7 @@ export default function Navbar() {
         </nav>
 
         {/* Desktop Auth / User Controls */}
-        <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
           {user ? (
             <>
               {role === "admin" && (
@@ -113,7 +113,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={logout}
-                className="px-3.5 py-1.5 rounded-xl border border-line text-xs font-medium text-ink hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors"
+                className="px-3.5 py-1.5 rounded-xl border border-line text-xs font-medium text-ink hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
               >
                 Logout
               </button>
@@ -222,29 +222,22 @@ export default function Navbar() {
                     👑 Admin Dashboard
                   </Link>
                 )}
-                {role === "vendor" && (
+                {role !== "vendor" && (
                   <Link
-                    href="/vendor/dashboard"
+                    href="/account"
                     onClick={() => setOpen(false)}
-                    className="block px-3 py-2 rounded-xl text-sm font-semibold text-brand-700 bg-brand-50 border border-brand-200"
+                    className="block px-3 py-2 rounded-xl text-sm font-medium text-ink hover:bg-gray-50"
                   >
-                    🏪 Vendor Portal
+                    My Account
                   </Link>
                 )}
-                <Link
-                  href="/account"
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2 rounded-xl text-sm font-medium text-ink hover:bg-gray-50"
-                >
-                  My Account
-                </Link>
                 <button
                   type="button"
                   onClick={() => {
                     setOpen(false);
                     logout();
                   }}
-                  className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                  className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 >
                   Logout
                 </button>

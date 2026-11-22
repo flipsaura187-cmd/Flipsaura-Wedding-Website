@@ -77,6 +77,12 @@ const RoomSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    blockedDates: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     active: {
       type: Boolean,
       default: true,

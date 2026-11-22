@@ -841,13 +841,13 @@ export default function AdminVenueFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-7xl bg-white rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[95vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-ink/60 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-7xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[96vh] sm:max-h-[95vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 bg-gradient-to-r from-brand-600 to-brand-700 text-white shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4.5 bg-gradient-to-r from-brand-600 to-brand-700 text-white shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl">
+              <span className="text-xl sm:text-2xl">
                 {activeCategoryTab === "Marriage Garden / Lawns"
                   ? "🌿"
                   : activeCategoryTab === "Wedding Resorts"
@@ -856,20 +856,20 @@ export default function AdminVenueFormModal({
                   ? "🎉"
                   : "🏛️"}
               </span>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-tight">
+              <h2 className="font-serif text-lg sm:text-2xl font-bold tracking-tight">
                 {isEdit
                   ? `Edit ${activeCategoryTab}`
                   : `Add ${activeCategoryTab}`}
               </h2>
             </div>
-            <p className="text-xs text-brand-100 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-brand-100 mt-0.5 line-clamp-1">
               Ek category bharein aur <strong>"Save Category"</strong> karein, phir doosra choose karke save karein. Aakhiri me <strong>"Full Submit"</strong> karein!
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-lg transition-colors cursor-pointer"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm sm:text-lg transition-colors cursor-pointer shrink-0 ml-2"
           >
             ✕
           </button>
@@ -882,7 +882,7 @@ export default function AdminVenueFormModal({
             e.preventDefault();
             handleSaveCurrentOnly();
           }}
-          className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6"
+          className="flex-1 overflow-y-auto p-3.5 sm:p-5 md:p-7 space-y-4 sm:space-y-6"
         >
           {error && (
             <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-semibold flex items-center gap-2">
@@ -992,7 +992,7 @@ export default function AdminVenueFormModal({
               <span>📍</span> Property Location & Contact Details (Shared for all venues)
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-xs font-semibold text-ink mb-1">
                   City / District <span className="text-red-500">*</span>
@@ -1068,11 +1068,11 @@ export default function AdminVenueFormModal({
                 />
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-ink mb-1">
                   Owner / Manager Name & Email
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="text"
                     name="ownerName"
@@ -1376,7 +1376,7 @@ export default function AdminVenueFormModal({
                 <span>💰</span> Pricing: Rental Cost & Plate Price for {activeCategoryTab}
               </h4>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
                 <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200">
                   <label className="block text-xs font-bold text-amber-950 mb-1">
                     {activeCategoryTab === "Marriage Garden / Lawns"

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "@/compat/navigation";
 import api from "@/api/axios";
+import HotelAvailabilityCalendar from "@/components/HotelAvailabilityCalendar";
 
 function getAmenityIcon(name) {
   const lower = (name || "").toLowerCase();
@@ -47,7 +48,23 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
     activePhotoIndex: 0,
   });
 
+  // Dedicated Availability Calendar Modal
+  const [calendarModal, setCalendarModal] = useState({
+    isOpen: false,
+    room: null,
+    selectedDates: null,
+  });
+
   const hotelId = item?._id;
+
+  const openCalendarModal = (room, e) => {
+    if (e) e.stopPropagation();
+    setCalendarModal({
+      isOpen: true,
+      room,
+      selectedDates: null,
+    });
+  };
 
   const handleCardNextPhoto = (e, roomId, total) => {
     e.stopPropagation();
@@ -113,7 +130,7 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    if (galleryModal.isOpen || detailsModal.isOpen) {
+    if (galleryModal.isOpen || detailsModal.isOpen || calendarModal.isOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -121,7 +138,7 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [galleryModal.isOpen, detailsModal.isOpen]);
+  }, [galleryModal.isOpen, detailsModal.isOpen, calendarModal.isOpen]);
 
   // Gallery keyboard controls
   useEffect(() => {
@@ -445,22 +462,32 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
                     </div>
                   </div>
 
-                  {/* Actions Row: 'View Details' and 'Book Room' */}
-                  <div className="pt-3 border-t border-gray-100 flex items-center gap-2.5">
+                  {/* Actions Row: 'Details', 'Calendar' and 'Book Room' */}
+                  <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
                     <button
                       type="button"
                       onClick={(e) => openRoomDetails(room, e)}
-                      className="flex-1 py-2.5 px-3 rounded-xl border border-brand-200 hover:border-brand-300 hover:bg-brand-50/60 text-brand-800 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 cursor-pointer"
+                      className="py-2.5 px-3 rounded-xl border border-brand-200 hover:border-brand-300 hover:bg-brand-50/60 text-brand-800 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 cursor-pointer"
+                      title="View room photos and amenities"
                     >
-                      <span>Room Details</span>
+                      <span>Details</span>
                       <span className="text-brand-600 font-bold">›</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => openCalendarModal(room, e)}
+                      className="py-2.5 px-3 rounded-xl border border-blue-200 hover:border-blue-300 hover:bg-blue-50/70 text-blue-800 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                      title="View real-time availability calendar"
+                    >
+                      <span>📅 Dates</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleBookRoom(room)}
                       disabled={room.availableRooms <= 0}
-                      className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-brand-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 cursor-pointer"
+                      className="flex-1 py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-brand-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <span>Book Room</span>
                       <span>→</span>
@@ -842,6 +869,87 @@ export default function HotelRoomsSection({ item, isTopPriority = false }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Dedicated Room Availability Calendar Modal */}
+      {calendarModal.isOpen && calendarModal.room && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none animate-in fade-in duration-200"
+          onClick={() => setCalendarModal({ isOpen: false, room: null, selectedDates: null })}
+        >
+          <div
+            className="w-full sm:max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200/60">
+                  {calendarModal.room.roomType || "Deluxe Room"}
+                </span>
+                <h3 className="font-serif font-bold text-lg text-ink mt-0.5">
+                  {calendarModal.room.name} Availability
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCalendarModal({ isOpen: false, room: null, selectedDates: null })}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+              <HotelAvailabilityCalendar
+                hotelId={hotelId}
+                roomId={calendarModal.room._id}
+                roomName={calendarModal.room.name}
+                selectedCheckIn={calendarModal.selectedDates?.checkIn || ""}
+                selectedCheckOut={calendarModal.selectedDates?.checkOut || ""}
+                onSelectDates={(dates) => {
+                  setCalendarModal((prev) => ({ ...prev, selectedDates: dates }));
+                }}
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3 shrink-0">
+              <div className="text-xs text-muted">
+                {calendarModal.selectedDates?.checkIn ? (
+                  <span className="font-semibold text-emerald-800">
+                    ✓ Dates selected: {calendarModal.selectedDates.checkIn}
+                    {calendarModal.selectedDates.checkOut && ` to ${calendarModal.selectedDates.checkOut}`}
+                  </span>
+                ) : (
+                  <span>Select available dates on the calendar</span>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={!calendarModal.selectedDates?.checkIn}
+                onClick={() => {
+                  const room = calendarModal.room;
+                  const dates = calendarModal.selectedDates;
+                  const query = new URLSearchParams({
+                    itemId: hotelId,
+                    roomId: room._id,
+                    roomName: room.name,
+                    price: String(room.pricePerNight),
+                    checkIn: dates.checkIn,
+                    checkOut: dates.checkOut || dates.checkIn,
+                  });
+                  setCalendarModal({ isOpen: false, room: null, selectedDates: null });
+                  router.push(`/checkout?${query.toString()}`);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+              >
+                Continue to Booking →
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>

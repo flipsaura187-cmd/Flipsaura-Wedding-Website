@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ItemForm from "@/components/vendor/ItemForm";
 import AdminVenueFormModal from "@/components/admin/AdminVenueFormModal";
 import AdminHotelFormModal from "@/components/admin/AdminHotelFormModal";
+import HotelLocationModal from "@/components/vendor/HotelLocationModal";
 import AdminPhotographyFormModal from "@/components/admin/AdminPhotographyFormModal";
 import AdminMehandiFormModal from "@/components/admin/AdminMehandiFormModal";
 import AdminHomeSetupFormModal from "@/components/admin/AdminHomeSetupFormModal";
@@ -134,6 +135,8 @@ export default function VendorItems() {
   const [activeCategoryType, setActiveCategoryType] = useState(null); // 'venue' | 'hotel' | 'photography' | 'mehandi' | 'generic' | null
   const [selectedVenueCategory, setSelectedVenueCategory] = useState("Banquet Halls");
   const [editingItem, setEditingItem] = useState(null);
+  const [isHotelLocationModalOpen, setIsHotelLocationModalOpen] = useState(false);
+  const [pendingHotelLocation, setPendingHotelLocation] = useState(null);
   const [categories, setCategories] = useState([]);
   const [vendorStatus, setVendorStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -160,8 +163,25 @@ export default function VendorItems() {
       .catch(() => {});
 
   useEffect(() => {
-    Promise.all([load(), cate(), checkStatus()]).finally(() => setLoading(false));
+    Promise.all([load(), cate(), checkStatus()]).finally(() => {
+      setLoading(false);
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("add") === "true") {
+          setIsCategoryPickerOpen(true);
+        }
+      } catch {}
+    });
   }, []);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("add") === "true") {
+        setIsCategoryPickerOpen(true);
+      }
+    } catch {}
+  }, [window.location.search]);
 
   const isApproved = Boolean(vendorStatus?.isApproved || items.length > 0);
 
@@ -344,6 +364,8 @@ export default function VendorItems() {
   const closeModal = () => {
     setActiveCategoryType(null);
     setEditingItem(null);
+    setPendingHotelLocation(null);
+    setIsHotelLocationModalOpen(false);
     load();
   };
 
@@ -357,23 +379,23 @@ export default function VendorItems() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-line">
         <div>
-          <h1 className="font-serif text-2xl md:text-3xl font-bold text-wine tracking-tight">
+          <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-wine tracking-tight">
             My Listed Services & Items
           </h1>
-          <p className="mt-1 text-xs md:text-sm text-muted">
+          <p className="mt-0.5 sm:mt-1 text-xs md:text-sm text-muted">
             Manage your public wedding service packages, rates, equipment catalogues, and property listings.
           </p>
         </div>
 
-        <div>
+        <div className="w-full sm:w-auto">
           {isApproved ? (
             <button
               onClick={handleOpenCategoryPicker}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm transition-colors shadow-2xs cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs sm:text-sm transition-colors shadow-2xs cursor-pointer"
             >
               <span className="text-base font-bold">+</span> New Service Item
             </button>
@@ -381,7 +403,7 @@ export default function VendorItems() {
             <button
               disabled
               title="Locked until admin approval"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-400 font-medium text-sm cursor-not-allowed border border-gray-200"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-400 font-medium text-xs sm:text-sm cursor-not-allowed border border-gray-200"
             >
               <span>🔒</span> New Item (Locked)
             </button>
@@ -434,7 +456,7 @@ export default function VendorItems() {
       ) : (
         <div className="space-y-4">
           {/* Mobile Card View (shown on screens < 768px) */}
-          <div className="grid grid-cols-1 gap-3.5 md:hidden">
+          <div className="grid grid-cols-1 gap-3 md:hidden">
             {items.map((it) => {
               const badge = getCategoryBadge(it);
               const price = (it.rentalPrice || it.price || 0);
@@ -442,28 +464,28 @@ export default function VendorItems() {
               return (
                 <div
                   key={it._id}
-                  className="bg-white p-4 rounded-2xl border border-line shadow-2xs space-y-3"
+                  className="bg-white p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-line shadow-2xs space-y-2.5 sm:space-y-3"
                 >
                   <div className="flex items-start gap-3">
                     {it.images?.[0] ? (
                       <img
                         src={it.images[0]}
                         alt={it.title}
-                        className="w-16 h-16 rounded-xl object-cover border border-line flex-shrink-0"
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border border-line flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-2xl flex-shrink-0">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-2xl flex-shrink-0">
                         {badge.icon}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-1.5">
                         <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border ${badge.color}`}>
                           <span>{badge.icon}</span>
-                          <span>{badge.label}</span>
+                          <span className="truncate max-w-[120px]">{badge.label}</span>
                         </span>
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                             it.active
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-gray-100 text-gray-600 border border-gray-200"
@@ -484,15 +506,15 @@ export default function VendorItems() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-line/70 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-muted block">Tariff / Price</span>
-                      <span className="text-base font-bold text-brand-700">
+                  <div className="pt-2 border-t border-line/70 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-muted block leading-none mb-0.5">Tariff / Price</span>
+                      <span className="text-sm sm:text-base font-bold text-brand-700 truncate block">
                         ₹{price.toLocaleString("en-IN")}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <Link
                         href={detectCategory(it) === "hotel" ? `/hotels/${it._id}` : `/venues/${it._id}`}
                         className="px-2.5 py-1.5 rounded-lg border border-line text-xs font-semibold text-ink hover:text-brand-600 hover:border-brand-600 transition-colors"
@@ -660,6 +682,9 @@ export default function VendorItems() {
                     } else if (cat.type === "venue") {
                       setSelectedVenueCategory(cat.venueCategory || "Banquet Halls");
                       setActiveCategoryType("venue");
+                    } else if (cat.type === "hotel") {
+                      setPendingHotelLocation(null);
+                      setIsHotelLocationModalOpen(true);
                     } else {
                       setActiveCategoryType(cat.type);
                     }
@@ -718,6 +743,19 @@ export default function VendorItems() {
         </div>
       )}
 
+      {/* Hotel Location Onboarding Modal (Step 1 for adding a hotel) */}
+      <HotelLocationModal
+        isOpen={isHotelLocationModalOpen}
+        defaultCity={vendorStatus?.vendorProfile?.city || "Daudnagar"}
+        defaultState={vendorStatus?.vendorProfile?.state || "Bihar"}
+        onClose={() => setIsHotelLocationModalOpen(false)}
+        onProceed={(locData) => {
+          setPendingHotelLocation(locData);
+          setIsHotelLocationModalOpen(false);
+          setActiveCategoryType("hotel");
+        }}
+      />
+
       {/* 0. Home Setup Form Modal (Interactive 7-Group Catalogue & Custom Options) */}
       {activeCategoryType === "home-setup" && (
         <AdminHomeSetupFormModal
@@ -751,6 +789,7 @@ export default function VendorItems() {
           isOpen={true}
           isVendor={true}
           initialData={editingItem}
+          initialLocation={pendingHotelLocation}
           onClose={closeModal}
           onSaved={() => {
             closeModal();

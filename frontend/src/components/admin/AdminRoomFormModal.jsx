@@ -488,19 +488,19 @@ export default function AdminRoomFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-line flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+      <div className="relative w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-line flex flex-col max-h-[95vh] sm:max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 border-b border-line bg-surface/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center text-xl shadow-2xs">
+        <div className="flex items-start sm:items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4.5 border-b border-line bg-surface/50 gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
               🛏️
             </div>
-            <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-wine leading-tight">
+            <div className="min-w-0">
+              <h2 className="font-serif text-lg sm:text-2xl font-bold text-wine leading-tight truncate">
                 {isEdit ? "Edit Hotel Room" : "Add Hotel Room"}
               </h2>
-              <p className="text-xs text-muted">
+              <p className="text-[11px] sm:text-xs text-muted line-clamp-1">
                 {isEdit
                   ? "Update room name, tariff, bed configuration, amenities, and photos."
                   : "Create room type under selected hotel property with transparent nightly tariff."}
@@ -510,14 +510,14 @@ export default function AdminRoomFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center text-sm font-bold transition cursor-pointer"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center text-sm font-bold transition cursor-pointer shrink-0"
           >
             ✕
           </button>
         </div>
 
         {/* Scrollable Form */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6 flex-1">
+        <form onSubmit={handleSubmit} className="overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1">
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-medium flex items-center gap-2">
               <span>⚠️</span>
@@ -539,7 +539,7 @@ export default function AdminRoomFormModal({
               1. Hotel Property & Room Title
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
               {/* Hotel Selector */}
               <div>
                 <label className="block text-xs font-semibold text-ink mb-1">
@@ -689,7 +689,7 @@ export default function AdminRoomFormModal({
               </div>
 
               {/* Room Title */}
-              <div className="sm:col-span-2">
+              <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-ink mb-1">
                   Room Display Name <span className="text-rose-500">*</span>
                 </label>
@@ -792,7 +792,7 @@ export default function AdminRoomFormModal({
               </div>
 
               {/* Bed Type */}
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 md:col-span-4">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-semibold text-ink">
                     Bed Configuration
@@ -1311,12 +1311,12 @@ export default function AdminRoomFormModal({
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-line bg-surface/50 flex items-center justify-end gap-3">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-line bg-surface/50 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-5 py-2.5 rounded-xl border border-line hover:bg-gray-100 text-ink font-semibold text-sm transition"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-line hover:bg-gray-100 text-ink font-semibold text-sm transition text-center"
           >
             Cancel
           </button>
@@ -1325,7 +1325,7 @@ export default function AdminRoomFormModal({
             type="button"
             onClick={handleSubmit}
             disabled={submitting || uploadingImage}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer text-center"
           >
             {submitting ? (
               <>

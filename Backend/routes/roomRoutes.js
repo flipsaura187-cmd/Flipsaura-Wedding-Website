@@ -7,6 +7,7 @@ import {
   updateRoom,
   deleteRoom,
 } from "../controllers/roomController.js";
+import { toggleRoomBlockedDates } from "../controllers/hotelAvailabilityController.js";
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.get("/:id", optionalAuth, getRoom);
 
 // Vendor & Admin CRUD mutations
 router.post("/", requireAuth, requireRole("admin", "vendor"), createRoom);
+router.post("/:id/block-dates", requireAuth, requireRole("admin", "vendor"), toggleRoomBlockedDates);
 router.put("/:id", requireAuth, requireRole("admin", "vendor"), updateRoom);
 router.delete("/:id", requireAuth, requireRole("admin", "vendor"), deleteRoom);
 

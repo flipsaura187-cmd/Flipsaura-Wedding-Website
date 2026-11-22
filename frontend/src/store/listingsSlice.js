@@ -38,7 +38,7 @@ export const fetchCategoryItems = createAsyncThunk(
     }
 
     try {
-      const urlParams = new URLSearchParams({ category: slug, limit: "12", ...params });
+      const urlParams = new URLSearchParams({ category: slug, limit: "20", ...params });
       const { data: res } = await api.get(`/api/items?${urlParams.toString()}`);
 
       if (!res?.ok) return rejectWithValue("Failed to fetch items");

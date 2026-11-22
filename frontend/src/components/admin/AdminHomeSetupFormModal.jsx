@@ -586,9 +586,9 @@ export default function AdminHomeSetupFormModal({
         </div>
       )}
 
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-4xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-brand-100 flex flex-col max-h-[95vh] sm:max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-start sm:items-center justify-between px-4 py-3.5 sm:px-6 sm:py-4.5 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shrink-0 gap-3">
+        <div className="flex items-start sm:items-center justify-between px-4 py-3 sm:px-6 sm:py-4 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shrink-0 gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xl sm:text-2xl">🎪</span>
@@ -609,7 +609,7 @@ export default function AdminHomeSetupFormModal({
         </div>
 
         {/* Step Indicator */}
-        <div className="shrink-0 px-4 sm:px-6 pt-4 pb-0 bg-white">
+        <div className="shrink-0 px-3 sm:px-6 pt-3 sm:pt-4 pb-0 bg-white">
           <div className="flex items-center gap-0">
             {[
               { key: "catalogue", step: 1, label: "Select Services", icon: "🎪" },
@@ -664,7 +664,7 @@ export default function AdminHomeSetupFormModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6">
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-medium flex items-center gap-2">
               <span>⚠️</span>
@@ -683,11 +683,11 @@ export default function AdminHomeSetupFormModal({
           {activeTab === "catalogue" && (
             <div className="space-y-6">
               {/* Catalogue Summary Header */}
-              <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 p-5 rounded-2xl border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 p-4 sm:p-5 rounded-2xl border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">🎪</span>
-                    <h3 className="font-serif text-lg font-bold text-amber-950">
+                    <span className="text-xl sm:text-2xl">🎪</span>
+                    <h3 className="font-serif text-base sm:text-lg font-bold text-amber-950">
                       Event Services Catalogue & Equipment Setup
                     </h3>
                   </div>
@@ -696,24 +696,26 @@ export default function AdminHomeSetupFormModal({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-start shrink-0">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                     {totalSelectedCatalogueCount} Selected
                   </span>
-                  <button
-                    type="button"
-                    onClick={selectAllCatalogueServices}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition shadow-2xs cursor-pointer"
-                  >
-                    Select All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={clearAllCatalogueServices}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-gray-50 text-gray-700 border border-line transition cursor-pointer"
-                  >
-                    Clear All
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={selectAllCatalogueServices}
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition shadow-2xs cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearAllCatalogueServices}
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-gray-50 text-gray-700 border border-line transition cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -825,7 +827,7 @@ export default function AdminHomeSetupFormModal({
                       </div>
 
                       {/* Custom Item Input */}
-                      <div className="pt-2 flex items-center gap-2">
+                      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <input
                           type="text"
                           value={customInputs[group.key] || ""}
@@ -844,7 +846,7 @@ export default function AdminHomeSetupFormModal({
                         <button
                           type="button"
                           onClick={() => handleAddCustomToGroup(group.name, group.key)}
-                          className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-amber-100 text-gray-800 text-xs font-semibold transition cursor-pointer shrink-0"
+                          className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-amber-100 text-gray-800 text-xs font-semibold transition cursor-pointer shrink-0 text-center"
                         >
                           + Add Custom
                         </button>
@@ -874,8 +876,8 @@ export default function AdminHomeSetupFormModal({
           {/* TAB 2: BASIC INFORMATION & PRICING */}
           {activeTab === "basic" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-ink mb-1">
                     Home Setup / Business Title <span className="text-rose-500">*</span>
                   </label>
@@ -974,7 +976,7 @@ export default function AdminHomeSetupFormModal({
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-ink mb-1">Address / Base Office</label>
                   <input
                     type="text"
@@ -986,7 +988,7 @@ export default function AdminHomeSetupFormModal({
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-ink mb-1">About Your Home Setup Services</label>
                   <textarea
                     rows={3}
@@ -998,7 +1000,7 @@ export default function AdminHomeSetupFormModal({
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-ink mb-1">Detailed Description & Policies</label>
                   <textarea
                     rows={4}
@@ -1010,7 +1012,7 @@ export default function AdminHomeSetupFormModal({
                   />
                 </div>
 
-                <div className="sm:col-span-2 flex items-center gap-6 pt-2">
+                <div className="md:col-span-2 flex flex-wrap items-center gap-4 sm:gap-6 pt-2">
                   <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-ink">
                     <input
                       type="checkbox"
@@ -1270,7 +1272,7 @@ export default function AdminHomeSetupFormModal({
                         </div>
 
                         {/* Direct URL Input */}
-                        <div className="pt-1 flex items-center gap-2">
+                        <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                           <input
                             type="url"
                             value={directImageUrl}
@@ -1287,7 +1289,7 @@ export default function AdminHomeSetupFormModal({
                           <button
                             type="button"
                             onClick={handleAddDirectImageUrl}
-                            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs"
+                            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs text-center"
                           >
                             + Add Image URL
                           </button>
@@ -1305,7 +1307,7 @@ export default function AdminHomeSetupFormModal({
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
                               {currentCategoryPhotos.map((img, idx) => {
                                 const isMainCover = form.images?.[0] === img;
                                 return (
@@ -1458,18 +1460,18 @@ export default function AdminHomeSetupFormModal({
                 </div>
               )}
 
-              <div className="pt-4 flex justify-between items-center">
+              <div className="pt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setActiveTab("basic")}
-                  className="px-4 py-2 rounded-xl border border-line text-xs font-semibold text-ink hover:bg-gray-50 transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-line text-xs font-semibold text-ink hover:bg-gray-50 transition cursor-pointer text-center"
                 >
                   ← Back to Details
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer disabled:opacity-50 text-center"
                 >
                   {submitting ? "Saving Listing..." : isEdit ? "✓ Update Home Setup" : "🚀 Publish & Complete Setup"}
                 </button>

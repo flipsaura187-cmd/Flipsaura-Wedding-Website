@@ -37,14 +37,14 @@ export default function AdminVenueDetailsModal({
   const vendorEmail = venue.contactEmail || venue.vendor?.email || "";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-ink/70 backdrop-blur-xs overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-ink/70 backdrop-blur-xs overflow-y-auto">
       <div
-        className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-brand-100 overflow-hidden my-auto max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200"
+        className="bg-white w-full max-w-4xl rounded-2xl sm:rounded-3xl shadow-2xl border border-brand-100 overflow-hidden my-auto max-h-[95vh] sm:max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
       >
         {/* HEADER */}
-        <div className="px-5 sm:px-6 py-4 bg-gradient-to-r from-brand-50 via-white to-brand-50/40 border-b border-brand-100 flex items-start justify-between gap-3 shrink-0">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-brand-50 via-white to-brand-50/40 border-b border-brand-100 flex items-start justify-between gap-3 shrink-0">
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-600 text-white text-[10px] font-bold uppercase tracking-wider">

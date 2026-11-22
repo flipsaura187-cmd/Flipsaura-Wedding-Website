@@ -81,9 +81,9 @@ export default function VendorBookings() {
         </div>
       )}
 
-      {/* Bookings Table / Empty State */}
+      {/* Bookings Content */}
       {list.length === 0 ? (
-        <div className="bg-white p-12 text-center rounded-2xl border border-dashed border-line shadow-2xs">
+        <div className="bg-white p-8 sm:p-12 text-center rounded-2xl border border-dashed border-line shadow-2xs">
           <div className="w-14 h-14 mx-auto rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-2xl mb-4">
             📅
           </div>
@@ -95,67 +95,124 @@ export default function VendorBookings() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-line shadow-2xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-line bg-surface/60 text-xs font-semibold text-muted uppercase tracking-wider">
-                  <th className="py-3.5 px-4 md:px-6">Service Item</th>
-                  <th className="py-3.5 px-4 md:px-6">Customer</th>
-                  <th className="py-3.5 px-4 md:px-6">Event Date</th>
-                  <th className="py-3.5 px-4 md:px-6">Amount</th>
-                  <th className="py-3.5 px-4 md:px-6">Status</th>
-                  <th className="py-3.5 px-4 md:px-6 text-right">Update Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line text-sm text-ink">
-                {list.map((b) => (
-                  <tr key={b._id} className="hover:bg-brand-50/30 transition-colors">
-                    <td className="py-3.5 px-4 md:px-6 font-semibold text-ink">
-                      {b.item?.title || "—"}
-                    </td>
-                    <td className="py-3.5 px-4 md:px-6">
-                      <div className="font-medium text-ink">{b.name}</div>
-                      <div className="text-xs text-muted font-mono">{b.phone}</div>
-                    </td>
-                    <td className="py-3.5 px-4 md:px-6 text-muted">
-                      {b.eventDate || "—"}
-                    </td>
-                    <td className="py-3.5 px-4 md:px-6 font-semibold text-brand-700">
-                      ₹{b.amount?.toLocaleString("en-IN")}
-                    </td>
-                    <td className="py-3.5 px-4 md:px-6">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
-                          b.status === "confirmed"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : b.status === "completed"
-                            ? "bg-sky-50 text-sky-700 border border-sky-200"
-                            : b.status === "cancelled"
-                            ? "bg-rose-50 text-rose-700 border border-rose-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
-                        }`}
-                      >
-                        {b.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 md:px-6 text-right">
-                      <select
-                        disabled={!isApproved}
-                        value={b.status}
-                        onChange={(e) => setStatus(b._id, e.target.value)}
-                        className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </td>
+        <div className="space-y-4">
+          {/* Mobile Card View (shown on screens < 768px) */}
+          <div className="grid grid-cols-1 gap-3 md:hidden">
+            {list.map((b) => (
+              <div key={b._id} className="bg-white p-3.5 rounded-xl border border-line shadow-2xs space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-sm text-ink truncate">{b.item?.title || "Booking Service"}</h4>
+                    <p className="text-xs text-muted mt-0.5 truncate">
+                      Customer: <b className="text-ink font-semibold">{b.name}</b> <span className="font-mono">({b.phone})</span>
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold capitalize shrink-0 ${
+                      b.status === "confirmed"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : b.status === "completed"
+                        ? "bg-sky-50 text-sky-700 border border-sky-200"
+                        : b.status === "cancelled"
+                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                    }`}
+                  >
+                    {b.status}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-line/70 flex items-center justify-between text-xs gap-2">
+                  <div>
+                    <span className="text-[10px] text-muted block leading-none mb-0.5">Event Date</span>
+                    <span className="font-semibold text-ink text-xs">{b.eventDate || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted block leading-none mb-0.5">Amount</span>
+                    <span className="font-bold text-brand-700 text-xs sm:text-sm">₹{b.amount?.toLocaleString("en-IN")}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted block leading-none mb-0.5">Action</span>
+                    <select
+                      disabled={!isApproved}
+                      value={b.status}
+                      onChange={(e) => setStatus(b._id, e.target.value)}
+                      className="px-2 py-1 rounded-lg border border-line bg-white text-xs font-medium text-ink focus:outline-none focus:border-brand-600 disabled:opacity-50 cursor-pointer"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View (shown on md: and above) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-line shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-line bg-surface/60 text-xs font-semibold text-muted uppercase tracking-wider">
+                    <th className="py-3.5 px-4 md:px-6">Service Item</th>
+                    <th className="py-3.5 px-4 md:px-6">Customer</th>
+                    <th className="py-3.5 px-4 md:px-6">Event Date</th>
+                    <th className="py-3.5 px-4 md:px-6">Amount</th>
+                    <th className="py-3.5 px-4 md:px-6">Status</th>
+                    <th className="py-3.5 px-4 md:px-6 text-right">Update Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-line text-sm text-ink">
+                  {list.map((b) => (
+                    <tr key={b._id} className="hover:bg-brand-50/30 transition-colors">
+                      <td className="py-3.5 px-4 md:px-6 font-semibold text-ink">
+                        {b.item?.title || "—"}
+                      </td>
+                      <td className="py-3.5 px-4 md:px-6">
+                        <div className="font-medium text-ink">{b.name}</div>
+                        <div className="text-xs text-muted font-mono">{b.phone}</div>
+                      </td>
+                      <td className="py-3.5 px-4 md:px-6 text-muted">
+                        {b.eventDate || "—"}
+                      </td>
+                      <td className="py-3.5 px-4 md:px-6 font-semibold text-brand-700">
+                        ₹{b.amount?.toLocaleString("en-IN")}
+                      </td>
+                      <td className="py-3.5 px-4 md:px-6">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
+                            b.status === "confirmed"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : b.status === "completed"
+                              ? "bg-sky-50 text-sky-700 border border-sky-200"
+                              : b.status === "cancelled"
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                          }`}
+                        >
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 md:px-6 text-right">
+                        <select
+                          disabled={!isApproved}
+                          value={b.status}
+                          onChange={(e) => setStatus(b._id, e.target.value)}
+                          className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

@@ -422,34 +422,34 @@ export default function AdminMakeupFormModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col border border-fuchsia-200 animate-in fade-in zoom-in-95 duration-200 overflow-hidden"
+        className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[92vh] flex flex-col border border-fuchsia-200 animate-in fade-in zoom-in-95 duration-200 overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-4 sm:p-6 border-b border-fuchsia-100 bg-gradient-to-r from-fuchsia-50 via-pink-50 to-rose-50 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-white border border-fuchsia-200 flex items-center justify-center text-xl shadow-xs">
+        <div className="p-3.5 sm:p-5 border-b border-fuchsia-100 bg-gradient-to-r from-fuchsia-50 via-pink-50 to-rose-50 flex items-center justify-between shrink-0 gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-fuchsia-200 flex items-center justify-center text-lg sm:text-xl shadow-xs shrink-0">
               💄
             </span>
-            <div>
-              <h2 className="font-serif text-lg sm:text-xl font-bold text-ink">
+            <div className="min-w-0">
+              <h2 className="font-serif text-base sm:text-xl font-bold text-ink truncate">
                 {isEdit ? "Edit Makeup & Grooming Listing" : "Add Bridal Makeup & Grooming Listing"}
               </h2>
-              <p className="text-xs text-muted">
+              <p className="text-[11px] sm:text-xs text-muted line-clamp-1">
                 Configure bridal makeup artist details, cosmetics brands, packages, portfolio, and styling services.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-ink hover:bg-white/80 transition cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-ink hover:bg-white/80 transition cursor-pointer shrink-0"
           >
             ✕
           </button>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-4 sm:p-6 space-y-6 flex-1 text-ink">
+        <form onSubmit={handleSubmit} className="overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6 flex-1 text-ink">
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
               ⚠️ {error}
@@ -462,12 +462,12 @@ export default function AdminMakeupFormModal({
           )}
 
           {/* Section 1: Basic Studio & Contact Info */}
-          <div className="space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-fuchsia-100 shadow-2xs">
+          <div className="space-y-4 bg-white p-3.5 sm:p-5 rounded-2xl border border-fuchsia-100 shadow-2xs">
             <h4 className="font-serif font-bold text-sm text-fuchsia-950 border-b border-fuchsia-100 pb-2 flex items-center gap-2">
               <span>👑</span> Makeup Studio & Artist Details
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
               <div>
                 <label className="block text-xs font-semibold text-ink mb-1">
                   Artist / Studio / Salon Name <span className="text-rose-500">*</span>
@@ -584,7 +584,7 @@ export default function AdminMakeupFormModal({
             </div>
 
             {/* Custom Service Input */}
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <input
                 type="text"
                 value={customService}
@@ -595,7 +595,7 @@ export default function AdminMakeupFormModal({
               <button
                 type="button"
                 onClick={addCustomService}
-                className="px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold text-xs transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold text-xs transition cursor-pointer text-center"
               >
                 + Add Custom
               </button>
@@ -603,8 +603,8 @@ export default function AdminMakeupFormModal({
           </div>
 
           {/* Section 3: Cosmetics Brands & Facilities */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-fuchsia-100 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-fuchsia-100 space-y-3">
               <h4 className="font-serif font-bold text-sm text-fuchsia-950 border-b border-fuchsia-100 pb-2 flex items-center gap-2">
                 <span>💄</span> Cosmetics Brands Used
               </h4>
@@ -629,7 +629,7 @@ export default function AdminMakeupFormModal({
               </div>
             </div>
 
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-fuchsia-100 space-y-3">
+            <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-fuchsia-100 space-y-3">
               <h4 className="font-serif font-bold text-sm text-fuchsia-950 border-b border-fuchsia-100 pb-2 flex items-center gap-2">
                 <span>⭐</span> Facilities & Service Policy
               </h4>
@@ -656,12 +656,12 @@ export default function AdminMakeupFormModal({
           </div>
 
           {/* Section 4: 4-Tier Bridal Packages */}
-          <div className="space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-fuchsia-100 shadow-2xs">
+          <div className="space-y-4 bg-white p-3.5 sm:p-5 rounded-2xl border border-fuchsia-100 shadow-2xs">
             <h4 className="font-serif font-bold text-sm text-fuchsia-950 border-b border-fuchsia-100 pb-2 flex items-center gap-2">
               <span>💼</span> Bridal & Party Makeover Packages
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
               {Object.entries(form.packages).map(([tierKey, pkg]) => (
                 <div key={tierKey} className="p-4 rounded-xl border border-fuchsia-200 bg-fuchsia-50/30 space-y-2">
                   <div className="flex items-center justify-between gap-2">
@@ -765,7 +765,7 @@ export default function AdminMakeupFormModal({
               </div>
 
               {/* Direct image URLs */}
-              <div className="flex gap-2 mt-3">
+              <div className="flex flex-col sm:flex-row gap-2 mt-3">
                 <input
                   type="text"
                   value={directImageUrl}
@@ -776,7 +776,7 @@ export default function AdminMakeupFormModal({
                 <button
                   type="button"
                   onClick={handleAddDirectImage}
-                  className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold cursor-pointer text-center shrink-0"
                 >
                   + Add URL
                 </button>
@@ -784,7 +784,7 @@ export default function AdminMakeupFormModal({
 
               {/* Photo thumbnails */}
               {form.images.length > 0 && (
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-3">
                   {form.images.map((img, idx) => (
                     <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-fuchsia-200 group">
                       <img src={img} alt="Bride" className="w-full h-full object-cover" />
@@ -812,9 +812,9 @@ export default function AdminMakeupFormModal({
                   value={newVideoTitle}
                   onChange={(e) => setNewVideoTitle(e.target.value)}
                   placeholder="Video Title (e.g. Royal HD Bridal Reveal)"
-                  className="sm:w-1/3 px-3.5 py-2 rounded-xl border border-fuchsia-200 text-xs"
+                  className="w-full sm:w-1/3 px-3.5 py-2 rounded-xl border border-fuchsia-200 text-xs"
                 />
-                <div className="flex-1 flex gap-2">
+                <div className="flex-1 flex flex-col sm:flex-row gap-2">
                   <input
                     type="url"
                     value={newVideoUrl}
@@ -825,7 +825,7 @@ export default function AdminMakeupFormModal({
                   <button
                     type="button"
                     onClick={handleAddVideo}
-                    className="px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold text-xs transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold text-xs transition cursor-pointer text-center shrink-0"
                   >
                     + Add Video
                   </button>
@@ -852,7 +852,7 @@ export default function AdminMakeupFormModal({
           </div>
 
           {/* Section 6: About & Experience */}
-          <div className="space-y-3 bg-white p-4 sm:p-5 rounded-2xl border border-fuchsia-100 shadow-2xs">
+          <div className="space-y-3 bg-white p-3.5 sm:p-5 rounded-2xl border border-fuchsia-100 shadow-2xs">
             <h4 className="font-serif font-bold text-sm text-fuchsia-950 border-b border-fuchsia-100 pb-2 flex items-center gap-2">
               <span>📝</span> About the Makeup Artist & Booking Policies
             </h4>
@@ -879,18 +879,18 @@ export default function AdminMakeupFormModal({
           </div>
 
           {/* Modal Footer */}
-          <div className="pt-4 border-t border-fuchsia-100 flex items-center justify-between gap-3 shrink-0">
+          <div className="pt-4 border-t border-fuchsia-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
+              className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-muted hover:text-ink cursor-pointer text-center"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2.5 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-xs font-bold shadow-md shadow-fuchsia-600/20 disabled:opacity-50 transition cursor-pointer"
+              className="px-6 py-2.5 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-xs font-bold shadow-md shadow-fuchsia-600/20 disabled:opacity-50 transition cursor-pointer text-center"
             >
               {submitting ? "Saving..." : isEdit ? "Update Makeup Listing ✓" : "Publish Makeup Service ✓"}
             </button>

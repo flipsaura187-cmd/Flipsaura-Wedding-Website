@@ -117,7 +117,19 @@ export async function updateVendorProfile(req, res) {
     user.vendorProfile.ownerName = ownerName.trim();
     if (!user.name || user.name === "User") user.name = ownerName.trim();
   }
-  if (vendorType !== undefined) user.vendorProfile.vendorType = vendorType;
+  if (vendorType !== undefined) {
+    user.vendorProfile.vendorType = vendorType;
+    if (
+      vendorType === "Vehicle Provider" ||
+      vendorType === "Vehicle Owner" ||
+      String(vendorType).toLowerCase().includes("vehicle")
+    ) {
+      user.vendorProfile.isVehicleProvider = true;
+    }
+  }
+  if (req.body.isVehicleProvider !== undefined) {
+    user.vendorProfile.isVehicleProvider = Boolean(req.body.isVehicleProvider);
+  }
   if (address !== undefined) user.vendorProfile.address = address.trim();
   if (city !== undefined) user.vendorProfile.city = city.trim();
   if (state !== undefined) user.vendorProfile.state = state.trim();
@@ -668,6 +680,14 @@ export async function getVendorStatus(req, res) {
     }))
   );
 
+  const isVehicleProvider = Boolean(
+    user.vendorProfile?.isVehicleProvider ||
+    user.isVehicleProvider ||
+    user.vendorProfile?.vendorType === "Vehicle Provider" ||
+    user.vendorProfile?.vendorType === "Vehicle Owner" ||
+    String(user.vendorProfile?.vendorType || "").toLowerCase().includes("vehicle")
+  );
+
   res.json({
     ok: true,
     data: {
@@ -678,6 +698,8 @@ export async function getVendorStatus(req, res) {
       canSubmit: completion.canSubmitForVerification,
       missingFields: isApproved ? [] : completion.missingFields,
       hasHotelService,
+      isVehicleProvider,
+      vendorType: user.vendorProfile?.vendorType || "Individual",
     },
   });
 }

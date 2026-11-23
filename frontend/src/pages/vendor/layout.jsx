@@ -211,6 +211,8 @@ export default function VendorLayout() {
       ? [{ href: "/vendor/rooms", label: "Manage Rooms", icon: "🛏️", locked: !user || !isApproved }]
       : []),
     { href: "/vendor/home-setup", label: "Home Setup Services", icon: "🎪", locked: !user || !isApproved },
+    { href: "/vendor/vehicles", label: "My Fleet & Vehicles", icon: "🚗", locked: !user || !isApproved },
+    { href: "/vendor/vehicle-bookings", label: "Vehicle Bookings", icon: "📋", locked: !user || !isApproved },
     { href: "/vendor/bookings", label: "Bookings", icon: "📅", locked: !user || !isApproved },
   ];
 
@@ -228,8 +230,9 @@ export default function VendorLayout() {
       {/* ============================================================ */}
       {/* MOBILE TOP NAVIGATION BAR (Visible on mobile/tablet < md)   */}
       {/* Shows My Services & Add Service directly; ☰ More for rest   */}
+      {/* Positioned at sticky top-20 directly beneath main Navbar    */}
       {/* ============================================================ */}
-      <div className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-line shadow-2xs px-3.5 py-2.5 flex items-center justify-between gap-2">
+      <div className="md:hidden sticky top-20 z-40 bg-white/98 backdrop-blur-md border-b border-line shadow-xs px-3.5 py-2.5 flex items-center justify-between gap-2">
         {/* Left: Quick Access to My Services */}
         <div className="flex items-center gap-2 min-w-0">
           <Link

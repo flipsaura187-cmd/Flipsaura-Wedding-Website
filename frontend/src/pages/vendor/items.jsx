@@ -116,6 +116,17 @@ const SERVICE_CATEGORY_CARDS = [
     borderColor: "hover:border-amber-500 hover:shadow-amber-500/10",
   },
   {
+    type: "transportation",
+    title: "Transport & Wedding Vehicles",
+    icon: "🚗",
+    badge: "Fleet & Rentals",
+    badgeColor: "bg-red-100 text-red-800 border-red-200",
+    description: "Luxury wedding cars, Thar, Vintage, Barat buses, and guest transport on rent.",
+    highlights: ["Luxury & Bridal Cars", "Wedding Rental (Per Day)", "Baraat Transport (Per KM)", "Bus & Coach Booking", "Vehicle Owner & Provider Fleet"],
+    bgGradient: "from-red-500/10 via-rose-500/5 to-transparent",
+    borderColor: "hover:border-red-400 hover:shadow-red-500/10",
+  },
+  {
     type: "generic",
     title: "Other Wedding Services",
     icon: "✨",
@@ -137,6 +148,26 @@ export default function VendorItems() {
   const [editingItem, setEditingItem] = useState(null);
   const [isHotelLocationModalOpen, setIsHotelLocationModalOpen] = useState(false);
   const [pendingHotelLocation, setPendingHotelLocation] = useState(null);
+  const [isVehicleRoleModalOpen, setIsVehicleRoleModalOpen] = useState(false);
+  const [selectedVehicleRole, setSelectedVehicleRole] = useState("Vehicle Owner");
+  const [settingVehicleRole, setSettingVehicleRole] = useState(false);
+
+  const handleConfirmVehicleRole = async () => {
+    try {
+      setSettingVehicleRole(true);
+      await api.put("/api/vendor/profile", {
+        vendorType: selectedVehicleRole,
+        isVehicleProvider: true,
+      });
+      setIsVehicleRoleModalOpen(false);
+      navigate("/vendor/vehicles");
+    } catch (err) {
+      console.error("Failed to set vehicle role:", err);
+      navigate("/vendor/vehicles");
+    } finally {
+      setSettingVehicleRole(false);
+    }
+  };
   const [categories, setCategories] = useState([]);
   const [vendorStatus, setVendorStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -685,6 +716,12 @@ export default function VendorItems() {
                     } else if (cat.type === "hotel") {
                       setPendingHotelLocation(null);
                       setIsHotelLocationModalOpen(true);
+                    } else if (cat.type === "transportation") {
+                      if (vendorStatus?.isVehicleProvider) {
+                        navigate("/vendor/vehicles");
+                      } else {
+                        setIsVehicleRoleModalOpen(true);
+                      }
                     } else {
                       setActiveCategoryType(cat.type);
                     }
@@ -755,6 +792,115 @@ export default function VendorItems() {
           setActiveCategoryType("hotel");
         }}
       />
+
+      {/* Transportation / Vehicle Role Modal */}
+      {isVehicleRoleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-red-200 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-6 border-b border-red-100 bg-gradient-to-r from-red-50 to-rose-50 relative">
+              <button
+                type="button"
+                onClick={() => setIsVehicleRoleModalOpen(false)}
+                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-gray-400 hover:text-gray-700 flex items-center justify-center text-lg transition-colors cursor-pointer shadow-2xs"
+              >
+                ×
+              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🚗</span>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-red-950">
+                    Wedding Transportation & Vehicles
+                  </h3>
+                  <p className="text-xs text-red-700 mt-0.5">
+                    Select your vehicle provider role to manage fleet & rentals
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              <p className="text-xs sm:text-sm text-gray-600">
+                Choose how you operate your wedding vehicle & transport service:
+              </p>
+
+              <div className="space-y-3">
+                {/* Option 1: Vehicle Owner */}
+                <div
+                  onClick={() => setSelectedVehicleRole("Vehicle Owner")}
+                  className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3.5 ${
+                    selectedVehicleRole === "Vehicle Owner"
+                      ? "border-red-500 bg-red-50/60 shadow-xs"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  <span className="text-2xl mt-0.5">🚗</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-ink">Vehicle Owner</h4>
+                      <input
+                        type="radio"
+                        checked={selectedVehicleRole === "Vehicle Owner"}
+                        onChange={() => setSelectedVehicleRole("Vehicle Owner")}
+                        className="accent-red-600 cursor-pointer"
+                      />
+                    </div>
+                    <p className="text-xs text-muted mt-1 leading-relaxed">
+                      I own personal or commercial vehicles (Luxury Cars, Thar, Wedding Autos, or Barat Buses) for self-drive rent or event transport.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Option 2: Vehicle Provider */}
+                <div
+                  onClick={() => setSelectedVehicleRole("Vehicle Provider")}
+                  className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3.5 ${
+                    selectedVehicleRole === "Vehicle Provider"
+                      ? "border-red-500 bg-red-50/60 shadow-xs"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  <span className="text-2xl mt-0.5">🏢</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-ink">Vehicle Provider / Agency</h4>
+                      <input
+                        type="radio"
+                        checked={selectedVehicleRole === "Vehicle Provider"}
+                        onChange={() => setSelectedVehicleRole("Vehicle Provider")}
+                        className="accent-red-600 cursor-pointer"
+                      />
+                    </div>
+                    <p className="text-xs text-muted mt-1 leading-relaxed">
+                      We operate a fleet management agency or transport company offering multiple wedding cars, coaches, and chauffeur services.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsVehicleRoleModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-medium transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={settingVehicleRole}
+                  onClick={handleConfirmVehicleRole}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-sm font-semibold transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <span>{settingVehicleRole ? "Setting Up..." : "Continue to Fleet Manager"}</span>
+                  <span>→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 0. Home Setup Form Modal (Interactive 7-Group Catalogue & Custom Options) */}
       {activeCategoryType === "home-setup" && (

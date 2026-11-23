@@ -6,6 +6,7 @@ import ItemCard from "@/components/ItemCard";
 import Pagination from "@/components/Pagination";
 import VenueListingView from "@/components/venue/VenueListingView";
 import HomeSetupListingView from "@/components/homesetup/HomeSetupListingView";
+import VehiclesPage from "@/pages/vehicles";
 import {
   fetchCategoryItems,
   fetchFilterMeta,
@@ -64,6 +65,14 @@ export default function CategoryPage() {
   }
   if (slug === "home-setup-pandal-tent-dj" || slug === "home-setup") {
     return <HomeSetupListingView />;
+  }
+  if (
+    slug === "transport-car-bus-auto" ||
+    slug === "transport" ||
+    slug === "transportation" ||
+    slug === "vehicles"
+  ) {
+    return <VehiclesPage />;
   }
   const router = useRouter();
   const sp = useSearchParams();

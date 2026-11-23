@@ -106,10 +106,10 @@ export default function RegisterPage() {
             <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-2">
               I want to register as
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <button
                 type="button"
-                className={`py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+                className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   form.role === "user"
                     ? "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-md shadow-brand-500/20"
                     : "bg-brand-50 hover:bg-brand-100 text-ink border border-brand-200/60"
@@ -120,14 +120,32 @@ export default function RegisterPage() {
               </button>
               <button
                 type="button"
-                className={`py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
-                  form.role === "vendor"
+                className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  form.role === "vendor" && !String(form.vendorType || "").toLowerCase().includes("vehicle")
                     ? "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-md shadow-brand-500/20"
                     : "bg-brand-50 hover:bg-brand-100 text-ink border border-brand-200/60"
                 }`}
-                onClick={() => setForm({ ...form, role: "vendor" })}
+                onClick={() => setForm({ ...form, role: "vendor", vendorType: "Individual" })}
               >
-                🏪 Vendor / Business
+                🏪 Wedding Vendor
+              </button>
+              <button
+                type="button"
+                className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  form.role === "vendor" && String(form.vendorType || "").toLowerCase().includes("vehicle")
+                    ? "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-md shadow-brand-500/20"
+                    : "bg-brand-50 hover:bg-brand-100 text-ink border border-brand-200/60"
+                }`}
+                onClick={() =>
+                  setForm({
+                    ...form,
+                    role: "vendor",
+                    vendorType: "Vehicle Provider",
+                    businessName: form.businessName || "Vehicle Fleet Services",
+                  })
+                }
+              >
+                🚗 Vehicle Owner
               </button>
             </div>
           </div>
@@ -136,10 +154,14 @@ export default function RegisterPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 pt-1">
               <div className="md:col-span-2 bg-brand-50 p-4 rounded-xl border border-brand-100">
                 <h4 className="font-bold text-sm text-brand-700 mb-1">
-                  Vendor Registration Details
+                  {String(form.vendorType || "").toLowerCase().includes("vehicle")
+                    ? "Vehicle Owner & Rental Provider Details"
+                    : "Vendor Registration Details"}
                 </h4>
                 <p className="text-xs text-muted m-0">
-                  Complete your basic registration to access the dashboard. Features unlock upon admin approval.
+                  {String(form.vendorType || "").toLowerCase().includes("vehicle")
+                    ? "Register your car rental or transport service to manage fleet, set per-day/km rates, and accept wedding bookings."
+                    : "Complete your basic registration to access the dashboard. Features unlock upon admin approval."}
                 </p>
               </div>
 
@@ -207,6 +229,7 @@ export default function RegisterPage() {
                 >
                   <option value="Individual">Individual (Freelancer / Sole Proprietor)</option>
                   <option value="Business">Business (Registered Company / Agency)</option>
+                  <option value="Vehicle Provider">Vehicle Provider (Cars / Transport / Fleet Owner)</option>
                 </select>
               </div>
 

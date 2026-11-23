@@ -4,7 +4,6 @@ import Item from "../models/Item.js";
 import User from "../models/User.js";
 import { sendMail, bookingConfirmationHtml } from "../lib/mailer.js";
 import { sendBookingWhatsAppNotifications } from "../lib/whatsapp.js";
-import { isItemHotel, validateStayAvailability } from "../lib/hotelAvailability.js";
 
 export async function getBookings(req, res) {
   await dbConnect();
@@ -40,34 +39,6 @@ export async function createBooking(req, res) {
     bookingAmount = Number(req.body.amount);
   }
 
-  // Hotel Availability Validation (Strictly scoped to hotel items)
-  const isHotel = await isItemHotel(item);
-  let checkInDate = null;
-  let checkOutDate = null;
-  let roomId = req.body.roomId || null;
-  let roomsCount = Math.max(1, Number(req.body.roomsCount) || 1);
-  let holdExpiresAt = null;
-
-  if (isHotel) {
-    checkInDate = req.body.checkInDate || req.body.eventDate;
-    checkOutDate = req.body.checkOutDate || req.body.secondaryDate || null;
-
-    const validation = await validateStayAvailability({
-      hotelId: item._id,
-      roomId,
-      checkInDate,
-      checkOutDate,
-      roomsCount,
-    });
-
-    if (!validation.ok) {
-      return res.status(400).json({ ok: false, error: validation.error });
-    }
-
-    // Set 15-minute temporary reservation hold
-    holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
-  }
-
   // Prevent duplicate bookings from rapid double-clicks / repeated submissions (within 10s)
   const recentBooking = await Booking.findOne({
     user: req.user.id,
@@ -88,11 +59,6 @@ export async function createBooking(req, res) {
     email: req.body.email || req.user.email,
     phone: req.body.phone || req.user.phone,
     eventDate: req.body.eventDate,
-    checkInDate,
-    checkOutDate,
-    roomId,
-    roomsCount,
-    holdExpiresAt,
     address: req.body.address,
     notes: req.body.notes,
     amount: bookingAmount,

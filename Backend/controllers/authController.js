@@ -59,8 +59,8 @@ function publicUser(user) {
   const isVendor = String(user.role || "").toLowerCase() === "vendor";
   const isApproved = Boolean(
     isVendor &&
-      user.vendorProfile?.approved &&
-      user.vendorProfile?.verificationStatus === "approved"
+    user.vendorProfile?.approved &&
+    user.vendorProfile?.verificationStatus === "approved"
   );
 
   return {
@@ -74,14 +74,14 @@ function publicUser(user) {
     verificationStatus: user.vendorProfile?.verificationStatus || (user.vendorProfile?.approved ? "approved" : "profile_incomplete"),
     vendorProfile: isVendor
       ? {
-          businessName: user.vendorProfile?.businessName || "",
-          ownerName: user.vendorProfile?.ownerName || user.name || "",
-          vendorType: user.vendorProfile?.vendorType || "Individual",
-          city: user.vendorProfile?.city || "",
-          approved: Boolean(user.vendorProfile?.approved),
-          verificationStatus: user.vendorProfile?.verificationStatus || "profile_incomplete",
-          profilePhoto: user.vendorProfile?.profilePhoto || "",
-        }
+        businessName: user.vendorProfile?.businessName || "",
+        ownerName: user.vendorProfile?.ownerName || user.name || "",
+        vendorType: user.vendorProfile?.vendorType || "Individual",
+        city: user.vendorProfile?.city || "",
+        approved: Boolean(user.vendorProfile?.approved),
+        verificationStatus: user.vendorProfile?.verificationStatus || "profile_incomplete",
+        profilePhoto: user.vendorProfile?.profilePhoto || "",
+      }
       : undefined,
   };
 }
@@ -170,7 +170,23 @@ export async function login(req, res) {
   if (isEmail) {
     user = await User.findOne({ email: normalizedEmail });
   } else if (cleanPhone.length >= 10) {
-    user = await User.findOne({ phone: new RegExp(cleanPhone + "$") });
+    const candidates = await User.find({ phone: new RegExp(cleanPhone + "$") });
+    // If multiple accounts share this phone, check password prioritizing vendor/admin accounts
+    const sorted = [...candidates].sort((a, b) => {
+      const aIsPriv = a.role === "vendor" || a.role === "admin" ? 1 : 0;
+      const bIsPriv = b.role === "vendor" || b.role === "admin" ? 1 : 0;
+      return bIsPriv - aIsPriv;
+    });
+
+    for (const cand of sorted) {
+      if (await cand.verifyPassword(parsed.data.password)) {
+        user = cand;
+        break;
+      }
+    }
+    if (!user && sorted.length > 0) {
+      user = sorted[0]; // fallback so invalid password error is triggered cleanly
+    }
   }
 
   if (!user) {
@@ -338,6 +354,11 @@ export async function register(req, res) {
           businessName: businessName?.trim() || "",
           ownerName: (ownerName || name).trim(),
           vendorType: vendorType || "Individual",
+          isVehicleProvider: Boolean(
+            vendorType === "Vehicle Provider" ||
+            vendorType === "Vehicle Owner" ||
+            String(vendorType).toLowerCase().includes("vehicle")
+          ),
           address: address?.trim() || "",
           city: city?.trim() || "",
           state: state?.trim() || "",
@@ -366,6 +387,11 @@ export async function register(req, res) {
           businessName: businessName?.trim() || "",
           ownerName: (ownerName || name).trim(),
           vendorType: vendorType || "Individual",
+          isVehicleProvider: Boolean(
+            vendorType === "Vehicle Provider" ||
+            vendorType === "Vehicle Owner" ||
+            String(vendorType).toLowerCase().includes("vehicle")
+          ),
           address: address?.trim() || "",
           city: city?.trim() || "",
           state: state?.trim() || "",
@@ -381,29 +407,29 @@ export async function register(req, res) {
       user = new User(userDoc);
     }
 
-  // OTP verification DISABLED — mark phone as verified immediately
-  user.isPhoneVerified = true;
-  user.phoneOtp = null;
-  user.phoneOtpExpires = null;
-  await user.save();
+    // OTP verification DISABLED — mark phone as verified immediately
+    user.isPhoneVerified = true;
+    user.phoneOtp = null;
+    user.phoneOtpExpires = null;
+    await user.save();
 
-  // Auto-link vendor services if phone was used in admin listings
-  await autoLinkAdminServicesToVendor(user);
+    // Auto-link vendor services if phone was used in admin listings
+    await autoLinkAdminServicesToVendor(user);
 
-  // DO NOT auto-login — user must sign in manually after registration
-  clearAuthCookie(res);
+    // DO NOT auto-login — user must sign in manually after registration
+    clearAuthCookie(res);
 
-  console.log(`[Register] New user registered: ${user.phone} / ${user.email || "no-email"} (role: ${user.role})`);
+    console.log(`[Register] New user registered: ${user.phone} / ${user.email || "no-email"} (role: ${user.role})`);
 
-  res.status(200).json({
-    ok: true,
-    requiresVerification: false,
-    message: "Account created successfully! Please sign in to continue.",
-    data: {
-      phone: user.phone,
-      email: user.email || null,
-    },
-  });
+    res.status(200).json({
+      ok: true,
+      requiresVerification: false,
+      message: "Account created successfully! Please sign in to continue.",
+      data: {
+        phone: user.phone,
+        email: user.email || null,
+      },
+    });
   } finally {
     await redisReleaseLock(signupLockKey);
   }

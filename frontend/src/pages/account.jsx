@@ -11,21 +11,33 @@ export default function AccountPage() {
   const isVerifiedBanner = sp?.get("verified") === "true";
   const newBookingId = sp?.get("booking");
   const [bookings, setBookings] = useState([]);
+  const [vehicleBookings, setVehicleBookings] = useState([]);
+  const [activeBookingTab, setActiveBookingTab] = useState("services"); // "services" | "vehicles"
   const [loading, setLoading] = useState(true);
 
   const confirmedBooking = bookings.find((b) => b._id === newBookingId);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data: j } = await api.get("/api/bookings");
-        if (j.ok) setBookings(j.data.bookings || []);
-      } catch (err) {
-        console.warn("Failed to load bookings:", err);
-      } finally {
-        setLoading(false);
+  const loadData = async () => {
+    try {
+      const [bRes, vRes] = await Promise.allSettled([
+        api.get("/api/bookings"),
+        api.get("/api/vehicles/customer/bookings"),
+      ]);
+      if (bRes.status === "fulfilled" && bRes.value?.data?.ok) {
+        setBookings(bRes.value.data.data?.bookings || bRes.value.data.bookings || []);
       }
-    })();
+      if (vRes.status === "fulfilled" && vRes.value?.data?.ok) {
+        setVehicleBookings(vRes.value.data.data?.bookings || []);
+      }
+    } catch (err) {
+      console.warn("Failed to load bookings:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   if (authLoading) {
@@ -180,12 +192,122 @@ export default function AccountPage() {
           </div>
         </div>
 
-        <h2 className="font-serif text-2xl font-bold text-ink mb-6">Your Bookings</h2>
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+          <h2 className="font-serif text-2xl font-bold text-ink">Your Bookings</h2>
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 border border-gray-200 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setActiveBookingTab("services")}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                activeBookingTab === "services"
+                  ? "bg-white text-ink shadow-xs"
+                  : "text-gray-600 hover:text-ink"
+              }`}
+            >
+              Services & Venues ({bookings.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveBookingTab("vehicles")}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                activeBookingTab === "vehicles"
+                  ? "bg-white text-ink shadow-xs"
+                  : "text-gray-600 hover:text-ink"
+              }`}
+            >
+              🚗 Vehicles & Fleet ({vehicleBookings.length})
+            </button>
+          </div>
+        </div>
 
         {loading ? (
           <div className="py-12 text-center text-brand-600 font-semibold animate-pulse">
             Loading bookings…
           </div>
+        ) : activeBookingTab === "vehicles" ? (
+          vehicleBookings.length === 0 ? (
+            <div className="p-12 text-center bg-brand-50/50 rounded-2xl border border-brand-100 text-muted">
+              <p className="mb-3">You haven't booked any rental cars or transport yet.</p>
+              <Link
+                href="/vehicles"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-xs"
+              >
+                <span>🚗 Explore Vehicles Fleet →</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {vehicleBookings.map((vb) => {
+                const v = vb.vehicle;
+                return (
+                  <div
+                    key={vb._id}
+                    className="p-5 rounded-2xl border border-brand-100 bg-white shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-4">
+                      {v?.images?.[0] ? (
+                        <img
+                          src={v.images[0]}
+                          alt={v.name}
+                          className="w-20 h-16 rounded-xl object-cover border border-line shrink-0"
+                        />
+                      ) : (
+                        <div className="w-20 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl shrink-0">
+                          🚗
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-ink text-sm sm:text-base">
+                            {v ? `${v.brand} ${v.model}` : "Vehicle Booking"}
+                          </h4>
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase bg-brand-50 text-brand-700 border border-brand-200">
+                            {vb.serviceType === "rental" ? "Self-Drive Rental" : "Chauffeur Transport"}
+                          </span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
+                              vb.status === "CONFIRMED"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : vb.status === "CANCELLED"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                            }`}
+                          >
+                            {vb.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted mt-1">
+                          Booking ID: <span className="font-mono">{vb._id}</span> • City: {vb.city || v?.city || "—"}
+                        </p>
+                        <p className="text-xs text-ink font-medium mt-0.5">
+                          {vb.serviceType === "rental"
+                            ? `Dates: ${vb.rentalDetails?.startDate || "—"} to ${vb.rentalDetails?.endDate || "—"}`
+                            : `Travel Date: ${vb.transportDetails?.travelDate || "—"} (${vb.transportDetails?.tripType || "trip"})`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex md:flex-col items-center md:items-end justify-between gap-2 pt-3 md:pt-0 border-t md:border-t-0 border-gray-100">
+                      <div className="text-right">
+                        <span className="text-[11px] text-muted block">Estimated Total</span>
+                        <span className="text-base font-bold text-brand-700">
+                          ₹{Number(vb.priceBreakdown?.totalAmount || vb.priceBreakdown?.quotedAmount || 0).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      {v?._id && (
+                        <Link
+                          href={`/vehicles/${v._id}`}
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs font-semibold text-gray-700 transition"
+                        >
+                          View Vehicle →
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
         ) : bookings.length === 0 ? (
           <div className="p-12 text-center bg-brand-50/50 rounded-2xl border border-brand-100 text-muted">
             You haven't booked anything yet.

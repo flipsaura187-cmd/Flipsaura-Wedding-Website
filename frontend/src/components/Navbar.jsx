@@ -24,6 +24,7 @@ export default function Navbar() {
         { href: "/", label: "Home" },
         { href: "/categories/hotels", label: "Hotels" },
         { href: "/categories/venues", label: "Venues" },
+        { href: "/vehicles", label: "Vehicles" },
         { href: "/categories/photographer-videographer", label: "Photography" },
         { href: "/categories/mehndi-services", label: "Mehndi" },
         { href: "/categories/home-setup-pandal-tent-dj", label: "Home Setup" },
@@ -178,7 +179,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer Menu */}
       {open && (
-        <div className="md:hidden border-t border-line bg-white/98 backdrop-blur-md px-5 py-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden border-t border-line bg-white/98 backdrop-blur-md px-5 py-4 space-y-3 animate-in slide-in-from-top-2 duration-200 max-h-[85vh] overflow-y-auto">
           {user && (
             <div className="p-3.5 rounded-xl bg-brand-50/70 border border-brand-100 mb-2">
               <div className="flex items-center justify-between">
@@ -197,8 +198,74 @@ export default function Navbar() {
             </div>
           )}
 
+          {/* Dedicated Vendor Mobile Menu Section */}
+          {isVendor && (
+            <div className="space-y-2 pb-2 border-b border-line">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-muted px-1 flex items-center justify-between">
+                <span>Vendor Management</span>
+                <span className="text-[10px] bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-bold">Portal</span>
+              </div>
+
+              {/* Quick Actions: My Services & Add Service */}
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/vendor/items"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 font-bold text-xs hover:bg-brand-100 transition shadow-2xs text-center"
+                >
+                  <span className="text-sm">📦</span>
+                  <span>My Services</span>
+                </Link>
+                <Link
+                  href="/vendor/items?add=true"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-wine text-white font-bold text-xs shadow-2xs hover:from-brand-700 hover:to-brand-800 transition text-center"
+                >
+                  <span className="text-sm font-bold leading-none">+</span>
+                  <span>Add Service</span>
+                </Link>
+              </div>
+
+              {/* Full list of Vendor Portal links */}
+              <div className="flex flex-col space-y-0.5 pt-1">
+                {[
+                  { href: "/vendor/dashboard", label: "Dashboard", icon: "📊" },
+                  { href: "/vendor/items", label: "My Services / Items", icon: "📦" },
+                  { href: "/vendor/onboarding?tab=profile", label: "Basic Profile", icon: "👤" },
+                  { href: "/vendor/onboarding?tab=services", label: "Services & Amenities", icon: "✨" },
+                  { href: "/vendor/onboarding?tab=documents", label: "KYC Documents", icon: "📄" },
+                  { href: "/vendor/onboarding?tab=bank", label: "Bank Details", icon: "🏦" },
+                  { href: "/vendor/onboarding?tab=portfolio", label: "Portfolio", icon: "🎨" },
+                  { href: "/vendor/rooms", label: "Manage Rooms", icon: "🛏️" },
+                  { href: "/vendor/home-setup", label: "Home Setup Services", icon: "🎪" },
+                  { href: "/vendor/vehicles", label: "My Fleet & Vehicles", icon: "🚗" },
+                  { href: "/vendor/vehicle-bookings", label: "Vehicle Bookings", icon: "📋" },
+                  { href: "/vendor/bookings", label: "Bookings", icon: "📅" },
+                ].map((item) => {
+                  const isActive = pathname === item.href || (item.href.includes("tab=") && location.search.includes(item.href.split("?")[1]));
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition ${
+                        isActive
+                          ? "bg-brand-50 text-brand-600 font-bold border border-brand-200"
+                          : "text-ink hover:bg-brand-50/50 hover:text-brand-600"
+                      }`}
+                    >
+                      <span className="text-sm">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* General Navigation Links (Events, Blogs, Home) */}
           <div className="flex flex-col space-y-1">
-            {navLinks.map((link) => (
+            {!isVendor && navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -208,6 +275,34 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            {isVendor && (
+              <>
+                <Link
+                  href="/"
+                  onClick={() => setOpen(false)}
+                  className="px-3 py-2 rounded-xl text-xs font-medium text-ink hover:bg-brand-50 hover:text-brand-600 transition-colors flex items-center gap-2"
+                >
+                  <span>🏠</span>
+                  <span>Customer Website Home</span>
+                </Link>
+                <Link
+                  href="/events"
+                  onClick={() => setOpen(false)}
+                  className="px-3 py-2 rounded-xl text-xs font-medium text-ink hover:bg-brand-50 hover:text-brand-600 transition-colors flex items-center gap-2"
+                >
+                  <span>🎉</span>
+                  <span>Events</span>
+                </Link>
+                <Link
+                  href="/blogs"
+                  onClick={() => setOpen(false)}
+                  className="px-3 py-2 rounded-xl text-xs font-medium text-ink hover:bg-brand-50 hover:text-brand-600 transition-colors flex items-center gap-2"
+                >
+                  <span>📝</span>
+                  <span>Blogs</span>
+                </Link>
+              </>
+            )}
           </div>
 
           <div className="pt-3 border-t border-line space-y-2">

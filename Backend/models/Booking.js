@@ -9,12 +9,6 @@ const BookingSchema = new mongoose.Schema(
     email: String,
     phone: String,
     eventDate: String,
-    // Hotel-specific reservation details
-    checkInDate: { type: String, trim: true, index: true },
-    checkOutDate: { type: String, trim: true, index: true },
-    roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room", index: true },
-    roomsCount: { type: Number, default: 1, min: 1 },
-    holdExpiresAt: { type: Date, default: null, index: true },
     address: String,
     notes: String,
     amount: { type: Number, required: true, min: 0 },

@@ -443,6 +443,24 @@ export default function VendorDashboard() {
 
           <div className="bg-white p-6 rounded-2xl border border-line shadow-2xs flex flex-col justify-between">
             <div>
+              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl mb-3">
+                🚗
+              </div>
+              <h4 className="font-semibold text-ink text-base mb-1.5">Vehicles & Fleet</h4>
+              <p className="text-xs md:text-sm text-muted mb-4">
+                List wedding cars, Thar, auto, and barat buses with rental and per-km pricing.
+              </p>
+            </div>
+            <Link
+              href="/vendor/vehicles"
+              className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs transition-colors shadow-2xs"
+            >
+              Manage Fleet →
+            </Link>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-line shadow-2xs flex flex-col justify-between">
+            <div>
               <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3">
                 🎨
               </div>

@@ -26,6 +26,8 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import RefundPolicy from "@/pages/refund-cancellation-policy";
 import ShippingPolicy from "@/pages/shipping-policy";
 import Terms from "@/pages/terms-of-service";
+import VehiclesPage from "@/pages/vehicles";
+import VehicleDetailPage from "@/pages/vehicle-detail";
 import EventsPage from "@/pages/events";
 import EventDetailPage from "@/pages/event-detail";
 import EventRegisterPage from "@/pages/event-register";
@@ -49,6 +51,8 @@ import AdminBookings from "@/pages/admin/bookings";
 import AdminBlogs from "@/pages/admin/blogs";
 import AdminBlogCreate from "@/pages/admin/blog-create";
 import AdminUsers from "@/pages/admin/users";
+import AdminVehicles from "@/pages/admin/vehicles";
+import AdminVehicleBookings from "@/pages/admin/vehicle-bookings";
 
 // Vendor pages
 import VendorLayout from "@/pages/vendor/layout";
@@ -57,6 +61,8 @@ import VendorOnboardingPage from "@/pages/vendor/onboarding";
 import VendorItems from "@/pages/vendor/items";
 import VendorRooms from "@/pages/vendor/rooms";
 import VendorBookings from "@/pages/vendor/bookings";
+import VendorVehicles from "@/pages/vendor/vehicles";
+import VendorVehicleBookings from "@/pages/vendor/vehicle-bookings";
 import VendorHomeSetupPage from "@/pages/vendor/home-setup";
 import VendorHomeSetupCategoryPage from "@/pages/vendor/home-setup-category";
 
@@ -94,6 +100,10 @@ export default function AppRoutes() {
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/terms-of-service" element={<Terms />} />
 
+            {/* Vehicle Rental & Booking routes */}
+            <Route path="/vehicles" element={<VehiclesPage />} />
+            <Route path="/vehicles/:id" element={<VehicleDetailPage />} />
+
             {/* FlipsAura Events Public routes */}
             <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:slug" element={<EventDetailPage />} />
@@ -116,6 +126,8 @@ export default function AppRoutes() {
               <Route path="categories" element={<AdminCategories />} />
               <Route path="items" element={<AdminItems />} />
               <Route path="bookings" element={<AdminBookings />} />
+              <Route path="vehicles" element={<AdminVehicles />} />
+              <Route path="vehicle-bookings" element={<AdminVehicleBookings />} />
               <Route path="blogs" element={<AdminBlogs />} />
               <Route path="blogs/create" element={<AdminBlogCreate />} />
               <Route path="users" element={<AdminUsers />} />
@@ -130,6 +142,8 @@ export default function AppRoutes() {
               <Route path="items" element={<VendorItems />} />
               <Route path="rooms" element={<VendorRooms />} />
               <Route path="bookings" element={<VendorBookings />} />
+              <Route path="vehicles" element={<VendorVehicles />} />
+              <Route path="vehicle-bookings" element={<VendorVehicleBookings />} />
               <Route path="home-setup" element={<VendorHomeSetupPage />} />
               <Route path="home-setup/:category" element={<VendorHomeSetupCategoryPage />} />
             </Route>

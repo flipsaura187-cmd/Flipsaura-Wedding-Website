@@ -125,7 +125,6 @@ const ItemSchema = new mongoose.Schema(
       },
     ],
     categoryPhotosMap: { type: mongoose.Schema.Types.Mixed, default: {} },
-    blockedDates: [{ type: String, trim: true }], // Hotel blocked dates (YYYY-MM-DD)
     rating: { type: Number, default: 0 },
     reviewsCount: { type: Number, default: 0 },
     active: { type: Boolean, default: true, index: true },
